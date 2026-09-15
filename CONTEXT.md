@@ -18,6 +18,18 @@ The company-specific argument expressed through “why we're here,” “why we'
 **Market map**:
 A view of a target company's competitive landscape whose axes, competitor selection, placements, subtitle, and commentary express an investment judgment.
 
+**Company fact**:
+A statement about the target company's product, customers, or business that a cited source supports. Only company facts may describe what the target company is or does.
+_Avoid_: Insight, observation
+
+**Recur proposal**:
+A statement of how Recur would help the target company, phrased as an offer drawn from Recur's go-to-market, product, payments, and AI strengths. It never asserts an unsupported weakness of the target company.
+_Avoid_: Recommendation, gap
+
+**Source record**:
+The evidence behind one run's sell deck: the sources for each company fact, the reasoning for each competitor and placement on the market map, and any assumption made to identify the target company. It is kept off the visible slides.
+_Avoid_: Bibliography, citations
+
 **Covered target**:
 A target company within the workflow's reliability promise: a private software business, in any vertical, with an official website and a determinable headquarters city. Other target companies receive best-effort runs.
 _Avoid_: Supported company, any company

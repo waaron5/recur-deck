@@ -26,6 +26,7 @@ An implementation-ready plan for a package that Recur can use in a familiar AI t
 - [Establish practical PowerPoint generation and validation options](issues/02-research-powerpoint-pipeline.md): Python and JavaScript generation paths can express the deck; rendered verification is a separate capability and PNG print quality depends on physical size.
 - [Choose the supported AI tool and package handoff](issues/03-choose-host-and-package.md): Support one Claude browser custom-skill ZIP with bundled JavaScript and assets, plus a short guide and example PPTX; verify account capabilities before relying on target-specific asset downloads or rendering.
 - [Define first-try success and the release bar](issues/04-define-first-try-success.md): A run is one prompt with no user turns (internal repair allowed); six critical defects fail it; ship after US Fleet Tracking plus five unfamiliar covered targets all pass in fresh chats under 15 minutes, judged in real PowerPoint.
+- [Define the evidence and investment judgment behind each pitch](issues/05-define-investment-judgment.md): Sources are ranked and every fact is traced in the speaker notes of slides 1–3; thesis sections have fixed roles (market view, company fact, Recur offer); competitors and axes must be defensible facts; controlled-language writing rules with a banned list are enforced by deterministic validation code.
 
 ## Not yet specified
 

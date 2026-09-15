@@ -11,3 +11,5 @@ Blocked by: 02, 03, 04, 05, 09
 ## Question
 
 What reusable layout and asset strategy produces a professional, directionally similar result from the available PNG reference? Use a cheap three-slide prototype for a live visual reaction to settle text density, logo legibility, map readability, landmark treatment, and first-three-slide editability. Decide how to reuse the six fixed PNGs and which rendering approach fits the supported host. Include an approach for acquiring genuine company logos and headquarters-related landmark images. Link prototype assets; do not mistake the prototype for the final submission deck.
+
+Constraints from [Define the evidence and investment judgment behind each pitch](05-define-investment-judgment.md): headers ≤ 12 words and bullets ≤ 14 words; 6–9 competitors plus the target on two categorical axes; a callout of "Our take" plus 2 dynamics bullets and 1 underlined proposal bullet; the source record lives in the speaker notes of slides 1–3, so the chosen rendering approach must write notes.
