@@ -14,16 +14,18 @@ An implementation-ready plan for a package that Recur can use in a familiar AI t
 - Recur's specific tools, account plans, and available capabilities remain unknown. Compatibility research can establish options but cannot establish what Recur has access to.
 - Required cover: headquarters-related landmark, Recur logo, and target-company logo. Required thesis: three named sections with a header and two bullets each. Required market map: AI-chosen axes, labels, subtitle, landscape callout, competitor logos, and placements.
 - Slides 4–9 may be reused directly. The available reference is nine PNG files in `Recur x US Fleet Tracking_vS/`; no editable source presentation is present. Directionally similar, usable results are sufficient; exact replication is not required.
-- PowerPoint and the packaged workflow are required deliverables. A mandatory human review step during generation would contradict the brief. The meaning and bounds of first-try success still need an acceptance decision.
+- PowerPoint and the packaged workflow are required deliverables. A mandatory human review step during generation would contradict the brief. The acceptance bar is set in [Define first-try success and the release bar](issues/04-define-first-try-success.md).
 - Consult wayfinder for every session; grilling and domain-modeling for human decisions; research for research tickets; prototype for visual exploration tickets.
 - Local Markdown tracker: this file is the map; child issues live in `issues/`. Each child links its parent. `Blocked by` lists prerequisite child IDs. `Status: open` with `Assignee: unassigned` is unclaimed. Before work set `Status: claimed` and assign the driving developer. A ticket is unblocked when all prerequisites are resolved. Scan open, unassigned, unblocked tickets in numeric order for the frontier.
 - Record resolutions as appended `## Answer` comments in the ticket, mark resolved, then add only its linked gist below. Do not resolve human decision tickets without a live exchange.
-- This workspace has no Git repository. Research uses isolated temporary Git repositories on `research/<name>` branches; each research ticket records its context pointer and links the durable findings copied into this effort's `research/` directory.
+- The workspace is a Git repository. Research runs on throwaway `research/<name>` branches; each research ticket records its context pointer and links the durable findings copied into this effort's `research/` directory.
 
 ## Decisions so far
 
 - [Establish which familiar AI tools can run the complete workflow](issues/01-research-ai-environments.md): Documented handoff candidates exist; actual account permissions, asset downloads, and unattended rendering need a feasibility check.
 - [Establish practical PowerPoint generation and validation options](issues/02-research-powerpoint-pipeline.md): Python and JavaScript generation paths can express the deck; rendered verification is a separate capability and PNG print quality depends on physical size.
+- [Choose the supported AI tool and package handoff](issues/03-choose-host-and-package.md): Support one Claude browser custom-skill ZIP with bundled JavaScript and assets, plus a short guide and example PPTX; verify account capabilities before relying on target-specific asset downloads or rendering.
+- [Define first-try success and the release bar](issues/04-define-first-try-success.md): A run is one prompt with no user turns (internal repair allowed); six critical defects fail it; ship after US Fleet Tracking plus five unfamiliar covered targets all pass in fresh chats under 15 minutes, judged in real PowerPoint.
 
 ## Not yet specified
 

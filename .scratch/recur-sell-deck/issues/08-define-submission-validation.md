@@ -10,4 +10,4 @@ Blocked by: 03, 04, 06, 07
 
 ## Question
 
-Which reference and unfamiliar software companies, clean-session handoff checks, and rendered-deck inspections will demonstrate the agreed release bar within four days? Decide the submission example, minimum successful independent runs, packaging instructions and supporting artifacts, and a stop rule for shipping early once the evidence is sufficient. Plan a credible demonstration without claiming more reliability than testing supports.
+The release bar and evidence threshold are set in [Define first-try success and the release bar](04-define-first-try-success.md): US Fleet Tracking plus five unfamiliar covered targets, each passing in a fresh chat. Which five covered targets (spanning sectors, sizes, and the edge cases exposed by the failure-behavior decision) should the release set use? Which deck becomes the submission example? What goes in the handoff guide beyond installation steps, including the tested-company claim and known soft spots?
