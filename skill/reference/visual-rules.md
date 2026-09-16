@@ -5,8 +5,11 @@ none of this does.
 
 ## Page
 
-Widescreen, 13.333 x 7.5 inches, matching the supplied reference slides
-(1300 x 731 px, about 97 px per inch at full width).
+10 x 5.625in, which is the original presentation's own page size. Working in the
+original's units means every value measured off it transfers straight in.
+
+The reference slides are 1300 x 731 px, so at this size they carry 130 px per
+inch.
 
 ## Slide inventory
 
@@ -22,12 +25,20 @@ excited", "How we can help".
 
 ## Type
 
-Arial throughout. Arial is metric-compatible with Liberation Sans, which the
-sandbox renderer substitutes, so a rendered slide predicts where PowerPoint
-breaks lines.
+**Noto Sans Arabic Light**, the original deck's typeface, read from the source
+presentation.
 
-Body text never goes below about 12pt. **Type sizes are fixed design values:
-text that does not fit gets shorter, it never gets smaller.**
+Slide titles are **20pt, not bold**, in navy, matching the reference exactly.
+
+Body text never goes below about 9pt, which is the visual bar's 12pt floor
+expressed in these 10-inch units. **Type sizes are fixed design values: text
+that does not fit gets shorter, it never gets smaller.**
+
+Noto Sans Arabic Light is not an OS default on macOS or Windows. Recur has it
+and prints the mailers, so the deck renders correctly where it matters, but
+PowerPoint substitutes it on machines that lack it. The sandbox renderer also
+lacks it, so the in-run render check predicts line breaks only approximately
+until the font ships inside the skill.
 
 ## Palette
 
@@ -46,11 +57,11 @@ text that does not fit gets shorter, it never gets smaller.**
 The Recur wordmark ships prerendered as transparent PNGs, white and navy, and is
 placed as an image. It never depends on a font being installed.
 
-A **text wordmark** — the company name set in Arial bold, sized to its slot,
-white on the cover and navy on light slides — is the terminal fallback whenever a
-logo image cannot be verified, converted, or kept sharp. A broken image or an
-empty slot is never acceptable. Never enlarge a logo past the size at which it
-still looks sharp.
+A **text wordmark** - the company name set bold, sized to its slot, white on the
+cover and navy on light slides - is the terminal fallback whenever a logo image
+cannot be verified, converted, or kept sharp. A broken image or an empty slot is
+never acceptable. Never enlarge a logo past the size at which it still looks
+sharp.
 
 ## Footer
 
@@ -58,10 +69,10 @@ Slide 2 carries the confidentiality line centred across the slide, the navy
 Recur wordmark at the right, and the page number beside it.
 
 Positions are measured from the reference slides, not guessed: the wordmark
-spans x 11.805-12.625in and the page number sits at x 12.923, both with their
-ink centred on y 7.100; the confidentiality line's ink runs y 7.326-7.408in.
+spans x 8.854-9.469in and the page number sits at x 9.692, both with their ink
+centred on y 5.325; the confidentiality line's ink runs y 5.495-5.556in.
 
-The cover and the market map carry **no footer** — the reference market map has
+The cover and the market map carry **no footer** - the reference market map has
 no confidentiality line, wordmark or page number, and reads less cluttered
 without them.
 

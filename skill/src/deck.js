@@ -4,6 +4,8 @@
 // order. Slides 1-3 are generated natively so their text stays editable; in
 // this build they carry only their layout frame and an empty notes field, and
 // later tickets fill in the cover photo, the thesis, and the market map.
+//
+// Geometry is in the original deck's 10 x 5.625in units - see design.js.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -22,6 +24,7 @@ const {
   FONT,
   COLORS,
   THESIS_SECTIONS,
+  TITLE,
   CONFIDENTIAL_LINE,
   FOOTER,
   MIN_FONT_SIZE,
@@ -50,7 +53,9 @@ async function buildDeck({ company, assetsDir, outDir, notes = {} }) {
   };
 
   const pres = new PptxGenJS();
-  pres.layout = 'LAYOUT_WIDE';
+  // The original presentation's page size, rather than a named preset.
+  pres.defineLayout({ name: 'RECUR', width: SLIDE_W, height: SLIDE_H });
+  pres.layout = 'RECUR';
 
   const generated = GENERATED_SLIDE_NUMBERS.map(() => pres.addSlide());
   const [cover, thesis, marketMap] = generated;
@@ -85,19 +90,19 @@ async function buildDeck({ company, assetsDir, outDir, notes = {} }) {
 function coverSlide(slide, company, asset) {
   slide.background = { color: COLORS.navy };
 
-  const divider = SLIDE_W / 2 - 0.35;
-  placeImage(slide, asset('recur-wordmark-white.png'), 2.2, 3.2, 3.9, 0.7);
+  const divider = SLIDE_W / 2 - 0.2625;
+  placeImage(slide, asset('recur-wordmark-white.png'), 1.65, 2.4, 2.925, 0.525);
   slide.addShape('line', {
     x: divider,
-    y: 2.95,
+    y: 2.2125,
     w: 0,
-    h: 1.25,
+    h: 0.9375,
     line: { color: COLORS.white, width: 1 },
   });
 
   // The target's name as a text wordmark. Ticket 03 adds the logo pipeline;
   // a clean wordmark is the terminal fallback either way, never a blank slot.
-  const slot = { x: SLIDE_W / 2 + 0.15, y: 3.05, w: 4.4, h: 0.95 };
+  const slot = { x: SLIDE_W / 2 + 0.1125, y: 2.2875, w: 3.3, h: 0.7125 };
   slide.addText(company, {
     ...slot,
     fontFace: FONT,
@@ -112,37 +117,37 @@ function coverSlide(slide, company, asset) {
 
 /** Thesis: three fixed sections. Headers and bullets arrive in ticket 04. */
 function thesisSlide(slide, company, asset) {
-  title(slide, `What we see in ${company}`);
+  title(slide, `What we see in ${company}`, TITLE.y.thesis);
 
   THESIS_SECTIONS.forEach((section, i) => {
-    const y = 1.75 + i * 1.62;
+    const y = 1.3125 + i * 1.215;
     slide.addShape('ellipse', {
-      x: 0.8,
-      y: y + 0.02,
-      w: 0.62,
-      h: 0.62,
+      x: 0.6,
+      y: y + 0.015,
+      w: 0.465,
+      h: 0.465,
       fill: { color: section.circle },
       line: { type: 'none' },
     });
     slide.addText(String(i + 1), {
-      x: 0.8,
-      y: y + 0.02,
-      w: 0.62,
-      h: 0.62,
+      x: 0.6,
+      y: y + 0.015,
+      w: 0.465,
+      h: 0.465,
       fontFace: FONT,
-      fontSize: 22,
+      fontSize: 16.5,
       color: section.numeral,
       align: 'center',
       valign: 'middle',
       margin: 0,
     });
     slide.addText(section.label, {
-      x: 1.75,
+      x: 1.3125,
       y,
-      w: 11,
-      h: 0.5,
+      w: 8.25,
+      h: 0.375,
       fontFace: FONT,
-      fontSize: 19,
+      fontSize: 14.25,
       bold: true,
       color: section.text,
       valign: 'middle',
@@ -160,14 +165,14 @@ function thesisSlide(slide, company, asset) {
  * or page number, and the slide reads less cluttered without them.
  */
 function marketMapSlide(slide, company) {
-  title(slide, `The opportunity for ${company}`, 0.45);
+  title(slide, `The opportunity for ${company}`, TITLE.y.marketMap);
 
-  const sidebar = 9.6;
+  const sidebar = 7.2;
   slide.addShape('rect', {
     x: 0,
-    y: 2.0,
+    y: 1.5,
     w: sidebar,
-    h: SLIDE_H - 2.0,
+    h: SLIDE_H - 1.5,
     fill: { color: COLORS.band },
     line: { type: 'none' },
   });
@@ -181,10 +186,10 @@ function marketMapSlide(slide, company) {
   });
 
   // The reference L-axes: no quadrant dividers, free placement inside them.
-  const gx = 2.95;
-  const gy = 2.45;
-  const gw = 5.9;
-  const gh = 3.75;
+  const gx = 2.2125;
+  const gy = 1.8375;
+  const gw = 4.425;
+  const gh = 2.8125;
   slide.addShape('line', { x: gx, y: gy, w: 0, h: gh, line: { color: COLORS.navy, width: 1 } });
   slide.addShape('line', {
     x: gx,
@@ -197,14 +202,16 @@ function marketMapSlide(slide, company) {
 
 // ---------- shared furniture ----------
 
-function title(slide, text, y = 0.55) {
+/** A slide title, matching the reference: 20pt, not bold, navy. */
+function title(slide, text, y) {
   slide.addText(text, {
-    x: 0.75,
+    x: TITLE.x,
     y,
-    w: 11.5,
-    h: 0.75,
+    w: TITLE.w,
+    h: TITLE.h,
     fontFace: FONT,
-    fontSize: 30,
+    fontSize: TITLE.fontSize,
+    bold: false,
     color: COLORS.navy,
     valign: 'middle',
     margin: 0,
@@ -271,9 +278,9 @@ function pngSize(file) {
 
 /**
  * Size a text wordmark to its slot: bounded by the slot height, and by the slot
- * width at Arial bold's rough average character width.
+ * width at the face's rough average character width.
  *
- * The result never goes below the 12pt floor. A name too long to fit on one
+ * The result never goes below the type floor. A name too long to fit on one
  * line at that floor wraps inside the slot instead of shrinking past it, since
  * type sizes are fixed design values. Capping name length is the content
  * gate's job (ticket 06), not this function's.
