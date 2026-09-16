@@ -45,12 +45,32 @@ _Avoid_: Bug, error
 **Quality note**:
 A shortcoming in a sell deck that does not make it unusable, such as a generic bullet, a weak landmark, or a debatable axis. Quality notes do not fail a run.
 
+**Evidence failure**:
+A run that cannot identify the target company, cannot establish from sources what it sells and to whom, or cannot reach the web at all. It delivers no sell deck, only an explanation and a suggested fix.
+_Avoid_: Error, crash
+
+**Flagged deck**:
+A sell deck delivered despite critical defects that survived the workflow's repairs, with those defects listed in the reply and "NOT READY" in its file name. Its run still fails.
+_Avoid_: Draft, partial deck
+
 **Submission example**:
 The single sell deck sent to Recur alongside the workflow package; it must be free of critical defects and quality notes.
 _Avoid_: Sample output, demo deck
 
+**Release set**:
+The fixed, named companies whose fresh runs on the final workflow package decide whether it ships. It is kept apart from development so the workflow is not tuned to it.
+_Avoid_: Test set, eval set
+
+**Practice set**:
+Companies used while building and tuning the workflow. Their runs never count toward the release bar.
+_Avoid_: Dev set, training set
+
+**Behavior check**:
+A run made to confirm one specific outcome, such as an evidence failure or a best-effort reply. It does not count toward the release bar.
+_Avoid_: Negative test, smoke test
+
 **Text wordmark**:
-A company's name set deliberately in clean text where its logo image would appear, used when no usable logo image is obtainable.
+A company's name set deliberately in clean text where its logo image would appear. It is used when no logo image can be verified as the company's own, when the image cannot be converted, or when the image cannot stay sharp at the size its slot needs.
 _Avoid_: Placeholder, broken logo
 
 **Recur introduction**:

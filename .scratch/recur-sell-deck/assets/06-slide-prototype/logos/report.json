@@ -1,0 +1,392 @@
+{
+  "usft": {
+    "url": "https://www.usfleettracking.com/",
+    "status": 200,
+    "candidates": [
+      {
+        "kind": "img",
+        "url": "https://www.usfleettracking.com/images/servapp/usft-servapp-rgb.svg",
+        "score": 1,
+        "at": 89949
+      },
+      {
+        "kind": "img",
+        "url": "https://www.usfleettracking.com/images/products/play-head-1.svg",
+        "score": 1,
+        "at": 115967
+      },
+      {
+        "kind": "img",
+        "url": "https://www.usfleettracking.com/images/products/shopping-icon.svg",
+        "score": 1,
+        "at": 133134
+      },
+      {
+        "kind": "img",
+        "url": "https://www.usfleettracking.com/images/products/call-icon.svg",
+        "score": 1,
+        "at": 134551
+      }
+    ],
+    "chosen": {
+      "kind": "img",
+      "url": "https://www.usfleettracking.com/images/servapp/usft-servapp-rgb.svg",
+      "score": 1,
+      "at": 89949,
+      "sourceFormat": "svg",
+      "width": 1198,
+      "height": 372
+    }
+  },
+  "samsara": {
+    "url": "https://www.samsara.com/",
+    "status": 200,
+    "candidates": [
+      {
+        "kind": "home-link inline-svg",
+        "score": 20,
+        "at": 44200,
+        "svg": "6322 chars"
+      },
+      {
+        "kind": "img",
+        "url": "https://images.ctfassets.net/bx9krvy0u3sx/GrZWUNAsDdY3ipppgk6DA/aabba8b55869e06651f513089e64d869/Logo-DHL-v2.svg?w=314&q=80",
+        "score": 9,
+        "at": 425853
+      },
+      {
+        "kind": "img",
+        "url": "https://images.ctfassets.net/bx9krvy0u3sx/BprIGIYWpJ81XtB58aeKj/1045e514d302ccd86c958ddc0040f6be/Logo-City_of_El_Paso-v2.svg?w=226&q=80",
+        "score": 9,
+        "at": 433819
+      },
+      {
+        "kind": "img",
+        "url": "https://images.ctfassets.net/bx9krvy0u3sx/4dJLxapWVwK8PcdcUXpdyH/578895eaa1c3ccba9afb4cc8f9156574/Logo-Swissport-v2.svg?w=226&q=80",
+        "score": 9,
+        "at": 440353
+      }
+    ],
+    "chosen": {
+      "kind": "img",
+      "url": "https://images.ctfassets.net/bx9krvy0u3sx/GrZWUNAsDdY3ipppgk6DA/aabba8b55869e06651f513089e64d869/Logo-DHL-v2.svg?w=314&q=80",
+      "score": 9,
+      "at": 425853,
+      "sourceFormat": "svg",
+      "width": 841,
+      "height": 119
+    }
+  },
+  "geotab": {
+    "url": "https://www.geotab.com/",
+    "status": 200,
+    "candidates": [
+      {
+        "kind": "home-link inline-svg",
+        "score": 20,
+        "at": 152001,
+        "svg": "3454 chars"
+      },
+      {
+        "kind": "img",
+        "url": "https://www.geotab.com/CMS-Media-production/Nav/geotab-fleet-dash-cams-hero-image-MPROD209-EN-NA-260206.svg",
+        "score": 1,
+        "at": 167734
+      },
+      {
+        "kind": "img",
+        "url": "https://www.geotab.com/CMS-Media-production/Signals/banners/geotab-signals-vol2-product-menu-dropdown-nav-MPROD-2546(animated).svg",
+        "score": 1,
+        "at": 174883
+      },
+      {
+        "kind": "img",
+        "url": "https://www.geotab.com/CMS-Media-production/Feature%20pages/Driver_Coaching/Updated-UI/mygeotab-map-fleet-safety-monitoring-mobile-deviceless-smart-mockup-1-2025-EN-NA(animated).svg",
+        "score": 1,
+        "at": 210911
+      }
+    ],
+    "chosen": {
+      "kind": "img",
+      "url": "https://www.geotab.com/CMS-Media-production/Nav/geotab-fleet-dash-cams-hero-image-MPROD209-EN-NA-260206.svg",
+      "score": 1,
+      "at": 167734,
+      "sourceFormat": "svg",
+      "width": 1168,
+      "height": 673
+    }
+  },
+  "verizon": {
+    "url": "https://www.verizonconnect.com/",
+    "status": 200,
+    "candidates": [
+      {
+        "kind": "home-link inline-svg",
+        "score": 20,
+        "at": 6284,
+        "svg": "9664 chars"
+      },
+      {
+        "kind": "img",
+        "url": "https://www.verizonconnect.com/next/common/logo-vzc.svg",
+        "score": 9,
+        "at": 124818
+      },
+      {
+        "kind": "img",
+        "url": "https://images.contentstack.io/v3/assets/blt0371ecb1478c7909/blt69f9597d8bc4d3b8/6882cb10899006c781034cf7/vzc-monarch-bill-howe-logo-us.webp?w=384&q=75&auto=webp",
+        "score": 8,
+        "at": 107727
+      },
+      {
+        "kind": "img",
+        "url": "https://images.contentstack.io/v3/assets/blt0371ecb1478c7909/blt4fb1ef56eb516441/6882cb14cdde5a70941a9fda/vzc-monarch-poolsure-logo-us.webp?w=384&q=75&auto=webp",
+        "score": 8,
+        "at": 108832
+      }
+    ],
+    "chosen": {
+      "kind": "img",
+      "url": "https://www.verizonconnect.com/next/common/logo-vzc.svg",
+      "score": 9,
+      "at": 124818,
+      "sourceFormat": "svg",
+      "width": 1200,
+      "height": 440
+    }
+  },
+  "motive": {
+    "url": "https://gomotive.com/",
+    "status": 200,
+    "candidates": [
+      {
+        "kind": "home-link inline-svg",
+        "score": 20,
+        "at": 92258,
+        "svg": "1833 chars"
+      },
+      {
+        "kind": "img",
+        "url": "https://gomotive.com/wp-content/uploads/2025/05/KONE-Logo.svg",
+        "score": 9,
+        "at": 191964
+      },
+      {
+        "kind": "img",
+        "url": "https://gomotive.com/wp-content/uploads/2025/05/Vestis-Logo.svg",
+        "score": 9,
+        "at": 192448
+      },
+      {
+        "kind": "img",
+        "url": "https://gomotive.com/wp-content/uploads/2025/05/1-800-GOT-JUNK-Logo.svg",
+        "score": 9,
+        "at": 192696
+      }
+    ],
+    "chosen": {
+      "kind": "img",
+      "url": "https://gomotive.com/wp-content/uploads/2025/05/KONE-Logo.svg",
+      "score": 9,
+      "at": 191964,
+      "sourceFormat": "svg",
+      "width": 626,
+      "height": 317
+    }
+  },
+  "azuga": {
+    "url": "https://www.azuga.com/",
+    "status": 200,
+    "candidates": [
+      {
+        "kind": "home-link img",
+        "url": "https://cdn.prod.website-files.com/5bc4b66f898dce69ebbe7ca9/6716adf57cc96eea2b1c050e_Azuga%20Lightmode.svg",
+        "score": 20,
+        "at": 10622
+      },
+      {
+        "kind": "img",
+        "url": "https://cdn.prod.website-files.com/5bc4b66f898dce69ebbe7ca9/6716adf57cc96eea2b1c050e_Azuga%20Lightmode.svg",
+        "score": 6,
+        "at": 55982
+      },
+      {
+        "kind": "img",
+        "url": "https://cdn.prod.website-files.com/6667bdeae006f1cbdc564246/6669ee24e8e7bde3875aab31_Azuga%20Lightmode.png",
+        "score": 5,
+        "at": 56156
+      },
+      {
+        "kind": "img",
+        "url": "https://cdn.prod.website-files.com/5bc4b66f898dce69ebbe7ca9/6716acf42b8818b87365e312_Azuga%20Lightmode.webp",
+        "score": 5,
+        "at": 184425
+      }
+    ],
+    "chosen": {
+      "kind": "home-link img",
+      "url": "https://cdn.prod.website-files.com/5bc4b66f898dce69ebbe7ca9/6716adf57cc96eea2b1c050e_Azuga%20Lightmode.svg",
+      "score": 20,
+      "at": 10622,
+      "sourceFormat": "svg",
+      "width": 1200,
+      "height": 506
+    }
+  },
+  "gpsinsight": {
+    "url": "https://www.gpsinsight.com/",
+    "status": 200,
+    "candidates": [
+      {
+        "kind": "home-link img",
+        "url": "https://www.gpsinsight.com/media/2024/08/GPSInsight-Tagline-Logo.png",
+        "score": 20,
+        "at": 396074
+      },
+      {
+        "kind": "img",
+        "url": "https://www.gpsinsight.com/media/2024/08/GPSInsight-Tagline-Logo.png",
+        "score": 8,
+        "at": 396115
+      },
+      {
+        "kind": "img",
+        "url": "https://www.gpsinsight.com/media/2024/09/CritterControl-Logo.webp",
+        "score": 8,
+        "at": 622094
+      },
+      {
+        "kind": "img",
+        "url": "https://www.gpsinsight.com/media/2024/12/Logo-Reviews-Squares-01-264x300.png",
+        "score": 8,
+        "at": 634152
+      }
+    ],
+    "chosen": {
+      "kind": "home-link img",
+      "url": "https://www.gpsinsight.com/media/2024/08/GPSInsight-Tagline-Logo.png",
+      "score": 20,
+      "at": 396074,
+      "sourceFormat": "png",
+      "width": 2085,
+      "height": 524
+    }
+  },
+  "teletrac": {
+    "url": "https://www.teletracnavman.com/",
+    "status": 200,
+    "candidates": [
+      {
+        "kind": "img",
+        "url": "https://www.teletracnavman.com/media/26178/teletrac-rgb-pbv-pos_resize.png",
+        "score": 8,
+        "at": 12586
+      },
+      {
+        "kind": "img",
+        "url": "https://www.teletracnavman.com/media/1073/logo_forkites.png?format=webp",
+        "score": 8,
+        "at": 78296
+      },
+      {
+        "kind": "img",
+        "url": "https://www.teletracnavman.com/media/1072/logo_mcleadsoftware.png?format=webp",
+        "score": 8,
+        "at": 78483
+      },
+      {
+        "kind": "img",
+        "url": "https://www.teletracnavman.com/media/1069/logo_shipwell.png?format=webp",
+        "score": 8,
+        "at": 78682
+      }
+    ],
+    "chosen": {
+      "kind": "img",
+      "url": "https://www.teletracnavman.com/media/26178/teletrac-rgb-pbv-pos_resize.png",
+      "score": 8,
+      "at": 12586,
+      "sourceFormat": "png",
+      "width": 2851,
+      "height": 840
+    }
+  },
+  "linxup": {
+    "url": "https://www.linxup.com/",
+    "status": 200,
+    "candidates": [
+      {
+        "kind": "home-link img",
+        "url": "https://www.linxup.com/site/assets/files/1/linxup_logo.png",
+        "score": 20,
+        "at": 14782
+      },
+      {
+        "kind": "img",
+        "url": "https://www.linxup.com/site/assets/files/1/linxup_logo.png",
+        "score": 11,
+        "at": 14842
+      },
+      {
+        "kind": "img",
+        "url": "https://www.linxup.com/site/templates/images/logo-linxup-white.svg",
+        "score": 9,
+        "at": 116020
+      },
+      {
+        "kind": "img",
+        "url": "https://www.linxup.com/site/templates/images/logo-linxup-white.svg",
+        "score": 9,
+        "at": 126735
+      }
+    ],
+    "chosen": {
+      "kind": "home-link img",
+      "url": "https://www.linxup.com/site/assets/files/1/linxup_logo.png",
+      "score": 20,
+      "at": 14782,
+      "sourceFormat": "png",
+      "width": 1169,
+      "height": 318
+    }
+  },
+  "forcebyrocket": {
+    "url": "https://www.forcebymojio.com/",
+    "status": 200,
+    "candidates": [
+      {
+        "kind": "home-link img",
+        "url": "https://forcefleet.com/wp-content/uploads/2023/11/ForceFT_logo_blue.svg",
+        "score": 20,
+        "at": 409964
+      },
+      {
+        "kind": "img",
+        "url": "https://forcefleet.com/wp-content/uploads/2023/11/ForceFT_logo_blue.svg",
+        "score": 12,
+        "at": 410054
+      },
+      {
+        "kind": "img",
+        "url": "https://forcefleet.com/wp-content/themes/force/img/ForceFT_logo_white.svg",
+        "score": 12,
+        "at": 410237
+      },
+      {
+        "kind": "img",
+        "url": "https://secure.businessintuition247.com/264480.png",
+        "score": 3,
+        "at": 408547
+      }
+    ],
+    "chosen": {
+      "kind": "home-link img",
+      "url": "https://forcefleet.com/wp-content/uploads/2023/11/ForceFT_logo_blue.svg",
+      "score": 20,
+      "at": 409964,
+      "sourceFormat": "svg",
+      "width": 1127,
+      "height": 562
+    }
+  }
+}

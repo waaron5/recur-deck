@@ -1,0 +1,56 @@
+<!doctype html>
+<!-- PROTOTYPE (ticket 10), throwaway. Two market-map chart treatments x two datasets, rendered by macOS Quick Look.
+     ←/→ switch treatment, ↑/↓ switch dataset; or ?variant=free|packed&data=usft|stress. PowerPoint: out/all.pptx -->
+<meta charset="utf-8">
+<title>Market map prototype · slide 3</title>
+<style>
+  body { margin: 0; background: #d9dde3; font: 14px -apple-system, system-ui, sans-serif; color: #09142f; }
+  main { max-width: 1320px; margin: 0 auto; padding: 24px 16px 96px; }
+  h1 { font-size: 16px; font-weight: 600; margin: 0 0 6px; }
+  p { margin: 0 0 16px; color: #4b5563; font-size: 13px; }
+  img { width: 100%; display: block; box-shadow: 0 2px 10px rgba(0,0,0,.18); background: #fff; }
+  .bar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center;
+         background: #111; color: #fff; padding: 8px 14px; border-radius: 999px; box-shadow: 0 4px 16px rgba(0,0,0,.35); }
+  .bar button { background: #333; color: #fff; border: 0; border-radius: 999px; min-width: 32px; height: 32px; font-size: 14px; cursor: pointer; padding: 0 12px; }
+  .bar button.on { background: #009384; }
+  .bar span { min-width: 220px; text-align: center; font-weight: 600; }
+</style>
+<main>
+  <h1>PROTOTYPE · slide 3 chart treatment · illustrative copy and placements</h1>
+  <p id="desc"></p>
+  <img id="slide" alt="Market map">
+</main>
+<div class="bar">
+  <button id="prev" aria-label="Previous treatment">←</button><span id="label"></span><button id="next" aria-label="Next treatment">→</button>
+  <button data-d="usft">US Fleet Tracking</button><button data-d="stress">Stress case</button>
+</div>
+<script>
+  const variants = { free: 'Free placement', freegrid: 'Free placement + faint dividers', packed: 'Packed cells' };
+  const data = {
+    usft: 'Dataset: the US Fleet Tracking placements from ticket 06.',
+    stress: 'Dataset: stress case. Five logos crowd the target\'s quadrant, one quadrant is empty, "Northwind Fleet" is a synthetic 10:1 wide logo, and Fleetio is a text wordmark. Red dashes mark collisions code could not resolve.',
+  };
+  const keys = Object.keys(variants);
+  const q = new URLSearchParams(location.search);
+  let cur = keys.includes(q.get('variant')) ? q.get('variant') : 'free';
+  let ds = q.get('data') in data ? q.get('data') : 'usft';
+  function show() {
+    document.getElementById('slide').src = `ql/${cur}-${ds}.pptx.png`;
+    document.getElementById('label').textContent = variants[cur];
+    document.getElementById('desc').textContent = data[ds];
+    document.querySelectorAll('[data-d]').forEach((b) => b.classList.toggle('on', b.dataset.d === ds));
+    const u = new URL(location.href); u.searchParams.set('variant', cur); u.searchParams.set('data', ds); history.replaceState(null, '', u);
+  }
+  const step = (d) => { cur = keys[(keys.indexOf(cur) + d + keys.length) % keys.length]; show(); };
+  const flip = () => { ds = ds === 'usft' ? 'stress' : 'usft'; show(); };
+  document.getElementById('prev').onclick = () => step(-1);
+  document.getElementById('next').onclick = () => step(1);
+  document.querySelectorAll('[data-d]').forEach((b) => (b.onclick = () => { ds = b.dataset.d; show(); }));
+  addEventListener('keydown', (e) => {
+    if (e.target.closest && e.target.closest('input, textarea, [contenteditable]')) return;
+    if (e.key === 'ArrowLeft') step(-1);
+    if (e.key === 'ArrowRight') step(1);
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); flip(); }
+  });
+  show();
+</script>
