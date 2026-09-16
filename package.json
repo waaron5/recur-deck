@@ -1,0 +1,19 @@
+{
+  "name": "recur-deck",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Build step for the Recur sell-deck workflow package (a Claude custom-skill ZIP).",
+  "scripts": {
+    "build": "node scripts/build-package.js",
+    "test": "node --test test/*.test.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@types/node": "22.15.3",
+    "esbuild": "0.28.2",
+    "jszip": "3.10.1",
+    "pptxgenjs": "4.0.1",
+    "typescript": "5.9.3"
+  }
+}
