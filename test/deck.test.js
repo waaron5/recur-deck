@@ -13,6 +13,7 @@ const {
   SLIDE_H,
   MIN_FONT_SIZE,
   CONFIDENTIAL_LINE,
+  THESIS_GEOMETRY,
 } = require('../skill/src/design.js');
 const {
   ensureBuilt,
@@ -22,6 +23,7 @@ const {
   testPhoto,
   TEST_HEADQUARTERS,
   TEST_CREDIT,
+  TEST_THESIS,
 } = require('./helpers.js');
 
 const REFERENCE_DIR = path.join(__dirname, '..', 'Recur x US Fleet Tracking_vS');
@@ -37,6 +39,7 @@ async function build(options = {}) {
     headquarters: TEST_HEADQUARTERS,
     identification: 'Matched the prompt to usfleettracking.com.',
     landmark: { photo: testPhoto(), credit: TEST_CREDIT },
+    thesis: TEST_THESIS,
     ...options,
   });
   return { file, pptx: await openPptx(file) };
@@ -124,15 +127,13 @@ test('slides 1-3 carry a notes field that later tickets can write into', async (
   }
 });
 
-test('the cover writes its own source record, and the rest wait for their tickets', async () => {
+test('the cover writes its own source record, and the market map waits for its ticket', async () => {
   const { pptx } = await build();
 
   const cover = await pptx.notesText(1);
   if (cover === null) assert.fail('slide 1 should carry speaker notes');
   assert.match(cover, /Headquarters: Oklahoma City/);
-  for (const slideNumber of [2, 3]) {
-    assert.equal(await pptx.notesText(slideNumber), '');
-  }
+  assert.equal(await pptx.notesText(3), '');
 });
 
 test('the cover sets the company name as a text wordmark', async () => {
@@ -159,4 +160,164 @@ test('a long company name wraps rather than shrinking below the type floor', asy
 test('a company name that would break a file name is cleaned up', async () => {
   const { file } = await build({ company: 'Acme / Beta: Co' });
   assert.equal(path.basename(file), 'Recur x Acme Beta Co.pptx');
+});
+
+// ---------- slide 2: the thesis ----------
+
+// Measured off the reference Slide2.png (1300 x 731px at 130 px/in), and
+// written out as literals rather than recomputed from the design constants, so
+// these assertions can disagree with the code rather than follow it.
+const THESIS_ROWS = [
+  { key: 'here', label: "Why we're here", circleTop: 1.5, header: 1.627, bullets: [1.877, 2.108] },
+  {
+    key: 'excited',
+    label: "Why we're excited",
+    circleTop: 2.531,
+    header: 2.658,
+    bullets: [2.908, 3.139],
+  },
+  {
+    key: 'help',
+    label: 'How we can help',
+    circleTop: 3.562,
+    header: 3.689,
+    bullets: [3.939, 4.17],
+  },
+];
+
+/** Text as a reader sees it, with the XML escaping undone. */
+const plain = (text) => text.replace(/&apos;|&#39;/g, "'").replace(/&amp;/g, '&');
+
+/** Slide 2's text boxes, read the way someone opening the deck would read them. */
+async function thesisBoxes(pptx) {
+  return (await pptx.textBoxes(2)).map((box) => ({ ...box, text: plain(box.text) }));
+}
+
+/** The box carrying one section's label and header, failed loudly when absent. */
+function findHeader(boxes, label) {
+  const header = boxes.find((box) => box.text.startsWith(`${label}:`));
+  if (!header) assert.fail(`slide 2 should carry the "${label}" header`);
+  return header;
+}
+
+test('slide 2 shows the three sections, each with a header and exactly two bullets', async () => {
+  const { pptx } = await build();
+  const boxes = await thesisBoxes(pptx);
+
+  for (const row of THESIS_ROWS) {
+    const header = findHeader(boxes, row.label);
+    assert.ok(
+      header.text.includes(TEST_THESIS[row.key].header),
+      `the "${row.label}" header should carry the copy the run wrote`,
+    );
+  }
+
+  const written = THESIS_ROWS.flatMap((row) =>
+    TEST_THESIS[row.key].bullets.map((bullet) => bullet.text),
+  );
+  for (const bullet of written) {
+    assert.ok(boxes.some((box) => box.text === bullet), `slide 2 should carry "${bullet}"`);
+  }
+  assert.equal(
+    boxes.filter((box) => written.includes(box.text)).length,
+    6,
+    'six bullets, two to a section',
+  );
+});
+
+test('the section rows sit where the reference puts them', async () => {
+  const { pptx } = await build();
+  const boxes = await thesisBoxes(pptx);
+
+  for (const row of THESIS_ROWS) {
+    const header = findHeader(boxes, row.label);
+
+    const centre = header.y + header.h / 2;
+    assert.ok(
+      Math.abs(centre - row.header) < 0.02,
+      `"${row.label}" centred at ${centre.toFixed(3)}in, expected about ${row.header}in`,
+    );
+    assert.ok(Math.abs(header.x - 1.4) < 0.01, 'headers start at the reference left edge');
+  }
+});
+
+test('each bullet sits on its own measured line', async () => {
+  const { pptx } = await build();
+  const boxes = await thesisBoxes(pptx);
+
+  for (const row of THESIS_ROWS) {
+    TEST_THESIS[row.key].bullets.forEach((bullet, i) => {
+      const box = boxes.find((b) => b.text === bullet.text);
+      if (!box) assert.fail(`slide 2 should carry "${bullet.text}"`);
+      const centre = box.y + box.h / 2;
+      assert.ok(
+        Math.abs(centre - row.bullets[i]) < 0.02,
+        `bullet ${i + 1} of "${row.label}" centred at ${centre.toFixed(3)}in, ` +
+          `expected about ${row.bullets[i]}in`,
+      );
+    });
+  }
+});
+
+test('the numbered circles carry their numerals where the reference puts them', async () => {
+  const { pptx } = await build();
+  const boxes = await pptx.textBoxes(2);
+
+  THESIS_ROWS.forEach((row, i) => {
+    // Filtered by position as well as text, because the footer's page number on
+    // slide 2 is also the character "2".
+    const numeral = boxes.find((box) => box.text === String(i + 1) && box.x < 1.2);
+    if (!numeral) assert.fail(`slide 2 should carry the numeral ${i + 1}`);
+
+    assert.ok(Math.abs(numeral.x - 0.6) < 0.01, 'the circle sits at the reference left edge');
+    assert.ok(Math.abs(numeral.w - 0.465) < 0.01, 'and carries the reference diameter');
+    assert.ok(
+      Math.abs(numeral.y - row.circleTop) < 0.02,
+      `circle ${i + 1} at ${numeral.y.toFixed(3)}in, expected about ${row.circleTop}in`,
+    );
+  });
+});
+
+test("slide 2's type sizes come from the reference's measured cap heights", async () => {
+  // Headers measure 0.146in of cap, bullets 0.115in, numerals 0.246in, which
+  // through the typeface's cap height are 15, 11.5 and 25pt. The prototype set
+  // all three smaller; the reference is what the deck matches.
+  const { pptx } = await build();
+  const sizes = new Set(
+    [...(await pptx.slideXml(2)).matchAll(/sz="(\d+)"/g)].map((m) => Number(m[1])),
+  );
+
+  assert.ok(sizes.has(1500), 'section headers at 15pt');
+  assert.ok(sizes.has(1150), 'bullets at 11.5pt');
+  assert.ok(sizes.has(2500), 'numerals at 25pt');
+  // Not a comparison of two literals: it reads the size the slide is actually
+  // built from, so shrinking type to cure an overflow fails here. Overflow is
+  // repaired by shortening copy, never by shrinking type.
+  assert.ok(
+    THESIS_GEOMETRY.bullet.fontSize >= MIN_FONT_SIZE,
+    `bullets at ${THESIS_GEOMETRY.bullet.fontSize}pt fall below the ${MIN_FONT_SIZE}pt floor`,
+  );
+});
+
+test("slide 2's speaker notes pair every bullet with its sources", async () => {
+  const { pptx } = await build();
+  const written = await pptx.notesText(2);
+  if (!written) assert.fail('slide 2 should carry speaker notes');
+  const notes = plain(written);
+
+  for (const row of THESIS_ROWS) {
+    assert.ok(notes.includes(row.label), `the notes should name "${row.label}"`);
+    for (const bullet of TEST_THESIS[row.key].bullets) {
+      assert.ok(notes.includes(bullet.text), `the notes should carry "${bullet.text}"`);
+      for (const source of bullet.sources) {
+        assert.ok(notes.includes(source), `the notes should carry the source ${source}`);
+      }
+    }
+  }
+});
+
+test('a run with no thesis is refused rather than delivering an empty thesis page', async () => {
+  // An empty thesis page is a missing required element, which is a critical
+  // defect. Failing here is what lets ticket 08 decide what the run does next.
+  await assert.rejects(() => build({ thesis: undefined }), /thesis/i);
 });

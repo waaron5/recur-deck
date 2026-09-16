@@ -13,16 +13,17 @@ of asking.
 ## Scope of this build
 
 Slides 4-9 are Recur's fixed introduction and ship with this skill. Slide 1, the
-cover, is built from the target company's real headquarters city. Slides 2 and 3
-are laid out but deliberately empty of content in this version.
+cover, is built from the target company's real headquarters city. Slide 2 is the
+thesis page, written from what you establish about the company. Slide 3, the
+market map, is laid out but deliberately empty of content in this version.
 
-**Establish only what this build needs: the company, its headquarters, and its
-logo.** Do not write thesis copy, choose competitors, or add photos or speaker
-notes of your own. The generator owns every slide.
+**Establish what this build needs: the company, its headquarters, its logo, and
+the thesis.** Do not choose competitors or add photos of your own, and do not
+write speaker notes - the generator writes those from the sources you record.
 
-The one judgment this build asks of you is whether a logo really belongs to the
-target company. Everything else about the logo - converting it, sizing it,
-deciding whether it suits the cover - is the generator's.
+Two judgments are yours: whether a logo really belongs to the target company,
+and what the thesis says. Everything else - converting and sizing the logo,
+laying out the slide, placing the type - is the generator's.
 
 ## Run
 
@@ -59,7 +60,44 @@ Only if you are sure, record it as `verified` in the run file. If you are not
 sure, or the command fails, leave the logo out entirely; the cover then sets the
 company's name as type, which is a designed outcome and not a defect.
 
-### 3. Write the run file
+### 3. Write the thesis
+
+Slide 2 carries three sections. Their roles are fixed and must not drift into
+each other.
+
+| Key | What it says | Drawn from |
+| --- | --- | --- |
+| `here` | A market or category observation, stated as Recur's view | Category sources |
+| `excited` | Company facts only: what the product does, who it serves, how it is sold | The company's own material |
+| `help` | Recur proposals, phrased as offers | Recur's introduction, slides 5-6 |
+
+Each section gets a header and **exactly two** bullets. Every bullet carries at
+least one source, which the generator pairs with it in slide 2's speaker notes.
+
+**Never assert a weakness of the target.** "They have no outbound motion" is an
+invented fact and a critical defect, and so is "strengthen their organic growth
+with an outbound team", which asserts the same absence in softer words. Write
+the help bullets as offers - "build ...", "apply ..." - drawn from Recur's
+go-to-market, product, payments and AI strengths, and promise only what slides
+5-6 actually back up.
+
+**Sources rank:** the official website first, then the company's own channels
+(press releases, help docs, pricing pages, job posts), then independent
+coverage. Crunchbase and ZoomInfo estimates are never facts. Use a number only
+when a primary source states it.
+
+**Writing rules.** Headers stay within 12 words and bullets within 14. One idea
+per bullet, active voice, present tense, plain investor English a human would
+write. No semicolons, dashes, parentheses or exclamation marks. Avoid *leverage,
+seamless, robust, empower, unlock, delve, cutting-edge, best-in-class,
+game-changer, revolutionize, synergy, holistic, innovative, world-class*, "not
+just X but Y", and hedges like *truly* or *potentially*. If a bullet would read
+just as true with another company's name in it, it is too generic.
+
+**Sparse evidence means saying less, not inventing more.** All six bullets stay
+required; they may stay product-level and category-level.
+
+### 4. Write the run file
 
 Write `run.json` to a working directory, with what you established:
 
@@ -71,6 +109,47 @@ Write `run.json` to a working directory, with what you established:
     "source": "https://www.usfleettracking.com/contact-us"
   },
   "identification": "Matched the prompt to usfleettracking.com, a private fleet tracking company.",
+  "thesis": {
+    "here": {
+      "header": "Commercial fleets are mid-cycle in adopting real-time telematics",
+      "bullets": [
+        {
+          "text": "Small commercial fleets still coordinate dispatch on homegrown tools",
+          "sources": ["https://www.fleetowner.com/technology/telematics"]
+        },
+        {
+          "text": "Enterprise telematics platforms price and configure for large fleets",
+          "sources": ["https://www.samsara.com/pricing"]
+        }
+      ]
+    },
+    "excited": {
+      "header": "US Fleet Tracking sells live GPS tracking without long contracts",
+      "bullets": [
+        {
+          "text": "Vehicle locations refresh on a live map every ten seconds",
+          "sources": ["https://www.usfleettracking.com/"]
+        },
+        {
+          "text": "Live tracking and in-vehicle video run in one app",
+          "sources": ["https://www.usfleettracking.com/products"]
+        }
+      ]
+    },
+    "help": {
+      "header": "Bring Recur's go-to-market and AI strengths to US Fleet Tracking",
+      "bullets": [
+        {
+          "text": "Apply Recur's go-to-market team to the live tracking product",
+          "sources": ["Recur introduction, slide 5"]
+        },
+        {
+          "text": "Build AI features on the tracking and video data the product captures",
+          "sources": ["Recur introduction, slide 6"]
+        }
+      ]
+    }
+  },
   "logo": {
     "file": "work/logo.png",
     "source": "https://www.usfleettracking.com/images/usft-logo-white.webp",
@@ -85,7 +164,7 @@ into slide 1's speaker notes, never onto a slide. So does the logo's source.
 `verified` must be `true` only because you looked at the image. A logo without
 it is never placed.
 
-### 4. Build the deck
+### 5. Build the deck
 
 ```
 node <skill-dir>/scripts/build-deck.js --input run.json
@@ -97,7 +176,7 @@ deck's navy duotone, builds the cover from it, and writes
 `Recur x <Company>.pptx` to the downloadable outputs directory. On success it
 prints `{"ok": true, "file": "...", "slides": 9, "landmark": "..."}`.
 
-### 5. Present that file to the user as a download.
+### 6. Present that file to the user as a download.
 
 ## Reply
 

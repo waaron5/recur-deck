@@ -2,8 +2,9 @@
 //
 // Slides 4-9 are the six supplied reference PNGs, placed full-bleed and in
 // order. Slides 1-3 are generated natively so their text stays editable. The
-// cover is built from a real headquarters landmark; the thesis and the market
-// map still carry only their layout frame, and later tickets fill them in.
+// cover is built from a real headquarters landmark and the thesis from the
+// run's research object; the market map still carries only its layout frame,
+// and ticket 05 fills it in.
 //
 // Geometry is in the original deck's 10 x 5.625in units - see design.js.
 
@@ -18,6 +19,7 @@ const PptxGenJS = /** @type {new () => import('pptxgenjs').default} */ (
 
 const { coverPhoto } = require('./cover-photo.js');
 const { chooseMark } = require('./logo.js');
+const { thesisSections, thesisNotes } = require('./thesis.js');
 const {
   SLIDE_W,
   SLIDE_H,
@@ -25,7 +27,7 @@ const {
   FIXED_SLIDE_NUMBERS,
   FONT,
   COLORS,
-  THESIS_SECTIONS,
+  THESIS_GEOMETRY,
   TITLE,
   COVER,
   CAP_HEIGHT_EM,
@@ -55,6 +57,7 @@ const {
  * @param {string} options.assetsDir  The skill's assets directory.
  * @param {string} options.outDir     Where the .pptx is written.
  * @param {Landmark} [options.landmark]  The cover photo and its credit.
+ * @param {import('./thesis.js').Thesis} [options.thesis]  The three sections the run wrote.
  * @param {CoverLogo} [options.logo]     The target's logo, if one was acquired.
  * @param {string} [options.logoNote]    Why there is no logo, when there is none.
  * @param {{city?: string, source?: string}} [options.headquarters]
@@ -67,6 +70,7 @@ async function buildDeck({
   assetsDir,
   outDir,
   landmark,
+  thesis,
   logo,
   logoNote,
   headquarters = {},
@@ -78,6 +82,11 @@ async function buildDeck({
   // A cover with no photo is a critical defect, not a deck to be delivered
   // quietly. What to do about it - the landmark ladder - belongs to ticket 08.
   if (!landmark?.photo) throw new Error(`buildDeck needs a landmark photo for ${name}'s cover`);
+
+  // Checked before anything is written. An empty thesis page is a missing
+  // required element, so the run hears which section is wrong rather than
+  // getting a deck with a hole where its argument should be.
+  const sections = thesisSections(thesis);
 
   const asset = (file) => {
     const full = path.join(assetsDir, file);
@@ -91,7 +100,7 @@ async function buildDeck({
   pres.layout = 'RECUR';
 
   const generated = GENERATED_SLIDE_NUMBERS.map(() => pres.addSlide());
-  const [cover, thesis, marketMap] = generated;
+  const [cover, thesisPage, marketMap] = generated;
   const coverMark = chooseMark({
     logo,
     slot: COVER.logo,
@@ -99,7 +108,7 @@ async function buildDeck({
     reason: logoNote,
   });
   coverSlide(cover, name, asset, landmark, coverMark);
-  thesisSlide(thesis, name, asset);
+  thesisSlide(thesisPage, name, sections, asset);
   marketMapSlide(marketMap, name);
 
   for (const slideNumber of FIXED_SLIDE_NUMBERS) {
@@ -116,6 +125,7 @@ async function buildDeck({
   // the thesis and market map get theirs from later tickets, through notes.
   const record = {
     1: sourceRecord({ company: name, headquarters, identification, landmark, logo, coverMark }),
+    2: thesisNotes(sections),
     ...notes,
   };
   GENERATED_SLIDE_NUMBERS.forEach((slideNumber, i) => {
@@ -254,43 +264,79 @@ function coverSlide(slide, company, asset, landmark, coverMark) {
 
 // ---------- slides 2-3: layout frame only ----------
 
-/** Thesis: three fixed sections. Headers and bullets arrive in ticket 04. */
-function thesisSlide(slide, company, asset) {
+/**
+ * The thesis: three stacked rows, each a numbered circle, the bold section
+ * label and its header on one line, and two bullets in the section's colour.
+ *
+ * Every box is centred on the ink the reference puts there, so a box taller
+ * than the line it holds cannot drag the type off the measurement. Each bullet
+ * gets its own box for the same reason: sharing one box would hand its second
+ * line's position to the renderer's line spacing instead of the reference.
+ *
+ * @param {any} slide
+ * @param {string} company
+ * @param {import('./thesis.js').LaidOutSection[]} sections
+ * @param {(file: string) => string} asset
+ */
+function thesisSlide(slide, company, sections, asset) {
   title(slide, `What we see in ${company}`, TITLE.y.thesis);
 
-  THESIS_SECTIONS.forEach((section, i) => {
-    const y = 1.3125 + i * 1.215;
+  const { rowTop, rowPitch, circle, header, bullet: bulletBox } = THESIS_GEOMETRY;
+
+  sections.forEach((section, i) => {
+    const top = rowTop + i * rowPitch;
+
     slide.addShape('ellipse', {
-      x: 0.6,
-      y: y + 0.015,
-      w: 0.465,
-      h: 0.465,
+      x: circle.x,
+      y: top,
+      w: circle.diameter,
+      h: circle.diameter,
       fill: { color: section.circle },
       line: { type: 'none' },
     });
     slide.addText(String(i + 1), {
-      x: 0.6,
-      y: y + 0.015,
-      w: 0.465,
-      h: 0.465,
+      x: circle.x,
+      y: top,
+      w: circle.diameter,
+      h: circle.diameter,
       fontFace: FONT,
-      fontSize: 16.5,
+      fontSize: circle.fontSize,
       color: section.numeral,
       align: 'center',
       valign: 'middle',
       margin: 0,
     });
-    slide.addText(section.label, {
-      x: 1.3125,
-      y,
-      w: 8.25,
-      h: 0.375,
-      fontFace: FONT,
-      fontSize: 14.25,
-      bold: true,
-      color: section.text,
-      valign: 'middle',
-      margin: 0,
+
+    // The label is bold and the header is not, both on one line and both in the
+    // section's own colour, which is what the reference does.
+    slide.addText(
+      [{ text: `${section.label}: `, options: { bold: true } }, { text: section.header }],
+      {
+        x: header.x,
+        y: top + header.inkCentre - header.boxHeight / 2,
+        w: header.w,
+        h: header.boxHeight,
+        fontFace: FONT,
+        fontSize: header.fontSize,
+        color: section.text,
+        valign: 'middle',
+        margin: 0,
+      },
+    );
+
+    section.bullets.forEach((bullet, b) => {
+      slide.addText(bullet.text, {
+        x: bulletBox.x,
+        y: top + bulletBox.inkCentre + b * bulletBox.leading - bulletBox.boxHeight / 2,
+        w: bulletBox.w,
+        h: bulletBox.boxHeight,
+        fontFace: FONT,
+        fontSize: bulletBox.fontSize,
+        color: section.text,
+        valign: 'middle',
+        margin: 0,
+        bullet: { code: bulletBox.square, indent: bulletBox.indent },
+      });
     });
   });
 

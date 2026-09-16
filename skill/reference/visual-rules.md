@@ -73,6 +73,34 @@ the mark reaches further left than the original's does.
 Nothing about the photo's credit, licence or source appears on the slide. It
 goes in slide 1's speaker notes.
 
+## Thesis
+
+Three stacked rows. Each row is a numbered circle, the bold section label and
+its header together on one line, and two bullets, all in the section's colour.
+
+**Geometry**, measured off the reference Slide2.png (1300 x 731px at 130 px/in).
+Row n sits at 1.500in + n x 1.031in, and everything else is an offset from its
+own row's top:
+
+| Element | Where |
+| --- | --- |
+| Numbered circle | x 0.600in, 0.465in across, at the row's top |
+| Section label and header | x 1.400in, ink centred 0.127in below the row's top |
+| First bullet | ink centred 0.377in below the row's top |
+| Second bullet | ink centred 0.608in below the row's top |
+
+**Type**, from measured cap heights: the label and header 15pt (caps 0.146in),
+bullets 11.5pt (0.115in), numerals 25pt (0.246in). The label is bold, the header
+is not. The prototype set all three smaller; the reference is what the deck
+matches.
+
+The numeral is white in the navy circle and **navy** in both the pale cyan and
+the teal one.
+
+Each text box is centred on the ink the reference puts there, and each bullet is
+its own box, so a box taller than its line cannot move the type off the
+measurement.
+
 ## Palette
 
 | Name | Hex | Used for |

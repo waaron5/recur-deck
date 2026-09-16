@@ -36,11 +36,70 @@ const COLORS = {
 
 // The three thesis sections are fixed by the brief, each with its own colour:
 // the section's text, its numbered circle, and the numeral inside that circle.
+//
+// The key is the section's role, and the research object is keyed by it rather
+// than ordered as a list, because the roles cannot drift between sections.
+//
+// The teal circle's numeral is navy, not white. Measured off the reference:
+// inside the teal disc sit 93 pixels of pure navy, against 108 for the navy
+// numeral in the pale cyan disc beside it. A white numeral leaves none, which
+// is what the navy disc in section one shows.
 const THESIS_SECTIONS = [
-  { label: "Why we're here", text: COLORS.navy, circle: COLORS.navy, numeral: COLORS.white },
-  { label: "Why we're excited", text: COLORS.blue, circle: COLORS.cyan, numeral: COLORS.navy },
-  { label: 'How we can help', text: COLORS.teal, circle: COLORS.teal, numeral: COLORS.white },
+  {
+    key: 'here',
+    label: "Why we're here",
+    text: COLORS.navy,
+    circle: COLORS.navy,
+    numeral: COLORS.white,
+  },
+  {
+    key: 'excited',
+    label: "Why we're excited",
+    text: COLORS.blue,
+    circle: COLORS.cyan,
+    numeral: COLORS.navy,
+  },
+  {
+    key: 'help',
+    label: 'How we can help',
+    text: COLORS.teal,
+    circle: COLORS.teal,
+    numeral: COLORS.navy,
+  },
 ];
+
+// Slide 2's three rows, measured off the reference Slide2.png (1300 x 731px at
+// 130 px/in). Row n sits at rowTop + n * rowPitch, and everything inside a row
+// is an offset from that row's top.
+//
+// Type sizes come from measured cap heights through CAP_HEIGHT_EM, not from the
+// prototype: the section header's caps run 0.146in, its bullets' 0.115in, and
+// the numerals' 0.246in. The prototype set all three smaller.
+//
+// Each text box is centred on the ink the reference puts there, the same way
+// the title's box is, so the measurement lands where it was taken from. The
+// three rows agreed on these offsets to within 0.001in.
+const THESIS_GEOMETRY = {
+  rowTop: 1.5,
+  rowPitch: 1.031,
+  // The numbered disc, and the numeral centred inside it.
+  circle: { x: 0.6, diameter: 0.465, fontSize: 25 },
+  // The bold section label and the header share one line and one colour.
+  header: { x: 1.4, w: 7.2, inkCentre: 0.127, boxHeight: 0.3, fontSize: 15 },
+  // Two bullets, each its own line so each lands on its measured centre. The
+  // square marker sits at the header's own left edge and the text indents to
+  // 1.589in, which is 14pt of bullet indent.
+  bullet: {
+    x: 1.4,
+    w: 7.2,
+    inkCentre: 0.377,
+    leading: 0.231,
+    boxHeight: 0.25,
+    fontSize: 11.5,
+    indent: 14,
+    square: '25AA',
+  },
+};
 
 // Slide titles, read from the source presentation: 20pt, not bold, navy. The box
 // is centred on the measured ink so the cap height lands where the reference
@@ -188,6 +247,7 @@ module.exports = {
   FONT,
   COLORS,
   THESIS_SECTIONS,
+  THESIS_GEOMETRY,
   TITLE,
   COVER,
   CAP_HEIGHT_EM,

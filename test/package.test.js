@@ -14,6 +14,7 @@ const {
   testPhoto,
   TEST_HEADQUARTERS,
   TEST_CREDIT,
+  TEST_THESIS,
 } = require('./helpers.js');
 const {
   SKILL_NAME,
@@ -129,6 +130,7 @@ test('the unpacked skill converts SVG and WebP logos with nothing installed', as
         company: `Acme ${format}`,
         headquarters: TEST_HEADQUARTERS,
         identification: 'Matched the prompt to acme.example.',
+        thesis: TEST_THESIS,
         landmark: { file: photoFile, credit: TEST_CREDIT },
         logo: { file: logoFile, source: 'https://acme.example/', verified: true },
       }),
@@ -179,6 +181,7 @@ test('a logo that cannot be converted still delivers a deck, with the reason rec
       company: 'Acme',
       headquarters: TEST_HEADQUARTERS,
       identification: 'Matched the prompt to acme.example.',
+      thesis: TEST_THESIS,
       landmark: { file: photoFile, credit: TEST_CREDIT },
       logo: { file: logoFile, source: 'https://acme.example/logo.gif', verified: true },
     }),
@@ -223,6 +226,7 @@ test('the unpacked skill builds a nine-slide deck with no node_modules in reach'
       company: 'US Fleet Tracking',
       headquarters: TEST_HEADQUARTERS,
       identification: 'Matched the prompt to usfleettracking.com.',
+      thesis: TEST_THESIS,
       landmark: { file: photoFile, credit: TEST_CREDIT },
     }),
   );

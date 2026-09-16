@@ -167,6 +167,64 @@ const TEST_CREDIT = {
   descriptionUrl: 'https://commons.wikimedia.org/wiki/File:Downtown_Oklahoma_City_skyline.jpg',
 };
 
+/**
+ * A research object's thesis, shaped the way the model is asked to write one:
+ * the three fixed roles, each a header and exactly two bullets, every bullet
+ * carrying the sources that slide 2's speaker notes pair it with.
+ *
+ * The help bullets cite the Recur introduction rather than the target's site,
+ * because they are Recur proposals and not company facts.
+ */
+const TEST_THESIS = {
+  here: {
+    header: 'Commercial fleets are mid-cycle in adopting real-time telematics',
+    bullets: [
+      {
+        text: 'Small commercial fleets still coordinate dispatch on homegrown tools',
+        sources: ['https://www.fleetowner.com/technology/telematics'],
+      },
+      {
+        text: 'Enterprise telematics platforms price and configure for large fleets',
+        sources: ['https://www.samsara.com/pricing'],
+      },
+    ],
+  },
+  excited: {
+    header: 'US Fleet Tracking sells live GPS tracking without long contracts',
+    bullets: [
+      {
+        text: 'Vehicle locations refresh on a live map every ten seconds',
+        sources: ['https://www.usfleettracking.com/'],
+      },
+      {
+        text: 'Live tracking and in-vehicle video run in one app',
+        sources: ['https://www.usfleettracking.com/products'],
+      },
+    ],
+  },
+  // Offers, and never a claim about what the target lacks. "Strengthen their
+  // organic growth with an outbound team" would assert an absent outbound
+  // motion, which is an invented fact and a critical defect.
+  help: {
+    header: "Bring Recur's go-to-market and AI strengths to US Fleet Tracking",
+    bullets: [
+      {
+        text: "Apply Recur's go-to-market team to the live tracking product",
+        sources: ['Recur introduction, slide 5'],
+      },
+      {
+        text: 'Build AI features on the tracking and video data the product captures',
+        sources: ['Recur introduction, slide 6'],
+      },
+    ],
+  },
+};
+
+/** The test thesis with one section replaced, for the rejection cases. */
+function thesisWith(section, copy) {
+  return { ...TEST_THESIS, [section]: copy };
+}
+
 module.exports = {
   ensureBuilt,
   tempDir,
@@ -175,4 +233,6 @@ module.exports = {
   testPhoto,
   TEST_HEADQUARTERS,
   TEST_CREDIT,
+  TEST_THESIS,
+  thesisWith,
 };

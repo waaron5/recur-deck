@@ -10,8 +10,12 @@
 //     "company": "US Fleet Tracking",
 //     "headquarters": { "city": "Oklahoma City, Oklahoma", "source": "https://..." },
 //     "identification": "Matched the prompt to usfleettracking.com.",
+//     "thesis": { "here": {...}, "excited": {...}, "help": {...} },   // see thesis.js
 //     "landmark": { "file": "...", "credit": { ... } }    // optional, see below
 //   }
+//
+// The thesis is three sections, each a header and exactly two bullets, and
+// every bullet carries the sources that slide 2's speaker notes pair with it.
 //
 // The landmark is normally found here, from the headquarters city. Passing one
 // in skips the search, which is what a rebuild after a repair wants: the photo
@@ -99,6 +103,7 @@ async function main() {
     assetsDir,
     outDir,
     landmark,
+    thesis: run.thesis,
     logo,
     logoNote,
     headquarters: run.headquarters,
