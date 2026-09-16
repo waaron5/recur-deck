@@ -40,6 +40,39 @@ PowerPoint substitutes it on machines that lack it. The sandbox renderer also
 lacks it, so the in-run render check predicts line breaks only approximately
 until the font ships inside the skill.
 
+## Cover
+
+The headquarters landmark fills the slide, under the deck's navy duotone. Over
+it sit the Recur wordmark, a thin white divider, and the target company.
+
+**The photo** comes from Wikimedia Commons, searched for the headquarters city
+and filtered to JPEG files over 1600px, then downloaded at 1920px wide. JPEG is
+deliberate: the treatment runs on a bundled JavaScript codec, because the skill
+ships as one script with no package installs at run time.
+
+**The treatment** crops to the slide's 16:9, sitting high in the frame because a
+skyline wants more sky than foreground, then maps every pixel onto one navy-to-
+pale-blue ramp, returns 16% of the photo's own colour, and pulls the whole
+ground down. Measured: a real Commons skyline lands at a mean luminance of about
+77 of 255, which is what the reference cover's own ground measures, and its hue
+concentration goes from 0.42 to 0.99 - one ramp, not a dimmed photograph.
+
+**Geometry**, measured off the reference cover (1300 x 731px at 130 px/in):
+
+| Element | Where |
+| --- | --- |
+| Recur wordmark ink | right edge x 4.638in, cap height 0.400in, centred on y 2.835in |
+| Divider | x 4.927in, running y 2.508-3.108in |
+| Company name ink | from x 5.323in, 2.831in wide, centred on y 2.808in |
+
+The bundled wordmark PNG cannot match both of the reference's dimensions: its
+ink is 5.41 wide to 1 high against the reference wordmark's 4.54, because it is
+tracked wider. Cap height and the right-hand edge are held to the reference, so
+the mark reaches further left than the original's does.
+
+Nothing about the photo's credit, licence or source appears on the slide. It
+goes in slide 1's speaker notes.
+
 ## Palette
 
 | Name | Hex | Used for |

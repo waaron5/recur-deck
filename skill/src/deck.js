@@ -1,9 +1,9 @@
 // Assembles the nine-slide deck.
 //
 // Slides 4-9 are the six supplied reference PNGs, placed full-bleed and in
-// order. Slides 1-3 are generated natively so their text stays editable; in
-// this build they carry only their layout frame and an empty notes field, and
-// later tickets fill in the cover photo, the thesis, and the market map.
+// order. Slides 1-3 are generated natively so their text stays editable. The
+// cover is built from a real headquarters landmark; the thesis and the market
+// map still carry only their layout frame, and later tickets fill them in.
 //
 // Geometry is in the original deck's 10 x 5.625in units - see design.js.
 
@@ -16,6 +16,7 @@ const PptxGenJS = /** @type {new () => import('pptxgenjs').default} */ (
   /** @type {unknown} */ (require('pptxgenjs'))
 );
 
+const { coverPhoto } = require('./cover-photo.js');
 const {
   SLIDE_W,
   SLIDE_H,
@@ -25,6 +26,9 @@ const {
   COLORS,
   THESIS_SECTIONS,
   TITLE,
+  COVER,
+  CAP_HEIGHT_EM,
+  CHAR_WIDTH_EM,
   CONFIDENTIAL_LINE,
   FOOTER,
   MIN_FONT_SIZE,
@@ -33,18 +37,37 @@ const {
 } = require('./design.js');
 
 /**
+ * @typedef {{fileName: string, artist: string, licence: string, descriptionUrl: string}} PhotoCredit
+ * @typedef {{photo: Buffer, credit?: PhotoCredit, width?: number}} Landmark
+ */
+
+/**
  * Build the deck and return the path it was written to.
  *
  * @param {object} options
  * @param {string} options.company    Target company name, as it should read.
  * @param {string} options.assetsDir  The skill's assets directory.
  * @param {string} options.outDir     Where the .pptx is written.
+ * @param {Landmark} [options.landmark]  The cover photo and its credit.
+ * @param {{city?: string, source?: string}} [options.headquarters]
+ * @param {string} [options.identification]  How the company was identified.
  * @param {Record<number, string>} [options.notes]  Speaker notes by slide number.
  * @returns {Promise<string>}
  */
-async function buildDeck({ company, assetsDir, outDir, notes = {} }) {
+async function buildDeck({
+  company,
+  assetsDir,
+  outDir,
+  landmark,
+  headquarters = {},
+  identification = '',
+  notes = {},
+}) {
   const name = safeCompany(company);
   if (!name) throw new Error('buildDeck needs a company name');
+  // A cover with no photo is a critical defect, not a deck to be delivered
+  // quietly. What to do about it - the landmark ladder - belongs to ticket 08.
+  if (!landmark?.photo) throw new Error(`buildDeck needs a landmark photo for ${name}'s cover`);
 
   const asset = (file) => {
     const full = path.join(assetsDir, file);
@@ -59,7 +82,7 @@ async function buildDeck({ company, assetsDir, outDir, notes = {} }) {
 
   const generated = GENERATED_SLIDE_NUMBERS.map(() => pres.addSlide());
   const [cover, thesis, marketMap] = generated;
-  coverSlide(cover, name, asset);
+  coverSlide(cover, name, asset, landmark);
   thesisSlide(thesis, name, asset);
   marketMapSlide(marketMap, name);
 
@@ -73,9 +96,14 @@ async function buildDeck({ company, assetsDir, outDir, notes = {} }) {
     });
   }
 
-  // Slides 1-3 carry the source record. Empty here; later tickets write it.
+  // Slides 1-3 carry the run's source record. The cover's part is written here;
+  // the thesis and market map get theirs from later tickets, through notes.
+  const record = {
+    1: sourceRecord({ company: name, headquarters, identification, landmark }),
+    ...notes,
+  };
   GENERATED_SLIDE_NUMBERS.forEach((slideNumber, i) => {
-    generated[i].addNotes(notes[slideNumber] ?? '');
+    generated[i].addNotes(record[slideNumber] ?? '');
   });
 
   fs.mkdirSync(outDir, { recursive: true });
@@ -84,29 +112,96 @@ async function buildDeck({ company, assetsDir, outDir, notes = {} }) {
   return file;
 }
 
-// ---------- slides 1-3: layout frame only ----------
+/**
+ * What slide 1's speaker notes say. None of it appears on the slide: the cover
+ * is a mailed sales piece, and the evidence belongs behind it.
+ *
+ * @param {object} options
+ * @param {string} options.company
+ * @param {{city?: string, source?: string}} options.headquarters
+ * @param {string} options.identification
+ * @param {Landmark} options.landmark
+ */
+function sourceRecord({ company, headquarters, identification, landmark }) {
+  const lines = [`Company: ${company}`];
+  if (identification) lines.push(`Identified: ${identification}`);
+  if (headquarters.city) lines.push(`Headquarters: ${headquarters.city}`);
+  if (headquarters.source) lines.push(`Headquarters source: ${headquarters.source}`);
 
-/** Cover: the landmark photo and duotone arrive in ticket 02. */
-function coverSlide(slide, company, asset) {
+  const { credit } = landmark;
+  if (credit) {
+    lines.push(`Cover photo: ${credit.fileName}`);
+    if (credit.artist) lines.push(`Photographer: ${credit.artist}`);
+    if (credit.licence) lines.push(`Licence: ${credit.licence}`);
+    if (credit.descriptionUrl) lines.push(`Photo source: ${credit.descriptionUrl}`);
+  }
+  // The cover wants a photo at least 1600px wide. Recording what it actually
+  // got means a narrower one, from the 1280 retry, is visible in the source
+  // record instead of shipping unremarked. Grading it is ticket 08's ladder.
+  if (landmark.width) lines.push(`Photo width: ${landmark.width}px`);
+
+  return lines.join('\n');
+}
+
+// ---------- slide 1: the cover ----------
+
+/**
+ * The cover: the headquarters landmark under the navy duotone, the Recur
+ * wordmark, a thin divider, and the target company.
+ *
+ * @param {any} slide
+ * @param {string} company
+ * @param {(file: string) => string} asset
+ * @param {Landmark} landmark
+ */
+function coverSlide(slide, company, asset, landmark) {
+  // Navy behind the photo, so a slide that somehow loses its image still reads
+  // as the deck rather than as a white page.
   slide.background = { color: COLORS.navy };
 
-  const divider = SLIDE_W / 2 - 0.2625;
-  placeImage(slide, asset('recur-wordmark-white.png'), 1.65, 2.4, 2.925, 0.525);
+  // The photo goes in as bytes rather than a path: it is made in memory, and
+  // the sandbox has nowhere better to put it than a temporary file nobody
+  // would clean up.
+  slide.addImage({
+    data: `image/jpeg;base64,${coverPhoto(landmark.photo).toString('base64')}`,
+    x: 0,
+    y: 0,
+    w: SLIDE_W,
+    h: SLIDE_H,
+  });
+
+  // The Recur wordmark is the bundled PNG, so it never depends on a font being
+  // installed. Held to the reference's cap height and right-hand edge.
+  const wordmarkFile = asset('recur-wordmark-white.png');
+  const { width, height } = pngSize(wordmarkFile);
+  const markHeight = COVER.wordmark.capHeight;
+  const markWidth = (width / height) * markHeight;
+  slide.addImage({
+    path: wordmarkFile,
+    x: COVER.wordmark.right - markWidth,
+    y: COVER.wordmark.centreY - markHeight / 2,
+    w: markWidth,
+    h: markHeight,
+  });
+
   slide.addShape('line', {
-    x: divider,
-    y: 2.2125,
+    x: COVER.divider.x,
+    y: COVER.divider.y,
     w: 0,
-    h: 0.9375,
-    line: { color: COLORS.white, width: 1 },
+    h: COVER.divider.h,
+    line: { color: COLORS.white, width: COVER.divider.weight },
   });
 
   // The target's name as a text wordmark. Ticket 03 adds the logo pipeline;
   // a clean wordmark is the terminal fallback either way, never a blank slot.
-  const slot = { x: SLIDE_W / 2 + 0.1125, y: 2.2875, w: 3.3, h: 0.7125 };
+  const slot = COVER.name;
   slide.addText(company, {
-    ...slot,
+    x: slot.left,
+    y: slot.centreY - slot.boxHeight / 2,
+    w: slot.width,
+    h: slot.boxHeight,
     fontFace: FONT,
-    fontSize: wordmarkFontSize(company, slot.w, slot.h),
+    fontSize: wordmarkFontSize(company, slot.width, slot.capHeight),
     bold: true,
     color: COLORS.white,
     valign: 'middle',
@@ -114,6 +209,8 @@ function coverSlide(slide, company, asset) {
     wrap: true,
   });
 }
+
+// ---------- slides 2-3: layout frame only ----------
 
 /** Thesis: three fixed sections. Headers and bullets arrive in ticket 04. */
 function thesisSlide(slide, company, asset) {
@@ -277,18 +374,26 @@ function pngSize(file) {
 }
 
 /**
- * Size a text wordmark to its slot: bounded by the slot height, and by the slot
- * width at the face's rough average character width.
+ * Size a text wordmark to its slot: the reference's cap height, unless the name
+ * is too long for the slot at that size, in which case the width decides.
+ *
+ * Both bounds come from measurements of the reference cover, not estimates. An
+ * invented character width here quietly overrides the measured cap height and
+ * sets the name far smaller than the reference does.
  *
  * The result never goes below the type floor. A name too long to fit on one
  * line at that floor wraps inside the slot instead of shrinking past it, since
  * type sizes are fixed design values. Capping name length is the content
  * gate's job (ticket 06), not this function's.
+ *
+ * @param {string} text
+ * @param {number} boxW
+ * @param {number} capHeight
  */
-function wordmarkFontSize(text, boxW, boxH) {
-  const byHeight = boxH * 72 * 0.62;
-  const byWidth = (boxW * 72) / (0.58 * Math.max(text.length, 1));
-  return Math.max(MIN_FONT_SIZE, Math.round(Math.min(byHeight, byWidth)));
+function wordmarkFontSize(text, boxW, capHeight) {
+  const byCapHeight = (capHeight / CAP_HEIGHT_EM) * 72;
+  const byWidth = (boxW * 72) / (CHAR_WIDTH_EM * Math.max(text.length, 1));
+  return Math.max(MIN_FONT_SIZE, Math.round(Math.min(byCapHeight, byWidth)));
 }
 
 module.exports = { buildDeck };

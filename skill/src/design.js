@@ -47,6 +47,39 @@ const THESIS_SECTIONS = [
 // puts it - y 0.707in on the thesis slide, 0.616in on the market map.
 const TITLE = { x: 0.57, w: 8.8, h: 0.45, fontSize: 20, y: { thesis: 0.58, marketMap: 0.505 } };
 
+// The cover, measured off the reference Slide1.png (1300 x 731 px at 130 px/in):
+// the Recur wordmark's ink runs x 2.823-4.638in with a cap height of 0.400in
+// centred on y 2.835; the divider sits at x 4.927 and runs y 2.508-3.108; the
+// company name's ink runs x 5.323-8.146in, centred on y 2.808.
+//
+// The bundled wordmark PNG cannot match both of the reference's dimensions: its
+// ink is 5.41 wide to 1 high, against the reference wordmark's 4.54, because it
+// is tracked wider. Cap height and the right-hand edge are held to the
+// reference, so the mark reaches further left than the original's does.
+const COVER = {
+  wordmark: { right: 4.638, capHeight: 0.4, centreY: 2.835 },
+  divider: { x: 4.927, y: 2.508, h: 0.6, weight: 1 },
+  // The name is a text wordmark until the logo pipeline lands in ticket 03. Its
+  // box is taller than the reference's ink so a long name wraps inside the slot
+  // rather than shrinking below the type floor.
+  //
+  // The cap height is measured cap-top to baseline, which is not the same as
+  // the ink: "USFleetTracking" has a descender, so its ink spans 0.354in while
+  // the caps run y 2.638-2.900in. The reference deliberately sets the company
+  // name smaller than RECUR's 0.400in.
+  name: { left: 5.323, width: 2.831, centreY: 2.808, capHeight: 0.269, boxHeight: 0.9 },
+};
+
+// Cap height as a fraction of the type size, for this typeface. Established in
+// ticket 01 by reading the source presentation: 20pt titles measure 0.263in.
+const CAP_HEIGHT_EM = 0.706;
+
+// Average character width, as a fraction of the type size, for this typeface
+// set bold. Measured off the reference cover rather than estimated: its
+// "USFleetTracking" fills 2.831in with 15 characters at a 0.269in cap height,
+// which is 27.4pt, so each character averages 0.495 of the type size.
+const CHAR_WIDTH_EM = 0.495;
+
 const CONFIDENTIAL_LINE = 'Recur Software Highly Confidential - Not for Distribution';
 
 // Footer geometry, measured off the reference slides (1300 x 731 px at 130 px/in)
@@ -64,6 +97,33 @@ const FOOTER = {
 // The visual bar's floor for native text is about 12pt on a 13.333in-wide slide.
 // In the original's 10in units that same physical size is 9pt.
 const MIN_FONT_SIZE = 9;
+
+// The cover photo's treatment, set by the user's reaction to the prototype:
+// take most of the colour out and apply a stronger, premium blue filter, so the
+// wordmarks stand out and the city reads cleanly.
+//
+// The reference cover's own ground measures a mean luminance of about 77 of 255
+// at a mean saturation of 0.19, which is the neighbourhood these values aim at.
+const COVER_PHOTO = {
+  // The dark and light ends of the duotone ramp. The shadow is the deck's navy;
+  // the highlight is a cool pale blue rather than white, so a bright sky keeps
+  // the same cast as the rest of the photo.
+  shadow: { r: 0x09, g: 0x14, b: 0x2f },
+  highlight: { r: 0xc8, g: 0xdc, b: 0xf0 },
+  // How much of the photo's own colour survives: 0 is a pure two-colour image,
+  // 1 is the untouched photo. Enough to keep a city legible, not enough to
+  // bring the untidy colour back.
+  colourKept: 0.16,
+  // The whole ground is pulled down so the white wordmarks carry the slide.
+  // Tuned against the reference rather than by eye: at this value a real 1920px
+  // Commons skyline lands at a mean luminance of about 77 of 255, which is what
+  // the reference cover's own ground measures.
+  exposure: 0.64,
+  // Where the 16:9 window sits vertically: 0 keeps the top of the photo, 1 the
+  // bottom. Skylines want more sky than foreground.
+  cropBias: 0.35,
+  quality: 86,
+};
 
 /** The clean-deck file name. A flagged deck adds "- NOT READY" (ticket 08). */
 function deckFileName(company) {
@@ -89,9 +149,13 @@ module.exports = {
   COLORS,
   THESIS_SECTIONS,
   TITLE,
+  COVER,
+  CAP_HEIGHT_EM,
+  CHAR_WIDTH_EM,
   CONFIDENTIAL_LINE,
   FOOTER,
   MIN_FONT_SIZE,
+  COVER_PHOTO,
   deckFileName,
   safeCompany,
 };

@@ -7,7 +7,14 @@ const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { ensureBuilt, tempDir, openPptx } = require('./helpers.js');
+const {
+  ensureBuilt,
+  tempDir,
+  openPptx,
+  testPhoto,
+  TEST_HEADQUARTERS,
+  TEST_CREDIT,
+} = require('./helpers.js');
 const { SKILL_NAME, FIXED_SLIDE_NUMBERS } = require('../skill/src/design.js');
 
 /** Every file in the ZIP, as posix paths relative to the archive root. */
@@ -86,15 +93,25 @@ test('the unpacked skill builds a nine-slide deck with no node_modules in reach'
 
   const outDir = path.join(room, 'outputs');
   fs.mkdirSync(outDir);
+
+  // The run carries its own landmark, so the check stays offline and proves the
+  // bundle, rather than Wikimedia, is what is being tested here.
+  const photoFile = path.join(room, 'landmark.jpg');
+  fs.writeFileSync(photoFile, testPhoto());
+  const runFile = path.join(room, 'run.json');
+  fs.writeFileSync(
+    runFile,
+    JSON.stringify({
+      company: 'US Fleet Tracking',
+      headquarters: TEST_HEADQUARTERS,
+      identification: 'Matched the prompt to usfleettracking.com.',
+      landmark: { file: photoFile, credit: TEST_CREDIT },
+    }),
+  );
+
   execFileSync(
     process.execPath,
-    [
-      path.join(room, SKILL_NAME, 'scripts', 'build-deck.js'),
-      '--company',
-      'US Fleet Tracking',
-      '--out',
-      outDir,
-    ],
+    [path.join(room, SKILL_NAME, 'scripts', 'build-deck.js'), '--input', runFile, '--out', outDir],
     { cwd: room, encoding: 'utf8', env: { PATH: process.env.PATH } },
   );
 

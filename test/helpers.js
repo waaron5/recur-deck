@@ -132,4 +132,47 @@ async function openPptx(file) {
   };
 }
 
-module.exports = { ensureBuilt, tempDir, openPptx, sha256 };
+/**
+ * A small stand-in for a downloaded Commons photo, so no test needs the
+ * network. It is encoded with the same codec the cover treatment decodes with.
+ *
+ * @param {number} [width]
+ * @param {number} [height]
+ */
+function testPhoto(width = 480, height = 270) {
+  const jpeg = require('jpeg-js');
+  const data = Buffer.alloc(width * height * 4);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const i = (y * width + x) * 4;
+      data[i] = Math.round((x * 255) / width);
+      data[i + 1] = Math.round((y * 255) / height);
+      data[i + 2] = 200;
+      data[i + 3] = 255;
+    }
+  }
+  return jpeg.encode({ data, width, height }, 90).data;
+}
+
+/** The headquarters and cover photo a test hands to buildDeck. */
+const TEST_HEADQUARTERS = {
+  city: 'Oklahoma City, Oklahoma',
+  source: 'https://www.usfleettracking.com/contact-us',
+};
+
+const TEST_CREDIT = {
+  fileName: 'Downtown Oklahoma City skyline.jpg',
+  artist: 'Urbanative',
+  licence: 'CC0',
+  descriptionUrl: 'https://commons.wikimedia.org/wiki/File:Downtown_Oklahoma_City_skyline.jpg',
+};
+
+module.exports = {
+  ensureBuilt,
+  tempDir,
+  openPptx,
+  sha256,
+  testPhoto,
+  TEST_HEADQUARTERS,
+  TEST_CREDIT,
+};

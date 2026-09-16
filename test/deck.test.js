@@ -14,7 +14,15 @@ const {
   MIN_FONT_SIZE,
   CONFIDENTIAL_LINE,
 } = require('../skill/src/design.js');
-const { ensureBuilt, tempDir, openPptx, sha256 } = require('./helpers.js');
+const {
+  ensureBuilt,
+  tempDir,
+  openPptx,
+  sha256,
+  testPhoto,
+  TEST_HEADQUARTERS,
+  TEST_CREDIT,
+} = require('./helpers.js');
 
 const REFERENCE_DIR = path.join(__dirname, '..', 'Recur x US Fleet Tracking_vS');
 
@@ -26,6 +34,9 @@ async function build(options = {}) {
     company: 'US Fleet Tracking',
     assetsDir: path.join(stageDir, 'assets'),
     outDir,
+    headquarters: TEST_HEADQUARTERS,
+    identification: 'Matched the prompt to usfleettracking.com.',
+    landmark: { photo: testPhoto(), credit: TEST_CREDIT },
     ...options,
   });
   return { file, pptx: await openPptx(file) };
@@ -113,9 +124,13 @@ test('slides 1-3 carry a notes field that later tickets can write into', async (
   }
 });
 
-test('this build leaves those notes empty', async () => {
+test('the cover writes its own source record, and the rest wait for their tickets', async () => {
   const { pptx } = await build();
-  for (const slideNumber of [1, 2, 3]) {
+
+  const cover = await pptx.notesText(1);
+  if (cover === null) assert.fail('slide 1 should carry speaker notes');
+  assert.match(cover, /Headquarters: Oklahoma City/);
+  for (const slideNumber of [2, 3]) {
     assert.equal(await pptx.notesText(slideNumber), '');
   }
 });
