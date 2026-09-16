@@ -85,6 +85,41 @@ goes in slide 1's speaker notes.
 | Grey | `6B7280` | Footer, secondary labels |
 | Rule | `C9CED6` | Hairlines and dividers |
 
+## Logos
+
+A logo is taken from the company's **own site**, in this order: the mark inside
+the link back to the home page, then images that call themselves a logo ranked
+by how near the header they sit, then logo URLs in the stylesheet, and only as a
+last resort the social image or touch icon. Customer, partner and award logos
+are excluded, by the words in the image's tag and by the block it sits in.
+
+**Conversion.** Logos arrive as SVG and WebP more often than as PNG, and
+PowerPoint can place neither. Both are converted inside the package by bundled
+WebAssembly rasterizers, because the skill installs as one script with no
+package installs at run time. Every logo is trimmed of its transparent padding,
+so the rules below measure the mark rather than its empty space. A format that
+cannot be converted becomes a text wordmark.
+
+**Identity.** The model looks at every normalised logo and confirms it is that
+company's own current logo. An unconfirmed logo is never placed.
+
+**Background fit.** Use the version the company drew for that background; never
+recolour a whole logo. On the dark cover a light mark is used as it is, a mark
+drawn in a single ink may be whitened through its alpha channel, and anything
+multicolour becomes a text wordmark.
+
+**Resolution.** Never enlarge a logo past the size at which it still looks
+sharp: 150px per inch of placed width. A logo is placed at the smaller of its
+slot and that maximum, its shape is never distorted, and if the result is
+shorter than its slot's minimum legible height it becomes a text wordmark.
+
+On the cover a logo fills the name's 2.831in slot, is never taller than the
+0.600in divider beside it, and is never shorter than 0.269in, which is the cap
+height of the wordmark it replaces.
+
+US Fleet Tracking's own logo is 258 x 27px, so it stays sharp only to 1.72in
+wide, which is 0.180in tall. It becomes a text wordmark on the cover.
+
 ## Wordmarks
 
 The Recur wordmark ships prerendered as transparent PNGs, white and navy, and is

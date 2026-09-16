@@ -21,6 +21,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { buildDeck } = require('./deck.js');
 const { findLandmarkPhoto, cityLandmarkSearch } = require('./landmark.js');
+const { normaliseLogo } = require('./logo.js');
 
 const SANDBOX_OUTPUTS = '/mnt/user-data/outputs';
 
@@ -77,11 +78,29 @@ async function main() {
       }
     : await findLandmark(city);
 
+  const assetsDir = path.join(skillDir, 'assets');
+
+  // A logo that cannot be converted costs the deck its logo, never its deck.
+  // The cover falls back to a text wordmark and slide 1 records why.
+  let logo;
+  let logoNote;
+  if (run.logo?.file) {
+    try {
+      logo = await readLogo(run.logo, assetsDir);
+    } catch (error) {
+      logoNote = `the logo could not be used: ${
+        error instanceof Error ? error.message : String(error)
+      }`;
+    }
+  }
+
   const file = await buildDeck({
     company: run.company,
-    assetsDir: path.join(skillDir, 'assets'),
+    assetsDir,
     outDir,
     landmark,
+    logo,
+    logoNote,
     headquarters: run.headquarters,
     identification: run.identification,
   });
@@ -89,6 +108,20 @@ async function main() {
   console.log(
     JSON.stringify({ ok: true, file, slides: 9, landmark: landmark.credit?.fileName }, null, 2),
   );
+}
+
+/**
+ * The logo the model looked at, normalised the way the cover needs it.
+ *
+ * `verified` has to be said explicitly: a run that never showed the logo to the
+ * model has not confirmed anything, and the cover falls back to type.
+ *
+ * @param {{file: string, source?: string, verified?: boolean}} entry
+ * @param {string} assetsDir
+ */
+async function readLogo(entry, assetsDir) {
+  const logo = await normaliseLogo(fs.readFileSync(entry.file), { assetsDir });
+  return { ...logo, source: entry.source, verified: entry.verified === true };
 }
 
 /** @param {string} city */

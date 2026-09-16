@@ -68,6 +68,12 @@ const COVER = {
   // the caps run y 2.638-2.900in. The reference deliberately sets the company
   // name smaller than RECUR's 0.400in.
   name: { left: 5.323, width: 2.831, centreY: 2.808, capHeight: 0.269, boxHeight: 0.9 },
+  // A logo stands in the name's slot when one is verified, sharp enough, and
+  // right for a dark ground. Its width is the name's own. The height bounds are
+  // a judgment call rather than a measurement, because the reference cover sets
+  // this company as type: a logo may not outgrow the divider beside it
+  // (0.600in), and may not read smaller than the wordmark it replaces.
+  logo: { maxWidth: 2.831, maxHeight: 0.6, minHeight: 0.269 },
 };
 
 // Cap height as a fraction of the type size, for this typeface. Established in
@@ -125,6 +131,40 @@ const COVER_PHOTO = {
   quality: 86,
 };
 
+// The resolution rule, set by the user's reaction to the prototype: never
+// enlarge a logo past the size at which it still looks sharp, because an
+// upscaled mark is "an instant signal of lack of care". Pixels per inch of
+// placed width; 150 is the starting threshold, to be tuned in the release runs.
+// The background-fit thresholds are measured off the real logos the trial
+// pulled down, and each sits in a gap between cases rather than on top of one:
+//
+//   mean luminance   225 (a white mark) against 119, 59 and 17 for dark marks
+//   share of one ink 100% (a single-ink mark) against 75%, 64% and 47%
+//
+// Both are read from each mark's fully opaque core, because antialiasing varies
+// a pixel's alpha rather than its ink and would otherwise read as a second
+// colour.
+const LOGO = {
+  sharpPixelsPerInch: 150,
+  // Above this, a mark is already the light version its company drew for a
+  // dark ground, and is used exactly as it is.
+  lightMarkLuminance: 160,
+  // At or above this share of one ink, a mark carries a single colour and may
+  // be whitened through its alpha channel. Below it, repainting would ruin it.
+  singleInkShare: 0.95,
+  // How close two colours count as the same ink, as a distance in RGB. At this
+  // value the trial's single-ink mark measured 100% of its core one shade while
+  // the next closest measured 75%, so the threshold above sits in a gap rather
+  // than on top of a case.
+  singleInkDistance: 40,
+};
+
+// Logos arrive as SVG and WebP, which PptxGenJS cannot place. Both are
+// converted by WebAssembly rasterizers carried inside the package, because the
+// skill installs as one bundled script with no package installs at run time.
+// These are their file names beside the deck's other assets.
+const RASTERIZER_ASSETS = { svg: 'resvg.wasm', webp: 'webp-dec.wasm' };
+
 /** The clean-deck file name. A flagged deck adds "- NOT READY" (ticket 08). */
 function deckFileName(company) {
   return `Recur x ${safeCompany(company)}.pptx`;
@@ -156,6 +196,8 @@ module.exports = {
   FOOTER,
   MIN_FONT_SIZE,
   COVER_PHOTO,
+  LOGO,
+  RASTERIZER_ASSETS,
   deckFileName,
   safeCompany,
 };

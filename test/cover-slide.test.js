@@ -17,6 +17,7 @@ const path = require('node:path');
 
 const { buildDeck } = require('../skill/src/deck.js');
 const { coverPhoto } = require('../skill/src/cover-photo.js');
+const { normaliseLogo } = require('../skill/src/logo.js');
 const { SLIDE_W, SLIDE_H } = require('../skill/src/design.js');
 const { ensureBuilt, tempDir, openPptx, sha256, testPhoto } = require('./helpers.js');
 
@@ -56,6 +57,74 @@ async function build(options = {}) {
   });
   return { file, photo, stageDir, pptx: await openPptx(file) };
 }
+
+/** A real logo, normalised the way a run would normalise it. */
+async function testLogo(name) {
+  const { stageDir } = await ensureBuilt();
+  const bytes = fs.readFileSync(path.join(__dirname, 'fixtures', name));
+  return normaliseLogo(bytes, { assetsDir: path.join(stageDir, 'assets') });
+}
+
+test("a verified logo stands in for the company's name on the cover", async () => {
+  // Samsara's mark is 1198 x 194px and drawn in a single ink, so it stays sharp
+  // to 7.99in wide - far past the 2.831in slot - and may be whitened for the
+  // dark ground. It is the case US Fleet Tracking's own logo is not.
+  const logo = await testLogo('samsara-logo.png');
+  const { pptx } = await build({
+    company: 'Samsara',
+    logo: { ...logo, source: 'https://www.samsara.com/', verified: true },
+  });
+
+  const onSlide = (await pptx.textBoxes(1)).map((box) => box.text).join(' ');
+  assert.ok(!onSlide.includes('Samsara'), 'the logo replaces the name, it does not join it');
+
+  assert.equal(
+    (await pptx.imageHashes(1)).length,
+    3,
+    'the cover should carry the photo, the Recur wordmark and the logo',
+  );
+
+  const notes = await pptx.notesText(1);
+  assert.match(String(notes), /samsara\.com/, 'slide 1 should record where the logo came from');
+});
+
+test('an unconfirmed logo never reaches the cover', async () => {
+  // The model looks at every normalised logo and says whether it is really this
+  // company's. In the trial the ranking alone picked another company's mark on
+  // 3 of 10 sites, and a product sub-brand on a fourth, so an unconfirmed logo
+  // is not placed however good it looks.
+  const logo = await testLogo('samsara-logo.png');
+  const { pptx } = await build({
+    company: 'Samsara',
+    logo: { ...logo, source: 'https://www.samsara.com/', verified: false },
+  });
+
+  const onSlide = (await pptx.textBoxes(1)).map((box) => box.text).join(' ');
+  assert.ok(onSlide.includes('Samsara'), 'the name should fall back to a text wordmark');
+  assert.equal((await pptx.imageHashes(1)).length, 2, 'no logo should have been placed');
+  assert.match(String(await pptx.notesText(1)), /not confirmed/i);
+});
+
+test("US Fleet Tracking's own logo is too coarse for the cover, and the notes say why", async () => {
+  // This is the file the company serves for dark backgrounds, so it passes the
+  // background rule and fails on resolution alone, which is the case decision 06
+  // named. At 258 x 27px it stays sharp only to 1.72in wide, which is 0.180in
+  // tall against the 0.269in the wordmark it replaces sets.
+  const logo = await testLogo('usft-logo-white.webp');
+  const { pptx } = await build({
+    company: 'US Fleet Tracking',
+    logo: { ...logo, source: 'https://www.usfleettracking.com/', verified: true },
+  });
+
+  const onSlide = (await pptx.textBoxes(1)).map((box) => box.text).join(' ');
+  assert.ok(onSlide.includes('US Fleet Tracking'), 'the cover sets the name as type instead');
+  assert.equal((await pptx.imageHashes(1)).length, 2, 'an upscaled logo is never placed');
+
+  const notes = String(await pptx.notesText(1));
+  assert.match(notes, /text wordmark/i);
+  assert.match(notes, /stays sharp only to/i, 'the notes should give the resolution reason');
+  assert.match(notes, /usfleettracking\.com/, 'and still record where the logo came from');
+});
 
 test('the cover is filled by the headquarters landmark photo', async () => {
   const { pptx, photo } = await build();

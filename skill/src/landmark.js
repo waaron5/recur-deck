@@ -18,14 +18,9 @@
  * @typedef {(url: string, init?: {headers?: Record<string, string>}) => Promise<FetchReply>} FetchLike
  */
 
-const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
+const { CHROME_UA, download } = require('./http.js');
 
-// Every sandbox fetch sends a full Chrome user-agent string. Cloudflare answers
-// the bare Mozilla/5.0 default with a 403 on ordinary sites, which would make a
-// reachable company look unreachable.
-const CHROME_UA =
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
-  '(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
 
 // Commons serves thumbnails at standard widths only: a request for 1600 comes
 // back as HTTP 400. 1920 is the size the cover wants; 1280 is the retry when a
@@ -180,25 +175,6 @@ function plainText(html) {
     .replace(/&nbsp;/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-}
-
-/**
- * Fetch the image bytes, or null if they cannot be had. A candidate that will
- * not come down is passed over rather than failing the run.
- *
- * @param {string} url
- * @param {FetchLike} fetchImpl
- * @returns {Promise<Buffer | null>}
- */
-async function download(url, fetchImpl) {
-  try {
-    const reply = await fetchImpl(url, { headers: { 'User-Agent': CHROME_UA } });
-    if (!reply.ok || !reply.arrayBuffer) return null;
-    const bytes = Buffer.from(await reply.arrayBuffer());
-    return bytes.byteLength > 0 ? bytes : null;
-  } catch {
-    return null;
-  }
 }
 
 module.exports = { findLandmarkPhoto, cityLandmarkSearch, LandmarkNotFound };

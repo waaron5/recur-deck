@@ -17,6 +17,7 @@ const PptxGenJS = /** @type {new () => import('pptxgenjs').default} */ (
 );
 
 const { coverPhoto } = require('./cover-photo.js');
+const { chooseMark } = require('./logo.js');
 const {
   SLIDE_W,
   SLIDE_H,
@@ -39,6 +40,11 @@ const {
 /**
  * @typedef {{fileName: string, artist: string, licence: string, descriptionUrl: string}} PhotoCredit
  * @typedef {{photo: Buffer, credit?: PhotoCredit, width?: number}} Landmark
+ * @typedef {import('./logo.js').NormalisedLogo & {
+ *   source?: string,
+ *   verified?: boolean,
+ * }} CoverLogo
+ * @typedef {import('./logo.js').PlacedMark} CoverMark
  */
 
 /**
@@ -49,6 +55,8 @@ const {
  * @param {string} options.assetsDir  The skill's assets directory.
  * @param {string} options.outDir     Where the .pptx is written.
  * @param {Landmark} [options.landmark]  The cover photo and its credit.
+ * @param {CoverLogo} [options.logo]     The target's logo, if one was acquired.
+ * @param {string} [options.logoNote]    Why there is no logo, when there is none.
  * @param {{city?: string, source?: string}} [options.headquarters]
  * @param {string} [options.identification]  How the company was identified.
  * @param {Record<number, string>} [options.notes]  Speaker notes by slide number.
@@ -59,6 +67,8 @@ async function buildDeck({
   assetsDir,
   outDir,
   landmark,
+  logo,
+  logoNote,
   headquarters = {},
   identification = '',
   notes = {},
@@ -82,7 +92,13 @@ async function buildDeck({
 
   const generated = GENERATED_SLIDE_NUMBERS.map(() => pres.addSlide());
   const [cover, thesis, marketMap] = generated;
-  coverSlide(cover, name, asset, landmark);
+  const coverMark = chooseMark({
+    logo,
+    slot: COVER.logo,
+    background: 'dark',
+    reason: logoNote,
+  });
+  coverSlide(cover, name, asset, landmark, coverMark);
   thesisSlide(thesis, name, asset);
   marketMapSlide(marketMap, name);
 
@@ -99,7 +115,7 @@ async function buildDeck({
   // Slides 1-3 carry the run's source record. The cover's part is written here;
   // the thesis and market map get theirs from later tickets, through notes.
   const record = {
-    1: sourceRecord({ company: name, headquarters, identification, landmark }),
+    1: sourceRecord({ company: name, headquarters, identification, landmark, logo, coverMark }),
     ...notes,
   };
   GENERATED_SLIDE_NUMBERS.forEach((slideNumber, i) => {
@@ -121,8 +137,10 @@ async function buildDeck({
  * @param {{city?: string, source?: string}} options.headquarters
  * @param {string} options.identification
  * @param {Landmark} options.landmark
+ * @param {CoverLogo} [options.logo]
+ * @param {CoverMark} [options.coverMark]
  */
-function sourceRecord({ company, headquarters, identification, landmark }) {
+function sourceRecord({ company, headquarters, identification, landmark, logo, coverMark }) {
   const lines = [`Company: ${company}`];
   if (identification) lines.push(`Identified: ${identification}`);
   if (headquarters.city) lines.push(`Headquarters: ${headquarters.city}`);
@@ -140,6 +158,16 @@ function sourceRecord({ company, headquarters, identification, landmark }) {
   // record instead of shipping unremarked. Grading it is ticket 08's ladder.
   if (landmark.width) lines.push(`Photo width: ${landmark.width}px`);
 
+  // Where the logo came from, and - when the cover fell back to type - why.
+  // A reviewer checking a deck needs to see the logo's provenance without
+  // going back to the site, and the reason is what makes a wordmark read as a
+  // decision rather than as something that went wrong.
+  if (logo?.source) lines.push(`Logo source: ${logo.source}`);
+  if (logo) lines.push(`Logo: ${logo.width}x${logo.height}px, from ${logo.sourceFormat}`);
+  if (coverMark?.kind === 'wordmark') {
+    lines.push(`Cover mark: text wordmark, because ${coverMark.reason}`);
+  }
+
   return lines.join('\n');
 }
 
@@ -153,8 +181,9 @@ function sourceRecord({ company, headquarters, identification, landmark }) {
  * @param {string} company
  * @param {(file: string) => string} asset
  * @param {Landmark} landmark
+ * @param {CoverMark} coverMark
  */
-function coverSlide(slide, company, asset, landmark) {
+function coverSlide(slide, company, asset, landmark, coverMark) {
   // Navy behind the photo, so a slide that somehow loses its image still reads
   // as the deck rather than as a white page.
   slide.background = { color: COLORS.navy };
@@ -192,9 +221,22 @@ function coverSlide(slide, company, asset, landmark) {
     line: { color: COLORS.white, width: COVER.divider.weight },
   });
 
-  // The target's name as a text wordmark. Ticket 03 adds the logo pipeline;
-  // a clean wordmark is the terminal fallback either way, never a blank slot.
   const slot = COVER.name;
+
+  // The company's own logo, left-aligned in the name's slot and centred on the
+  // same line, so the cover reads the same whichever mark it carries.
+  if (coverMark.kind === 'logo') {
+    slide.addImage({
+      data: `image/png;base64,${coverMark.png.toString('base64')}`,
+      x: slot.left,
+      y: slot.centreY - coverMark.height / 2,
+      w: coverMark.width,
+      h: coverMark.height,
+    });
+    return;
+  }
+
+  // The terminal fallback, and never a blank slot: the name set as type.
   slide.addText(company, {
     x: slot.left,
     y: slot.centreY - slot.boxHeight / 2,

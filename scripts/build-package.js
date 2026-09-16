@@ -11,7 +11,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const esbuild = require('esbuild');
 
-const { SKILL_NAME, FIXED_SLIDE_NUMBERS } = require('../skill/src/design.js');
+const { SKILL_NAME, FIXED_SLIDE_NUMBERS, RASTERIZER_ASSETS } = require('../skill/src/design.js');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 const SKILL_SRC = path.join(REPO_ROOT, 'skill');
@@ -36,6 +36,17 @@ function assetPlan() {
     {
       from: path.join(SKILL_SRC, 'assets', 'recur-wordmark-navy.png'),
       to: 'assets/recur-wordmark-navy.png',
+    },
+    // The logo rasterizers travel as assets rather than inside the bundle: a
+    // WebAssembly module read from a file needs no base64 detour, and the file
+    // cap the ZIP has to stay inside counts files, not bytes.
+    {
+      from: require.resolve('@resvg/resvg-wasm/index_bg.wasm'),
+      to: `assets/${RASTERIZER_ASSETS.svg}`,
+    },
+    {
+      from: require.resolve('@jsquash/webp/codec/dec/webp_dec.wasm'),
+      to: `assets/${RASTERIZER_ASSETS.webp}`,
     },
     ...FIXED_SLIDE_NUMBERS.map((n) => ({
       from: path.join(REFERENCE_SLIDES, `Slide${n}.png`),
@@ -63,8 +74,13 @@ async function buildPackage({ outDir = path.join(REPO_ROOT, 'dist') } = {}) {
   }
 
   await esbuild.build({
-    entryPoints: [path.join(SKILL_SRC, 'src', 'build-deck.js')],
-    outfile: path.join(stageDir, 'scripts', 'build-deck.js'),
+    // Two entry points: one finds and normalises the logo for the model to
+    // check, the other builds the deck once it has been checked.
+    entryPoints: [
+      path.join(SKILL_SRC, 'src', 'build-deck.js'),
+      path.join(SKILL_SRC, 'src', 'fetch-logo.js'),
+    ],
+    outdir: path.join(stageDir, 'scripts'),
     bundle: true,
     platform: 'node',
     target: 'node18',
