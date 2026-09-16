@@ -36,6 +36,18 @@ const THESIS_SECTIONS = [
 
 const CONFIDENTIAL_LINE = 'Recur Software Highly Confidential - Not for Distribution';
 
+// Footer geometry, measured off the reference slides (1300 x 731 px, so
+// 1 px = 0.01026 in) and identical on every reference slide that has a footer:
+// the wordmark spans x 11.805-12.625in and the page number sits at x 12.923,
+// both with their ink centred on y 7.100; the confidentiality line's ink runs
+// y 7.326-7.408in, centred on the slide. Reference slide 3 has no footer at
+// all, so the market map does not draw one.
+const FOOTER = {
+  wordmark: { x: 11.805, y: 7.018, w: 0.82, h: 0.164 },
+  pageNumber: { x: 12.764, y: 6.95, w: 0.4, h: 0.3, fontSize: 16 },
+  confidential: { y: 7.25, h: 0.25, fontSize: 7 },
+};
+
 // The visual bar puts the floor for body text at about 12pt.
 const MIN_FONT_SIZE = 12;
 
@@ -63,6 +75,7 @@ module.exports = {
   COLORS,
   THESIS_SECTIONS,
   CONFIDENTIAL_LINE,
+  FOOTER,
   MIN_FONT_SIZE,
   deckFileName,
   safeCompany,

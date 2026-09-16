@@ -23,6 +23,7 @@ const {
   COLORS,
   THESIS_SECTIONS,
   CONFIDENTIAL_LINE,
+  FOOTER,
   MIN_FONT_SIZE,
   deckFileName,
   safeCompany,
@@ -55,7 +56,7 @@ async function buildDeck({ company, assetsDir, outDir, notes = {} }) {
   const [cover, thesis, marketMap] = generated;
   coverSlide(cover, name, asset);
   thesisSlide(thesis, name, asset);
-  marketMapSlide(marketMap, name, asset);
+  marketMapSlide(marketMap, name);
 
   for (const slideNumber of FIXED_SLIDE_NUMBERS) {
     pres.addSlide().addImage({
@@ -152,8 +153,13 @@ function thesisSlide(slide, company, asset) {
   footer(slide, 2, asset);
 }
 
-/** Market map: the axes, competitors and callout arrive in ticket 05. */
-function marketMapSlide(slide, company, asset) {
+/**
+ * Market map: the axes, competitors and callout arrive in ticket 05.
+ *
+ * No footer: the reference market map carries no confidentiality line, wordmark
+ * or page number, and the slide reads less cluttered without them.
+ */
+function marketMapSlide(slide, company) {
   title(slide, `The opportunity for ${company}`, 0.45);
 
   const sidebar = 9.6;
@@ -187,8 +193,6 @@ function marketMapSlide(slide, company, asset) {
     h: 0,
     line: { color: COLORS.navy, width: 1 },
   });
-
-  footer(slide, 3, asset);
 }
 
 // ---------- shared furniture ----------
@@ -208,26 +212,34 @@ function title(slide, text, y = 0.55) {
 }
 
 function footer(slide, pageNumber, asset) {
+  const { wordmark, pageNumber: numeral, confidential } = FOOTER;
+
+  // Centred across the full slide width, which is where the reference puts it.
   slide.addText(CONFIDENTIAL_LINE, {
-    x: 3.9,
-    y: 7.05,
-    w: 5.5,
-    h: 0.25,
+    x: 0,
+    y: confidential.y,
+    w: SLIDE_W,
+    h: confidential.h,
     fontFace: FONT,
-    fontSize: 7,
+    fontSize: confidential.fontSize,
     color: COLORS.grey,
     align: 'center',
+    valign: 'middle',
     margin: 0,
   });
-  placeImage(slide, asset('recur-wordmark-navy.png'), 11.35, 6.95, 1.1, 0.25);
+
+  placeImage(slide, asset('recur-wordmark-navy.png'), wordmark.x, wordmark.y, wordmark.w, wordmark.h);
+
   slide.addText(String(pageNumber), {
-    x: 12.55,
-    y: 6.86,
-    w: 0.4,
-    h: 0.3,
+    x: numeral.x,
+    y: numeral.y,
+    w: numeral.w,
+    h: numeral.h,
     fontFace: FONT,
-    fontSize: 11,
+    fontSize: numeral.fontSize,
     color: COLORS.navy,
+    align: 'center',
+    valign: 'middle',
     margin: 0,
   });
 }

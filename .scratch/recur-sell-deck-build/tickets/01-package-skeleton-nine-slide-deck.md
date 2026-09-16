@@ -11,8 +11,8 @@ Decisions this implements: [Choose the supported AI tool and package handoff](..
 **Status:** ready-for-agent
 
 - [x] A repeatable build step in this repo produces the uploadable ZIP with one top-level skill folder, and the ZIP holds at most 200 files.
-- [ ] The ZIP uploads through Customize > Skills, passes the security scan, and shows as enabled.
-- [ ] One prompt in a fresh chat, with no user turns after it, ends in a download card for a PPTX.
+- [x] The ZIP uploads through Customize > Skills, passes the security scan, and shows as enabled.
+- [x] One prompt in a fresh chat, with no user turns after it, ends in a download card for a PPTX.
 - [ ] The file has exactly nine slides, opens in real PowerPoint, and slides 4–9 are the supplied reference PNGs in order.
 - [x] Generation runs entirely from the bundled script inside the sandbox, with no package installs at run time.
 - [x] Placeholder slides 1–3 carry speaker notes fields, so later tickets have somewhere to write the source record.
@@ -43,3 +43,22 @@ is present. A spec review read this as reaching into tickets 02, 04 and 05, whic
 now start by editing this code rather than filling blanks. Kept because those
 tickets replace these slides wholesale and blank pages would make the skeleton's
 output untestable by eye; say so if it should be stripped back.
+
+**First install and run, September 16, 2026.** The ZIP was installed in the
+developer's own Claude account and the one-line prompt produced the deck with no
+follow-up turns, closing the upload and one-prompt criteria. The output was as
+designed for this ticket: three laid-out slides carrying only the company name.
+Still open: confirming the file opens in real PowerPoint.
+
+**Footer corrected from measurements.** The run showed the confidentiality line
+sitting too high against reused slides 4–9, and that the reference market map
+carries no such line. Measuring the reference PNGs (1300 × 731, 1 px = 0.01026in)
+gave identical footers on every reference slide that has one: the wordmark spans
+x 11.805–12.625in and the page number sits at x 12.923, both with their ink
+centred on y 7.100; the confidentiality line's ink runs y 7.326–7.408in, centred
+on the slide. The line had been at y 7.05 — about 0.28in high — and the page
+number was 11pt against a measured ~16pt. Footer geometry now lives in
+`design.js` as `FOOTER` with its provenance recorded, and the market map draws no
+footer at all. Verified in the generated file: line centre y 7.375 and horizontal
+centre 6.666, page number centre y 7.100 / x 12.964, slide 3 free of footer text
+and images. Two tests hold the positions.

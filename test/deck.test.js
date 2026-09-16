@@ -12,6 +12,7 @@ const {
   SLIDE_W,
   SLIDE_H,
   MIN_FONT_SIZE,
+  CONFIDENTIAL_LINE,
 } = require('../skill/src/design.js');
 const { ensureBuilt, tempDir, openPptx, sha256 } = require('./helpers.js');
 
@@ -69,6 +70,35 @@ test('the reference slides are placed full-bleed', async () => {
     assert.ok(Math.abs(box.x) < 0.01 && Math.abs(box.y) < 0.01);
     assert.ok(Math.abs(box.w - SLIDE_W) < 0.01 && Math.abs(box.h - SLIDE_H) < 0.01);
   }
+});
+
+test('the confidentiality line sits where the reference slides put it', async () => {
+  // Measured off the reference PNGs: the line's ink runs y 7.326-7.408in,
+  // centred on the slide. It previously sat about 0.28in too high, which read
+  // as misaligned against the reused slides 4-9.
+  const { pptx } = await build();
+  const line = (await pptx.textBoxes(2)).find((b) => b.text === CONFIDENTIAL_LINE);
+  if (!line) assert.fail('slide 2 should carry the confidentiality line');
+
+  const centre = line.y + line.h / 2;
+  assert.ok(
+    Math.abs(centre - 7.376) < 0.06,
+    `line centred at ${centre.toFixed(3)}in, expected about 7.376in`,
+  );
+  assert.ok(
+    Math.abs(line.x + line.w / 2 - SLIDE_W / 2) < 0.05,
+    'the line should be centred across the slide',
+  );
+});
+
+test('the market map carries no footer, matching the reference', async () => {
+  const { pptx } = await build();
+  const boxes = await pptx.textBoxes(3);
+  assert.ok(
+    !boxes.some((b) => b.text.includes(CONFIDENTIAL_LINE)),
+    'reference slide 3 carries no confidentiality line',
+  );
+  assert.deepEqual(await pptx.imageHashes(3), [], 'and no Recur wordmark');
 });
 
 test('slides 1-3 carry a notes field that later tickets can write into', async () => {

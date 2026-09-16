@@ -96,6 +96,25 @@ async function openPptx(file) {
       return out;
     },
 
+    /** Text shapes on slide N: their box in inches, plus the text they carry. */
+    async textBoxes(slideNumber) {
+      const xml = await text(`ppt/slides/slide${slideNumber}.xml`);
+      const boxes = [];
+      for (const shape of xml.matchAll(/<p:sp>[\s\S]*?<\/p:sp>/g)) {
+        const off = shape[0].match(/<a:off x="(-?\d+)" y="(-?\d+)"\/>/);
+        const ext = shape[0].match(/<a:ext cx="(\d+)" cy="(\d+)"\/>/);
+        if (!off || !ext) continue;
+        boxes.push({
+          x: Number(off[1]) / EMU_PER_INCH,
+          y: Number(off[2]) / EMU_PER_INCH,
+          w: Number(ext[1]) / EMU_PER_INCH,
+          h: Number(ext[2]) / EMU_PER_INCH,
+          text: [...shape[0].matchAll(/<a:t>([^<]*)<\/a:t>/g)].map((t) => t[1]).join(''),
+        });
+      }
+      return boxes;
+    },
+
     /** Offsets and extents (in inches) of every picture shape on slide N. */
     async pictureBoxes(slideNumber) {
       const xml = await text(`ppt/slides/slide${slideNumber}.xml`);

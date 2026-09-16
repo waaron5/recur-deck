@@ -54,8 +54,16 @@ still looks sharp.
 
 ## Footer
 
-Slides 2 and 3 carry the confidentiality line centred, the navy Recur wordmark
-at the right, and the page number.
+Slide 2 carries the confidentiality line centred across the slide, the navy
+Recur wordmark at the right, and the page number beside it.
+
+Positions are measured from the reference slides, not guessed: the wordmark
+spans x 11.805-12.625in and the page number sits at x 12.923, both with their
+ink centred on y 7.100; the confidentiality line's ink runs y 7.326-7.408in.
+
+The cover and the market map carry **no footer** — the reference market map has
+no confidentiality line, wordmark or page number, and reads less cluttered
+without them.
 
 ## Speaker notes
 
