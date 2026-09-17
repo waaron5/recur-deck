@@ -27,7 +27,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { parseArgs } = require('./args.js');
 const { outcomeReply } = require('./outcome.js');
-const { openRunState, runStateFile } = require('./run-state.js');
+const { openRunState, runStateFile, stageTimer } = require('./run-state.js');
+
+/** Times this stage, the last one a run walks. */
+const mark = stageTimer();
 
 const USAGE =
   'usage: reply.js --outcome clean|flagged|evidence-failure [--work <dir>] ' +
@@ -70,6 +73,12 @@ function main() {
   if (!args.outcome) throw new Error(USAGE);
 
   const recorded = whatTheRunRecorded(args.work);
+
+  // The last stage to run, which makes its mark the run's own length. Recorded
+  // in the state file and never printed: the reply is fixed at about six lines
+  // by decision 07, and a run that reported its own duration to the user would
+  // be narrating itself.
+  if (args.work) mark(args.work, 'reply');
 
   console.log(
     outcomeReply({

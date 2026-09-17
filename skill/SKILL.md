@@ -90,7 +90,7 @@ worse than no deck, because a founder reads it.
 ### 2. Find the company's logo, and check it yourself
 
 ```
-node <skill-dir>/scripts/fetch-logo.js --site <company site> --out work
+node <skill-dir>/scripts/fetch-logo.js --site <company site> --out work --work work
 ```
 
 It fetches the company's home page, ranks the logo candidates on it, and writes
@@ -191,7 +191,7 @@ why it sits where you put it. Each axis carries its own `reasoning`.
 one company at a time:
 
 ```
-node <skill-dir>/scripts/fetch-logo.js --site <competitor site> --out work/<name>
+node <skill-dir>/scripts/fetch-logo.js --site <competitor site> --out work/<name> --work work
 ```
 
 Look at each one and confirm it is that company's own current logo before

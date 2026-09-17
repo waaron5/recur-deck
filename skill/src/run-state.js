@@ -24,11 +24,13 @@ const { RUN_BUDGET } = require('./design.js');
  * @typedef {'content' | 'render'} RoundKind
  * @typedef {{allowed: boolean, round: number, reason?: string}} Spend
  * @typedef {import('./outcome.js').ReportedDefect} ReportedDefect
+ * @typedef {{stage: string, ms: number, elapsedMs: number}} StageMark
  * @typedef {{
  *   startedAt: number,
  *   rounds: Record<string, number>,
  *   fallbacks: string[],
  *   defects: ReportedDefect[],
+ *   stages: StageMark[],
  * }} Stored
  */
 
@@ -71,6 +73,7 @@ function readState(file, now) {
           rounds: stored.rounds && typeof stored.rounds === 'object' ? stored.rounds : {},
           fallbacks: Array.isArray(stored.fallbacks) ? stored.fallbacks : [],
           defects: Array.isArray(stored.defects) ? stored.defects : [],
+          stages: Array.isArray(stored.stages) ? stored.stages : [],
         },
       };
     }
@@ -78,7 +81,10 @@ function readState(file, now) {
     // Unreadable, absent, or not JSON. All three mean the same thing here.
   }
 
-  return { fresh: true, state: { startedAt: now(), rounds: {}, fallbacks: [], defects: [] } };
+  return {
+    fresh: true,
+    state: { startedAt: now(), rounds: {}, fallbacks: [], defects: [], stages: [] },
+  };
 }
 
 /**
@@ -186,7 +192,70 @@ function openRunState({ file, now = Date.now }) {
       state.defects.push({ slide, message });
       save();
     },
+
+    /** The stages this run has walked, in order. @returns {StageMark[]} */
+    get stages() {
+      return [...state.stages];
+    },
+
+    /**
+     * Record that one stage ran, and how long it took.
+     *
+     * Two numbers, because they answer different questions. `ms` is the stage's
+     * own duration and says whether the code is slow. `elapsedMs` is how far
+     * into the run it finished, which is the number that makes the gap before it
+     * measurable - and those gaps are the model reading sites and choosing
+     * competitors, which is most of a ten-minute run. Every code stage here runs
+     * in seconds, so durations alone would account for almost none of it.
+     *
+     * @param {{stage: string, ms: number}} mark
+     */
+    noteStage({ stage, ms }) {
+      state.stages.push({ stage: String(stage), ms, elapsedMs: now() - state.startedAt });
+      save();
+    },
   };
 }
 
-module.exports = { openRunState, runStateFile };
+/**
+ * Time one stage, from here to wherever it finishes.
+ *
+ * Every entry point the skill ships is its own process, so each one has to read
+ * its own clock and the starting value cannot be shared. What can be shared is
+ * the shape - one call at the top of a stage, one at the end - and the reason
+ * for it, written down once here instead of once in every entry point.
+ *
+ * @param {() => number} [now]
+ * @returns {(dir: string, stage: string) => void}
+ */
+function stageTimer(now = Date.now) {
+  const began = now();
+  return (dir, stage) => recordStage(dir, stage, now() - began);
+}
+
+/**
+ * Time one stage of a started run, given the directory its run file sits in.
+ *
+ * A stage run without a started run records nothing. check-content.js and
+ * render-deck.js are both usable on their own - it is how someone tries the
+ * rules out on copy, or looks at a deck they already have - and timing must not
+ * be the thing that turns that into a run. A state file written here would hand
+ * the next real run a start time taken from someone's experiment.
+ *
+ * @param {string} dir
+ * @param {string} stage
+ * @param {number} ms
+ */
+function recordStage(dir, stage, ms) {
+  const file = runStateFile(dir);
+  if (!fs.existsSync(file)) return;
+
+  try {
+    openRunState({ file }).noteStage({ stage, ms });
+  } catch {
+    // Bookkeeping, like the rest of this file. Losing a timing should cost the
+    // run its timeline, which is a nuisance, and never cost it its deck.
+  }
+}
+
+module.exports = { openRunState, recordStage, runStateFile, stageTimer };

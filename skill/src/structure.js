@@ -90,9 +90,9 @@ const slideLabel = (/** @type {number} */ slide) => (slide === 0 ? 'the file' : 
  * @returns {Promise<Defect[]>}
  */
 async function checkStructure(file, { assetsDir }) {
-  let zip;
+  let opened;
   try {
-    zip = await JSZip.loadAsync(fs.readFileSync(file));
+    opened = await openDeck(file);
   } catch (error) {
     // The deck does not reopen. Nothing below can run, and this is the defect.
     return [
@@ -106,18 +106,13 @@ async function checkStructure(file, { assetsDir }) {
     ];
   }
 
-  const presentation = zip.file('ppt/presentation.xml');
-  if (!presentation) {
+  const { zip, order } = opened;
+  if (!order) {
     return [defect(0, 'unopenable', 'carries no ppt/presentation.xml, so it is not a deck')];
   }
 
   /** @type {Defect[]} */
   const defects = [];
-
-  // The order a reader sees, which is the presentation's own slide list, not
-  // the part names. Numbering parts is the writer's business; the list is what
-  // PowerPoint pages through.
-  const order = await slideOrder(zip, await presentation.async('string'));
 
   if (order.length !== SLIDE_COUNT) {
     defects.push(
@@ -133,7 +128,34 @@ async function checkStructure(file, { assetsDir }) {
 }
 
 /**
+ * Open a written deck, and resolve the order a reader pages through it.
+ *
+ * Both readers here need the same three things first - the package, its
+ * presentation part, and the slide order - so they ask for them once. What each
+ * does about a deck that carries no presentation part differs, which is why the
+ * order comes back undefined rather than this deciding: the checker reports that
+ * as a critical defect, while a reader of notes simply has none to return.
+ *
+ * Throws where the file is not a package at all, which is the one failure the
+ * caller has to tell apart from every other.
+ *
+ * @param {string} file
+ * @returns {Promise<{zip: JSZip, order: string[] | undefined}>}
+ */
+async function openDeck(file) {
+  const zip = await JSZip.loadAsync(fs.readFileSync(file));
+
+  const presentation = zip.file('ppt/presentation.xml');
+  if (!presentation) return { zip, order: undefined };
+
+  return { zip, order: await slideOrder(zip, await presentation.async('string')) };
+}
+
+/**
  * The slide parts in the order the presentation pages through them.
+ *
+ * This is the presentation's own slide list, not the part names. Numbering parts
+ * is the writer's business; the list is what PowerPoint pages through.
  *
  * @param {JSZip} zip
  * @param {string} presentationXml
@@ -342,6 +364,34 @@ async function notesText(zip, part) {
 }
 
 /**
+ * The speaker notes of a built deck, by slide number.
+ *
+ * The notes are the run's source record: the sources behind each company fact,
+ * the evidence behind each competitor, and how the company was identified. A
+ * person judging a deck reads them against what the slides claim, which is what
+ * ticket 09's spot-check is, and the judging harness reads them from here rather
+ * than opening the package a second way of its own.
+ *
+ * Slides with no notes are absent rather than empty, so a caller can tell "this
+ * slide carries nothing" from "this slide carries an empty string".
+ *
+ * @param {string} file
+ * @returns {Promise<Record<number, string>>}
+ */
+async function readNotes(file) {
+  const { zip, order } = await openDeck(file);
+  if (!order) return {};
+
+  /** @type {Record<number, string>} */
+  const notes = {};
+  for (const [index, part] of order.entries()) {
+    const text = await notesText(zip, part);
+    if (text && text.trim()) notes[index + 1] = text;
+  }
+  return notes;
+}
+
+/**
  * The relationships in a .rels part.
  *
  * Each element is read whole and its attributes pulled out one at a time,
@@ -361,4 +411,4 @@ function relationships(xml) {
     .filter((rel) => rel.id && rel.type && rel.target);
 }
 
-module.exports = { SLIDE_COUNT, checkStructure, assertStructure };
+module.exports = { SLIDE_COUNT, checkStructure, assertStructure, readNotes };

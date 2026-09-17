@@ -370,9 +370,28 @@ const PREFLIGHT = {
 // The cutoff is deliberately short of fifteen. A round that starts at twelve
 // still has to finish a rewrite, a build and a render, and a run that overruns
 // has failed whatever it was going to produce.
+// Two different limits, and they are not the same kind of thing.
+//
+// `cutoffMs` bounds the run from inside: decision 07 starts no new repair round
+// after about twelve minutes, which is what keeps a run inside the limit below.
+//
+// `typicalMs` and `limitMs` are decision 04's judging bar - "typical run of 10
+// minutes or less; a run over 15 minutes fails" - and they are here as numbers
+// rather than as prose in a ticket because ticket 09 judges every practice run
+// against them. A bar left in a comment is one the judging has to remember.
+//
+// So the three are not enforced in the same place, and that is worth knowing
+// before changing one: the run itself enforces `rounds` and `cutoffMs`, while
+// nothing in a run reads `typicalMs` or `limitMs` - they are read by the
+// judging pass afterwards. They live together anyway because `cutoffMs` is
+// derived from `limitMs`: twelve minutes is where a new round stops being able
+// to finish inside fifteen. Splitting them would leave a number in one file and
+// its reason in another.
 const RUN_BUDGET = {
   rounds: { content: 3, render: 2 },
   cutoffMs: 12 * 60 * 1000,
+  typicalMs: 10 * 60 * 1000,
+  limitMs: 15 * 60 * 1000,
 };
 
 // Logos arrive as SVG and WebP, which PptxGenJS cannot place. Both are

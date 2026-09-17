@@ -2,7 +2,7 @@
 // Finds the target company's own logo on its own site, and normalises it into
 // something the deck can place.
 //
-//   node <skill-dir>/scripts/fetch-logo.js --site https://www.acme.com/ --out work
+//   node <skill-dir>/scripts/fetch-logo.js --site https://www.acme.com/ --out work --work work
 //
 // It stops one step short of using the logo. The candidates it ranks are found
 // by pattern, and patterns pick the wrong company: in the trial the ranking
@@ -17,6 +17,10 @@ const path = require('node:path');
 const { pickLogoCandidates, normaliseLogo } = require('./logo.js');
 const { CHROME_UA, download } = require('./http.js');
 const { parseArgs } = require('./args.js');
+const { stageTimer } = require('./run-state.js');
+
+/** Times this stage, which is a page fetch, a download and a raster. */
+const mark = stageTimer();
 
 /** @typedef {import('./http.js').FetchLike} FetchLike */
 
@@ -121,36 +125,52 @@ function worthTrying(candidates) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  if (!args.site) throw new Error('usage: fetch-logo.js --site <url> [--out <dir>]');
+  if (!args.site) {
+    throw new Error('usage: fetch-logo.js --site <url> [--out <dir>] [--work <dir>]');
+  }
 
-  const skillDir = path.resolve(__dirname, '..');
-  const outDir = args.out || process.cwd();
-  fs.mkdirSync(outDir, { recursive: true });
+  // The run's state sits beside run.json, and this stage writes its logo
+  // somewhere else entirely - `work/<competitor>` for every company on the
+  // market map - so the working directory has to be named rather than inferred
+  // from --out, the same way render-deck.js names it.
+  const work = args.work;
 
-  const found = await acquireLogo({ site: args.site, assetsDir: path.join(skillDir, 'assets') });
-  const file = path.join(outDir, 'logo.png');
-  fs.writeFileSync(file, found.logo.png);
+  try {
+    const skillDir = path.resolve(__dirname, '..');
+    const outDir = args.out || process.cwd();
+    fs.mkdirSync(outDir, { recursive: true });
 
-  console.log(
-    JSON.stringify(
-      {
-        ok: true,
-        file,
-        source: found.source,
-        foundBy: found.kind,
-        sourceFormat: found.logo.sourceFormat,
-        width: found.logo.width,
-        height: found.logo.height,
-        rejected: found.rejected,
-        check:
-          'Look at this image. Confirm it is this company’s own current logo, ' +
-          'not a customer’s, a partner’s, or a product sub-brand’s, ' +
-          'before putting it in the run file as verified.',
-      },
-      null,
-      2,
-    ),
-  );
+    const found = await acquireLogo({ site: args.site, assetsDir: path.join(skillDir, 'assets') });
+    const file = path.join(outDir, 'logo.png');
+    fs.writeFileSync(file, found.logo.png);
+
+    console.log(
+      JSON.stringify(
+        {
+          ok: true,
+          file,
+          source: found.source,
+          foundBy: found.kind,
+          sourceFormat: found.logo.sourceFormat,
+          width: found.logo.width,
+          height: found.logo.height,
+          rejected: found.rejected,
+          check:
+            'Look at this image. Confirm it is this company’s own current logo, ' +
+            'not a customer’s, a partner’s, or a product sub-brand’s, ' +
+            'before putting it in the run file as verified.',
+        },
+        null,
+        2,
+      ),
+    );
+  } finally {
+    // Recorded whether or not a logo came back. A site that hangs for thirty
+    // seconds and then refuses has spent the run's time just as surely as one
+    // that answered, and a timeline that dropped the failures would attribute
+    // that minute to the model instead.
+    if (work) mark(work, 'fetch-logo');
+  }
 }
 
 if (require.main === module) {

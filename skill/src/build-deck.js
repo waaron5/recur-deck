@@ -34,12 +34,15 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { buildDeck } = require('./deck.js');
 const { findLandmarkOnLadder } = require('./ladder.js');
-const { openRunState, runStateFile } = require('./run-state.js');
+const { openRunState, runStateFile, stageTimer } = require('./run-state.js');
 const { normaliseLogo } = require('./logo.js');
 const { checkRun } = require('./content-gate.js');
 const { parseArgs } = require('./args.js');
 
 const SANDBOX_OUTPUTS = '/mnt/user-data/outputs';
+
+/** Times this stage: a Commons search, a download, a duotone and nine slides. */
+const mark = stageTimer();
 
 /**
  * The run's inputs: what the model established about the company.
@@ -146,6 +149,10 @@ async function main() {
     landmarkFallback: landmark.fallback,
     flagged,
   });
+
+  // The run's most expensive stage, so how long it took is the first thing a
+  // slow run gets read against.
+  mark(path.dirname(path.resolve(args.input)), 'build-deck');
 
   console.log(
     JSON.stringify(

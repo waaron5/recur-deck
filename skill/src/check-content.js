@@ -26,7 +26,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { parseArgs } = require('./args.js');
 const { checkRun } = require('./content-gate.js');
-const { openRunState, runStateFile } = require('./run-state.js');
+const { openRunState, runStateFile, stageTimer } = require('./run-state.js');
+
+/** Times this stage, which is the countable rules over the run's copy. */
+const mark = stageTimer();
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
@@ -39,6 +42,8 @@ function main() {
   // a run may rewrite its way out of trouble, and copy that came out right the
   // first time never asked for one.
   const spend = ok ? undefined : spendRound(args.input);
+
+  mark(path.dirname(path.resolve(args.input)), 'check-content');
 
   console.log(JSON.stringify({ ok, findings, ...spend }, null, 2));
   if (!ok) process.exitCode = 1;

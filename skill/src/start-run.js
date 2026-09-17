@@ -28,7 +28,10 @@
 const path = require('node:path');
 const { parseArgs } = require('./args.js');
 const { preflight } = require('./preflight.js');
-const { openRunState, runStateFile } = require('./run-state.js');
+const { openRunState, runStateFile, stageTimer } = require('./run-state.js');
+
+/** Times this stage, which is almost entirely the network probe. */
+const mark = stageTimer();
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
@@ -58,6 +61,11 @@ async function main() {
   // spends a round; the stages that do pass a real one.
   const stateFile = runStateFile(workDir);
   const state = openRunState({ file: stateFile, now: () => checked.startedAt });
+
+  // Recorded after the state file exists, which this stage is what creates. The
+  // duration here is almost entirely the network probe, so it is the one stage
+  // whose own time says something about the sandbox rather than about the model.
+  mark(workDir, 'start-run');
 
   console.log(
     JSON.stringify({ ok: true, startedAt: state.startedAt, state: stateFile }, null, 2),

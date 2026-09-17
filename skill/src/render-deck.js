@@ -17,9 +17,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { parseArgs } = require('./args.js');
 const { renderSlides } = require('./render.js');
-const { openRunState, runStateFile } = require('./run-state.js');
+const { openRunState, runStateFile, stageTimer } = require('./run-state.js');
 
 const USAGE = 'usage: render-deck.js --input <deck>.pptx [--out <dir>] [--work <dir>]';
+
+/** Times this stage, which is the converter rasterising slides 1-3. */
+const mark = stageTimer();
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
@@ -32,6 +35,8 @@ function main() {
 
   const outDir = args.out || path.join(path.dirname(path.resolve(args.input)), 'render');
   const images = renderSlides({ file: args.input, outDir });
+
+  if (args.work) mark(args.work, 'render-deck');
 
   console.log(
     JSON.stringify({ ok: true, images: images.map((image) => image.file), ...round }, null, 2),
