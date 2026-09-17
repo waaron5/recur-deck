@@ -38,6 +38,14 @@ _Avoid_: Supported company, any company
 One company-name prompt through to one delivered sell deck, with no user message in between. The workflow's own checks and bounded repairs happen inside a run; a clarifying question to the user ends it as a failure.
 _Avoid_: Attempt, try, iteration
 
+**Preflight**:
+What a run establishes before it spends anything on research: that the sandbox can reach a non-package host, and that the skill's own files unpacked whole. It also records the moment the run began, which is what the repair budget's cutoff is measured from.
+_Avoid_: Health check, smoke test
+
+**Repair budget**:
+What a run may spend rewriting its way out of trouble: three content rounds, two render rounds, and no new round after about twelve minutes of elapsed time. A critical defect that outlives the budget produces a flagged deck rather than another round.
+_Avoid_: Retries, attempts, backoff
+
 **Critical defect**:
 A flaw that makes a sell deck unusable and fails its run: wrong or invented company facts, a logo belonging to another company, a nonexistent or non-competing competitor, a missing required element, overflowing or illegible text, a wrong slide count or order, or a missing or unopenable file. Other shortcomings are quality notes.
 _Avoid_: Bug, error

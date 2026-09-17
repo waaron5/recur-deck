@@ -77,6 +77,27 @@ and filtered to JPEG files over 1600px, then downloaded at 1920px wide. JPEG is
 deliberate: the treatment runs on a bundled JavaScript codec, because the skill
 ships as one script with no package installs at run time.
 
+**The ladder** decides what to search for when the obvious phrase finds nothing
+usable. It steps down one rung at a time:
+
+| Rung | What is searched for | Counts as |
+| --- | --- | --- |
+| 1 | A recognisable landmark in the headquarters city | the intended cover |
+| 2 | That city's downtown skyline | the intended cover |
+| 3 | A landmark in the nearest major metro, within about 60km | a quality note |
+| 4 | A state or regional landmark | a quality note |
+
+A photo that is watermarked, narrower than about 1600px, or too somber for a
+sales cover sends the search down a rung. The metro and the region are supplied
+by the run, because which city is nearest is a judgment about a map rather than
+something the package can look up.
+
+The bottom two rungs are named in the run's reply. A deck carrying the nearest
+big city instead of the company's own is weaker and still worth mailing; the
+same picture unremarked reads as a mistake. **A cover with no photo at all is a
+critical defect**, reached only when every rung fails, and it produces a flagged
+deck rather than a quiet navy slide.
+
 **The treatment** crops to the slide's 16:9, sitting high in the frame because a
 skyline wants more sky than foreground, then maps every pixel onto one navy-to-
 pale-blue ramp, returns 16% of the photo's own colour, and pulls the whole

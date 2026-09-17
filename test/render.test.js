@@ -200,6 +200,50 @@ test('a deck that is not there is refused before anything is run', () => {
   assert.equal(calls.length, 0, 'nothing should be spawned for a deck that does not exist');
 });
 
+test('a run out of render rounds is refused before a converter is ever started', () => {
+  // The other half of decision 07's budget. Two render rounds, and the refusal
+  // has to come before anything is spawned - both because starting a two-minute
+  // conversion for a deck the run may not repair is wasted time, and because it
+  // is what makes this testable on a machine with no LibreOffice at all.
+  const { execFileSync } = require('node:child_process');
+  const entry = path.join(__dirname, '..', 'skill', 'src', 'render-deck.js');
+
+  const work = tempDir('recur-render-budget-');
+  fs.writeFileSync(
+    path.join(work, 'run-state.json'),
+    JSON.stringify({
+      startedAt: Date.now(),
+      rounds: { render: 2 },
+      fallbacks: [],
+      defects: [],
+    }),
+  );
+
+  const deck = path.join(work, 'Recur x Acme.pptx');
+  fs.writeFileSync(deck, Buffer.from('PK'));
+
+  let output = '';
+  try {
+    execFileSync(
+      process.execPath,
+      [entry, '--input', deck, '--out', path.join(work, 'render'), '--work', work],
+      { encoding: 'utf8' },
+    );
+    assert.fail('a run with no render rounds left should not succeed');
+  } catch (error) {
+    const failed = /** @type {{stdout?: string, stderr?: string}} */ (error);
+    output = `${failed.stdout ?? ''}${failed.stderr ?? ''}`;
+  }
+
+  assert.match(output, /render rounds are spent/, 'it says which budget ran out');
+  assert.match(output, /flag/i, 'and what to do instead of rendering again');
+  assert.doesNotMatch(
+    output,
+    /not installed in this sandbox/,
+    'the budget is checked first, so this never becomes a missing-converter error',
+  );
+});
+
 test('a converter missing from the sandbox says so, rather than failing obscurely', () => {
   // This is the failure a run has to be able to tell apart from a badly drawn
   // slide: one means repair the copy, the other means this sandbox cannot

@@ -2,7 +2,11 @@
 // The skill's one generation entry point. Bundled to <skill>/scripts/build-deck.js,
 // so it runs from the bundle alone with no package installs at run time.
 //
-//   node <skill-dir>/scripts/build-deck.js --input run.json
+//   node <skill-dir>/scripts/build-deck.js --input run.json [--flagged]
+//
+// --flagged writes the deck as "Recur x <Company> - NOT READY.pptx". It is asked
+// for by the stage that found a critical defect its repair rounds could not fix,
+// and it changes the file's name and nothing on its slides.
 //
 // The run file is what the model established about the company, as JSON:
 //
@@ -29,7 +33,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { buildDeck } = require('./deck.js');
-const { findLandmarkPhoto, cityLandmarkSearch } = require('./landmark.js');
+const { findLandmarkOnLadder } = require('./ladder.js');
+const { openRunState, runStateFile } = require('./run-state.js');
 const { normaliseLogo } = require('./logo.js');
 const { checkRun } = require('./content-gate.js');
 const { parseArgs } = require('./args.js');
@@ -41,8 +46,10 @@ const SANDBOX_OUTPUTS = '/mnt/user-data/outputs';
  *
  * @param {Record<string, string>} args
  */
+const USAGE = 'usage: build-deck.js --input run.json [--out <dir>] [--flagged]';
+
 function readRun(args) {
-  if (!args.input) throw new Error('usage: build-deck.js --input run.json [--out <dir>]');
+  if (!args.input) throw new Error(USAGE);
   return JSON.parse(fs.readFileSync(args.input, 'utf8'));
 }
 
@@ -51,8 +58,13 @@ async function main() {
   const run = readRun(args);
 
   if (!run.company) {
-    throw new Error('usage: build-deck.js --input run.json [--out <dir>]');
+    throw new Error(USAGE);
   }
+
+  // Asked for by name rather than inferred. This deck is being delivered with
+  // something known to be wrong with it, and that is a decision a stage makes
+  // deliberately, never one the generator arrives at on its own.
+  const flagged = Object.prototype.hasOwnProperty.call(args, 'flagged');
   const city = run.headquarters?.city;
   if (!city) {
     throw new Error(
@@ -68,8 +80,12 @@ async function main() {
   // the deck is written. Copy that breaks a rule is repaired with words, and a
   // run that skipped check-content.js should not spend a download - or get a
   // deck - on copy that would have failed it.
+  // A flagged build is the exception, and the only one. It is asked for after
+  // the repair budget ran out with something still wrong, so refusing it here
+  // would refuse the deck decision 07 says to hand over - and the findings are
+  // not lost, they are printed below for the reply to list by slide.
   const findings = checkRun(run);
-  if (findings.length > 0) {
+  if (findings.length > 0 && !flagged) {
     throw new Error(
       `the copy did not pass the content gate:\n${findings
         .map((finding) => `  slide ${finding.slide} ${finding.field}: ${finding.message}`)
@@ -77,13 +93,20 @@ async function main() {
     );
   }
 
+  // The run's state lives beside its run file, so every stage of the run finds
+  // the same one.
+  const stateFile = runStateFile(path.dirname(path.resolve(args.input)));
+
   const landmark = run.landmark?.file
     ? {
         photo: fs.readFileSync(run.landmark.file),
         credit: run.landmark.credit,
         width: run.landmark.width,
+        // Carried in the run file so a rebuild after a repair still records
+        // which rung the photo it is reusing came from.
+        fallback: run.landmark.fallback,
       }
-    : await findLandmark(city);
+    : await findLandmark(run.headquarters, stateFile);
 
   // Keep the photo beside the run file once it has been found. A render round
   // repairs copy and builds again, and searching Commons a second time would
@@ -119,6 +142,9 @@ async function main() {
     logoNote,
     headquarters: run.headquarters,
     identification: run.identification,
+    rejected: run.rejected,
+    landmarkFallback: landmark.fallback,
+    flagged,
   });
 
   console.log(
@@ -127,6 +153,10 @@ async function main() {
         ok: true,
         file,
         slides: 9,
+        flagged,
+        // What is still wrong with it, so the reply can list it by slide
+        // instead of the model reconstructing it from memory.
+        ...(flagged && findings.length > 0 ? { findings } : {}),
         landmark: landmark.credit?.fileName,
         // Where the photo was kept, so a rebuild after a render repair can pass
         // it back in and leave the cover's picture alone.
@@ -212,10 +242,31 @@ async function readMapLogos(map, assetsDir) {
   return { ...map, companies };
 }
 
-/** @param {string} city */
-async function findLandmark(city) {
-  const found = await findLandmarkPhoto({ search: cityLandmarkSearch(city) });
-  return { photo: found.photo, credit: found.credit, width: found.width };
+/**
+ * The cover photo, found by walking decision 07's ladder rather than by making
+ * one search and giving up.
+ *
+ * A rung below the headquarters city is a quality note, and it is recorded in
+ * the run's state so the reply can name it. The run supplies the metro and the
+ * region, because which city is nearest is a judgment about a map.
+ *
+ * @param {{city: string, metro?: string, region?: string}} headquarters
+ * @param {string} stateFile
+ */
+async function findLandmark(headquarters, stateFile) {
+  const found = await findLandmarkOnLadder({ headquarters });
+
+  // Recorded here, by the stage that actually settled for it. A reply that
+  // worked out afterwards which rung the photo came from would be guessing at
+  // something this already knows.
+  if (found.fallback) openRunState({ file: stateFile }).noteFallback(found.fallback);
+
+  return {
+    photo: found.photo,
+    credit: found.credit,
+    width: found.width,
+    fallback: found.fallback,
+  };
 }
 
 main().catch((error) => {

@@ -327,7 +327,7 @@ function checkCrowding(map) {
 /**
  * The shape backstop: everything thesis.js and market-map.js refuse that the
  * field-level checks above do not cover, such as a section with the wrong
- * number of bullets or a competitor count outside six to nine.
+ * number of bullets or a competitor count outside five to nine.
  *
  * @param {any} research
  * @returns {Finding[]}

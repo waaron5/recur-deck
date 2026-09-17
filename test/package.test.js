@@ -55,6 +55,13 @@ test('the skill folder carries its instructions, script, reference and assets', 
     // Without this a run cannot look at what it built, and decision 07 delivers
     // no deck unseen.
     'scripts/render-deck.js',
+    // Stage 0. Without this a run finds out the sandbox cannot reach the web
+    // only when it goes to download the cover photo, which is after the model
+    // has identified the company and written the whole thesis.
+    'scripts/start-run.js',
+    // The fixed reply, built from what the run recorded rather than from what
+    // the model remembers recording.
+    'scripts/reply.js',
     'reference/visual-rules.md',
     'assets/recur-wordmark-white.png',
     'assets/recur-wordmark-navy.png',
@@ -70,11 +77,11 @@ test('the skill folder carries its instructions, script, reference and assets', 
 });
 
 test('every entry point ships bundled, with nothing left to resolve at run time', async () => {
-  // All four, not just the generator: the sandbox installs nothing, so an entry
+  // All six, not just the generator: the sandbox installs nothing, so an entry
   // point that still reaches for node_modules is one a run cannot call at all.
   const { stageDir } = await ensureBuilt();
   const scripts = fs.readdirSync(path.join(stageDir, 'scripts'));
-  assert.ok(scripts.length >= 4, `expected the four entry points, found ${scripts.join(', ')}`);
+  assert.ok(scripts.length >= 6, `expected the six entry points, found ${scripts.join(', ')}`);
 
   for (const name of scripts) {
     const script = fs.readFileSync(path.join(stageDir, 'scripts', name), 'utf8');

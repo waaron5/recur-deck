@@ -7,8 +7,13 @@ description: Builds a Recur sell deck for a target software company as a downloa
 
 A run is one company-name prompt through to one delivered deck, with no user
 message in between. **Never ask the user a question.** A clarifying question
-fails the run. If something cannot be established, say so in the reply instead
-of asking.
+fails the run. Every case below has a decided answer: an ambiguous name is
+settled from evidence, a missing photo steps down a ladder, and evidence you
+cannot establish ends the run with an explanation instead of a question.
+
+**Do not narrate progress.** No running commentary, no stage announcements. The
+run is silent until it delivers, and then it uses one of the three replies at the
+bottom of this file.
 
 ## Scope of this build
 
@@ -29,6 +34,25 @@ generator's.
 
 ## Run
 
+### 0. Start the run
+
+```
+node <skill-dir>/scripts/start-run.js --work work
+```
+
+It checks the sandbox can reach a non-package host and that this skill unpacked
+whole, and writes down the moment the run began.
+
+```json
+{"ok": true, "startedAt": 1758067200000, "state": "work/run-state.json"}
+```
+
+**If it prints `"ok": false`, stop.** Do not research, do not build. Reply with
+the evidence failure template, using the `fix` line exactly as it comes back. The
+usual cause is the sandbox's default "Package managers only" allowlist, and the
+fix is one setting. Finding that out here costs seconds; finding it out at the
+cover photo costs most of the run.
+
 ### 1. Identify the company and its headquarters
 
 Read the company name from the prompt, exactly as the user wrote it. Then find,
@@ -41,6 +65,27 @@ LinkedIn are not sources for a headquarters.
 If you fetch the company's site from the sandbox, send a full Chrome
 user-agent string. Ordinary sites answer the bare default with a 403, which
 makes a reachable company look like it has no website.
+
+**When the name is ambiguous, settle it in this order and never by asking:**
+
+1. A website URL in the prompt decides it outright.
+2. Other hints in the prompt - a city, a sector, a size - rank the candidates.
+3. Otherwise prefer a private software business with its own website, and then
+   the one whose site and search presence is most prominent.
+
+Record the losing candidates and why each lost in `rejected`. State the
+assumption in the reply as one line. If no candidate is a software business, run
+the most prominent one as a best-effort target and add the best-effort line to
+the reply.
+
+**The evidence floor.** What the company sells and who buys it must come from
+the company's own site or its own channels. If that site is unreachable, or is a
+JavaScript shell or a "coming soon" page, **two independent sources that agree**
+will do, and the reply says the facts came from third parties.
+
+If you can establish neither, that is an **evidence failure**: build nothing and
+reply with the evidence failure template. A deck whose facts were invented is
+worse than no deck, because a founder reads it.
 
 ### 2. Find the company's logo, and check it yourself
 
@@ -112,6 +157,13 @@ defunct, and brands absorbed out of existence. A horizontal platform with a
 minor module counts only if buyers visibly compare the two. Mix recognised
 category leaders with peers of the target's own size.
 
+**A thin field gets one more search, not a padded list.** With fewer than six
+eligible competitors, search once more and more broadly, including the
+horizontal platforms buyers visibly compare with the target. Five placed is
+accepted and is a quality note. Fewer than five after that second search is a
+critical defect: build the deck, flag it, and say so. Never pad the list with
+adjacent or defunct companies to reach a number.
+
 **Axes: two two-sided categorical dimensions buyers actually choose on** -
 segment, commitment or delivery model, vertical depth, deployment, pricing
 model. Never a subjective quality and never a "leader" score. At least one axis
@@ -145,7 +197,9 @@ node <skill-dir>/scripts/fetch-logo.js --site <competitor site> --out work/<name
 Look at each one and confirm it is that company's own current logo before
 recording it as `verified`. A company with no logo is set as a text wordmark,
 which is a designed outcome; a company wearing someone else's logo is a critical
-defect.
+defect. If more than about a third of the competitors would be text wordmarks,
+swap in an equally eligible alternate that has a usable logo - but never drop a
+category leader over its logo, and never exceed nine to fix it.
 
 **The callout** is three parts, in this order: `take`, one line on where the
 target wins; `dynamics`, exactly two bullets on how the market behaves; and
@@ -158,16 +212,22 @@ rules from step 3 apply to every line on this slide.
 
 ### 5. Write the run file
 
-Write `run.json` to a working directory, with what you established:
+Write `run.json` into the same working directory as `run-state.json`, with what
+you established:
 
 ```json
 {
   "company": "US Fleet Tracking",
   "headquarters": {
     "city": "Oklahoma City, Oklahoma",
-    "source": "https://www.usfleettracking.com/contact-us"
+    "source": "https://www.usfleettracking.com/contact-us",
+    "metro": "Oklahoma City, Oklahoma",
+    "region": "Oklahoma"
   },
   "identification": "Matched the prompt to usfleettracking.com, a private fleet tracking company.",
+  "rejected": [
+    "US Fleet Tracking LLC of Tulsa: no website of its own"
+  ],
   "thesis": {
     "here": {
       "header": "Commercial fleets are mid-cycle in adopting real-time telematics",
@@ -260,8 +320,14 @@ Write `run.json` to a working directory, with what you established:
 }
 ```
 
-`identification` is one line on how you settled which company was meant. It goes
-into slide 1's speaker notes, never onto a slide. So does the logo's source.
+`identification` is one line on how you settled which company was meant, and
+`rejected` lists the candidates you ruled out. Both go into slide 1's speaker
+notes, never onto a slide. So does the logo's source.
+
+`metro` and `region` are what the cover photo falls back to when the
+headquarters city has no usable photo on Commons. Give the nearest major metro
+within about 60km, and the state or region. Leave `metro` out when the city *is*
+the major metro.
 
 `verified` must be `true` only because you looked at the image. A logo without
 it is never placed.
@@ -288,6 +354,11 @@ text too long for the box it has to sit in. Every finding names one field.
 `{"ok": true, "findings": []}`. Text that does not fit gets shorter. Never ask
 for smaller type: type sizes are fixed design values and the generator will not
 change them.
+
+Each failing check spends one of the run's three content rounds and prints which
+one it was. When they are gone it prints `"budgetSpent": true` and an `advice`
+line: stop rewriting and deliver a flagged deck. A check that passes costs
+nothing.
 
 **Then read the copy once yourself**, for the three things code cannot judge.
 
@@ -321,15 +392,26 @@ reopens the file it wrote and checks it: nine slides, slides 4-9 in order, notes
 on slides 1-3. A deck that fails this is a fault in the package, not in your
 copy; report the error rather than rewriting the deck around it.
 
+**The cover photo steps down a ladder** when the headquarters city has nothing
+usable: a landmark in the city, then the city's skyline, then the nearest major
+metro, then the region. The bottom two rungs are quality notes and must be named
+in the reply's `Fallbacks:` line. If every rung fails there is no cover photo,
+which is a critical defect: flag the deck.
+
 ### 8. Render the slides, and look at them
 
 **No deck is delivered unseen.**
 
 ```
-node <skill-dir>/scripts/render-deck.js --input "<the file build-deck.js printed>" --out work/render
+node <skill-dir>/scripts/render-deck.js --input "<the file build-deck.js printed>" --out work/render --work work
 ```
 
 It renders slides 1-3 to PNGs in about two seconds and prints where they landed.
+
+`--work` is the directory holding `run.json`, so this can find the run's state.
+Each render spends one of the run's **two** render rounds. When they are gone it
+refuses before starting a converter and tells you to deliver a flagged deck
+instead.
 
 **Now open those three images and look at them.** You are checking for things
 only an eye catches:
@@ -353,29 +435,114 @@ On the rebuild, add the photo you already have to `run.json` so the cover keeps
 the same picture and the run does not pay for the download twice:
 
 ```json
-"landmark": { "file": "work/landmark.jpg" }
+"landmark": { "file": "work/landmark.jpg", "fallback": "metro landmark (Dallas, Texas)" }
 ```
+
+Carry `fallback` back too, when the cover came from one, so the rebuilt deck's
+notes still record which rung it settled for.
 
 ### 9. Present that file to the user as a download.
 
+## Repairs are bounded
+
+A run may rewrite its way out of trouble **three times on copy and twice on
+renders**, and may start **no new round once it is about twelve minutes old**.
+Each round touches only the fields that failed.
+
+When the budget runs out with a critical defect still standing, stop repairing
+and deliver a **flagged deck**:
+
+```
+node <skill-dir>/scripts/build-deck.js --input run.json --flagged
+```
+
+That writes `Recur x <Company> - NOT READY.pptx`. It changes the file's name and
+**nothing on the slides**: do not add a warning to a slide, and do not remove the
+offending element.
+
+A flagged build is the one build that does not refuse copy the content gate
+failed - refusing would leave nothing to hand over. It prints what is still
+wrong as `findings`, and those go straight into the reply's `--defects`, one
+line each with the slide each sits on.
+
+Critical defects are: wrong or invented company facts, a logo belonging to
+another company, a competitor that does not exist or does not compete, a missing
+required element, text that overflows or is illegible, fewer than five placed
+competitors, no cover photo, a wrong slide count or order, and a file that will
+not open. Everything else - a generic bullet, a skyline instead of a landmark, a
+debatable axis - is a quality note and does not flag the deck.
+
 ## Reply
 
-Keep it to these two lines. Do not narrate the steps you took.
+Use one of these three, and nothing else. Keep it to about six lines. Do not
+narrate the steps you took, and do not offer to run it again or ask what to do
+next.
+
+**Build it, do not compose it:**
+
+```
+node <skill-dir>/scripts/reply.js --work work --outcome clean \
+  --company "<name as given>" --headquarters "<headquarters city>"
+```
+
+It prints the reply to say. Copy it out as it comes. It fills in the
+`Fallbacks:` line from what the run recorded along the way, so that does not
+depend on you remembering it.
+
+| Flag | When |
+| --- | --- |
+| `--assumption "<one line>"` | the company name was ambiguous |
+| `--defects "3:<what>\|1:<what>"` | `--outcome flagged`, one entry per surviving defect |
+| `--best-effort "<reason>"` | the target is outside the covered scope |
+| `--could-not-establish`, `--tried`, `--fix` | `--outcome evidence-failure` |
+
+`--defects` takes what `build-deck.js --flagged` printed, and adds it to
+anything the run already recorded.
+
+**A clean deck:**
 
 ```
 [download card]
 Company: <name as given>, <headquarters city>
+Assumed: <one line>            (only if the name was ambiguous)
+Fallbacks: <what was settled for>   (only if anything fell back)
 ```
 
-If the generator fails, give one line saying the deck could not be built and one
-line with the error it printed. Do not offer to retry or ask what to do.
+**A flagged deck** leads with what is wrong, then says everything a clean deck
+says:
 
-A failure that mentions the photo download usually means the sandbox cannot
-reach Wikimedia. The fix is Settings > Capabilities > Domain allowlist set to
-**All domains**. Say that in the second line.
+```
+⚠ Not ready to mail. 2 issues remain:
+- slide 3: only four competitors could be evidenced
+- slide 1: no usable cover photo was found
+[download card]
+Company: <name as given>, <headquarters city>
+```
+
+**An evidence failure** delivers no file at all:
+
+```
+No deck this time. I could not establish <what>.
+Tried: <where you looked>
+Fix: <what to send instead>
+```
+
+The fix is normally to resend with the website, as in `Create a Recur sell deck
+for Acme (acme.com)`. When step 0 reported a blocked sandbox, the fix is its
+line: `Set Settings > Capabilities > Domain allowlist to All domains, then
+resend.`
+
+**A target outside the covered scope** - not a private software business, or
+with no findable site or headquarters - runs exactly the same pipeline under the
+same gates, and adds one line. Pass `--best-effort "<reason>"` and the reply
+carries it:
+
+```
+Outside the covered scope (<reason>); treat as best-effort.
+```
 
 ## Reference
 
 - `reference/visual-rules.md` - page geometry, palette, type, the cover's
-  treatment, and the rule that overflow is fixed by shortening copy, never by
-  shrinking type.
+  treatment and its landmark ladder, and the rule that overflow is fixed by
+  shortening copy, never by shrinking type.

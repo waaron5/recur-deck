@@ -336,15 +336,67 @@ const LOGO = {
 // measured this whole step at about 2 seconds, and a run has 15 minutes total.
 const RENDER = { dpi: 150, timeoutMs: 120000 };
 
+// Stage 0's probe: one request to a non-package host, before a run spends
+// anything on research.
+//
+// The sandbox ships with its domain allowlist set to "Package managers only",
+// and under that setting every fetch a run makes fails. Without this the run
+// finds that out after identifying the company and writing a thesis, which
+// spends most of a fifteen-minute budget to arrive at nothing.
+//
+// The probe asks Commons rather than a generic canary host, because Commons is
+// where the cover photo comes from: probing the real dependency answers the
+// question a run actually has. siteinfo is the cheapest thing the API will
+// answer, and the answer's contents are never read - only that one came back.
+const PREFLIGHT = {
+  probe: 'https://commons.wikimedia.org/w/api.php?action=query&meta=siteinfo&format=json',
+  // A refused domain usually fails fast, but a connection that hangs is the
+  // same problem wearing a different coat, and node's fetch has no timeout of
+  // its own. Without a bound the cheapest stage in the run becomes the longest
+  // one. Eight seconds is far longer than Commons needs and far shorter than a
+  // run can afford to wait to be told it cannot start.
+  timeoutMs: 8000,
+};
+
+// The repair budget, from decision 07.
+//
+// Three content rounds and two render rounds, and no new round once the run is
+// about twelve minutes old. The rounds bound how many times a run may rewrite
+// its way out of trouble; the cutoff bounds what happens when each round is
+// individually cheap but the run as a whole is running out of its fifteen
+// minutes. Both are needed: three rounds of a slow research pass can outlast the
+// limit on their own.
+//
+// The cutoff is deliberately short of fifteen. A round that starts at twelve
+// still has to finish a rewrite, a build and a render, and a run that overruns
+// has failed whatever it was going to produce.
+const RUN_BUDGET = {
+  rounds: { content: 3, render: 2 },
+  cutoffMs: 12 * 60 * 1000,
+};
+
 // Logos arrive as SVG and WebP, which PptxGenJS cannot place. Both are
 // converted by WebAssembly rasterizers carried inside the package, because the
 // skill installs as one bundled script with no package installs at run time.
 // These are their file names beside the deck's other assets.
 const RASTERIZER_ASSETS = { svg: 'resvg.wasm', webp: 'webp-dec.wasm' };
 
-/** The clean-deck file name. A flagged deck adds "- NOT READY" (ticket 08). */
-function deckFileName(company) {
-  return `Recur x ${safeCompany(company)}.pptx`;
+/**
+ * What the deck is called when it is handed over.
+ *
+ * A flagged deck - one whose critical defects outlived the repair budget - is
+ * still delivered, because decision 07 hands over the deck and the list of what
+ * is wrong with it rather than nothing at all. The warning goes in the file name
+ * because the name is the part of a run that survives being forwarded: a reply
+ * gets skimmed and a chat gets closed, while the file travels on by itself to
+ * whoever is going to mail it.
+ *
+ * @param {string} company
+ * @param {{flagged?: boolean}} [options]
+ * @returns {string}
+ */
+function deckFileName(company, { flagged = false } = {}) {
+  return `Recur x ${safeCompany(company)}${flagged ? ' - NOT READY' : ''}.pptx`;
 }
 
 /** Keep a company name usable as a file name without rewriting how it reads. */
@@ -378,6 +430,8 @@ module.exports = {
   COVER_PHOTO,
   LOGO,
   RENDER,
+  PREFLIGHT,
+  RUN_BUDGET,
   RASTERIZER_ASSETS,
   deckFileName,
   safeCompany,

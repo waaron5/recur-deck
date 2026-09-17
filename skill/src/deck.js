@@ -67,7 +67,10 @@ const {
  * @param {string} [options.logoNote]    Why there is no logo, when there is none.
  * @param {{city?: string, source?: string}} [options.headquarters]
  * @param {string} [options.identification]  How the company was identified.
+ * @param {string[]} [options.rejected]  Candidates ruled out, and why each lost.
+ * @param {string} [options.landmarkFallback]  Which rung the cover photo came from.
  * @param {Record<number, string>} [options.notes]  Speaker notes by slide number.
+ * @param {boolean} [options.flagged]  Name the file so nobody mails it unread.
  * @returns {Promise<string>}
  */
 async function buildDeck({
@@ -81,7 +84,10 @@ async function buildDeck({
   logoNote,
   headquarters = {},
   identification = '',
+  rejected = [],
+  landmarkFallback = '',
   notes = {},
+  flagged = false,
 }) {
   const name = safeCompany(company);
   if (!name) throw new Error('buildDeck needs a company name');
@@ -93,7 +99,7 @@ async function buildDeck({
   // missing required element, so the run hears which part is wrong rather than
   // getting a deck with a hole where its argument should be.
   const sections = thesisSections(thesis);
-  const map = marketMap(mapInput);
+  const map = marketMap(mapInput, { flagged });
 
   const asset = (file) => {
     const full = path.join(assetsDir, file);
@@ -136,7 +142,16 @@ async function buildDeck({
   // the source behind every thesis bullet, and the evidence and reasoning
   // behind every competitor, placement and axis.
   const record = {
-    1: sourceRecord({ company: name, headquarters, identification, landmark, logo, coverMark }),
+    1: sourceRecord({
+      company: name,
+      headquarters,
+      identification,
+      rejected,
+      landmarkFallback,
+      landmark,
+      logo,
+      coverMark,
+    }),
     2: thesisNotes(sections),
     3: marketMapNotes(map, mapMarks),
     ...notes,
@@ -146,7 +161,11 @@ async function buildDeck({
   });
 
   fs.mkdirSync(outDir, { recursive: true });
-  const file = path.join(outDir, deckFileName(name));
+  // The warning goes in the name and nowhere else. Nothing is added to the
+  // slides themselves: decision 07 delivers a flagged deck as the deck it is,
+  // and a "NOT READY" stamp on slide 1 is a thing someone has to remove before
+  // the deck can ever be used.
+  const file = path.join(outDir, deckFileName(name, { flagged }));
   await pres.writeFile({ fileName: file });
 
   // Stage 6 ends here: the file is reopened and checked before anything is
@@ -167,13 +186,33 @@ async function buildDeck({
  * @param {string} options.company
  * @param {{city?: string, source?: string}} options.headquarters
  * @param {string} options.identification
+ * @param {string[]} [options.rejected]
+ * @param {string} [options.landmarkFallback]
  * @param {Landmark} options.landmark
  * @param {CoverLogo} [options.logo]
  * @param {CoverMark} [options.coverMark]
  */
-function sourceRecord({ company, headquarters, identification, landmark, logo, coverMark }) {
+function sourceRecord({
+  company,
+  headquarters,
+  identification,
+  rejected = [],
+  landmarkFallback = '',
+  landmark,
+  logo,
+  coverMark,
+}) {
   const lines = [`Company: ${company}`];
   if (identification) lines.push(`Identified: ${identification}`);
+
+  // The companies the run decided against, and why each lost. A run settles an
+  // ambiguous name without asking, so this is the only place a reviewer can see
+  // what it chose between - and it belongs behind the cover, not on it.
+  if (rejected.length > 0) {
+    lines.push('Ruled out:');
+    for (const candidate of rejected) lines.push(`  ${candidate}`);
+  }
+
   if (headquarters.city) lines.push(`Headquarters: ${headquarters.city}`);
   if (headquarters.source) lines.push(`Headquarters source: ${headquarters.source}`);
 
@@ -188,6 +227,13 @@ function sourceRecord({ company, headquarters, identification, landmark, logo, c
   // got means a narrower one, from the 1280 retry, is visible in the source
   // record instead of shipping unremarked. Grading it is ticket 08's ladder.
   if (landmark.width) lines.push(`Photo width: ${landmark.width}px`);
+
+  // Which rung of the ladder the cover came from, when it was not the
+  // headquarters city's own. Decision 07 puts this link in slide 1's notes:
+  // someone reviewing another city's skyline on this company has to be able to
+  // see from the deck that it was a decision, because the reply that said so is
+  // long gone by then.
+  if (landmarkFallback) lines.push(`Cover fallback: ${landmarkFallback}`);
 
   // Where the logo came from, and - when the cover fell back to type - why.
   // A reviewer checking a deck needs to see the logo's provenance without

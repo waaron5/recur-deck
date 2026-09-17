@@ -43,8 +43,12 @@ const { MAP } = require('./design.js');
  * }} MarketMap
  */
 
-// Fixed by the brief: a landscape, not a duel and not a crowd.
-const COMPETITORS = { min: 6, max: 9 };
+// The brief asks the model for six to nine: a landscape, not a duel and not a
+// crowd. This is the lower thing - where a run actually fails - and decision 07
+// puts it at five: "Five placed is accepted as a quality note." A thinner
+// landscape argues less well without being unusable, and throwing away a whole
+// deck over one competitor nobody could evidence is the worse outcome.
+const COMPETITORS = { min: 5, max: 9 };
 // Decided in ticket 10, so the deterministic nudge can always succeed.
 const QUADRANT_CAP = 4;
 const QUADRANTS_USED = 3;
@@ -61,9 +65,10 @@ const text = (value) => (typeof value === 'string' ? value.trim() : '');
  * nudge cannot resolve, is a critical defect and the run needs to hear which.
  *
  * @param {any} map  The run file's `marketMap`, as parsed from JSON.
+ * @param {{flagged?: boolean}} [options]  Building a deck already known to be defective.
  * @returns {MarketMap}
  */
-function marketMap(map) {
+function marketMap(map, { flagged = false } = {}) {
   if (!map || typeof map !== 'object') {
     throw new Error(
       'the run has no market map: slide 3 needs two axes, six to nine competitors ' +
@@ -89,10 +94,17 @@ function marketMap(map) {
     );
   }
 
+  // Not checked when the deck is being flagged. A count outside the bounds is a
+  // critical defect, and decision 07 delivers a critical defect as a flagged
+  // deck rather than as nothing - which it can only do if there is still a map
+  // to build from. Refusing here would leave no file to flag, and the run would
+  // fail silently where it was supposed to hand over a deck and say what is
+  // wrong with it. The reply carries that; everything else about the map is
+  // still checked, including the crowding rules below.
   const rivals = companies.length - 1;
-  if (rivals < COMPETITORS.min || rivals > COMPETITORS.max) {
+  if (!flagged && (rivals < COMPETITORS.min || rivals > COMPETITORS.max)) {
     throw new Error(
-      `the market map has ${rivals} competitors, and needs six to nine competitors ` +
+      `the market map has ${rivals} competitors, and needs five to nine competitors ` +
         'plus the target',
     );
   }

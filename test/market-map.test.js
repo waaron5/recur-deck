@@ -52,17 +52,38 @@ test('an axis missing a side or its reasoning is rejected, by name', () => {
   assert.throws(() => marketMap(noReason), /y axis.*reasoning/i);
 });
 
-test('the map carries six to nine competitors plus the target', () => {
-  // Fewer than six is not a landscape, and more than nine is a crowd no
-  // founder reads. The target is counted separately from the six-to-nine.
+test('the map carries five to nine competitors plus the target', () => {
+  // The brief asks for six to nine; decision 07 sets where a run actually
+  // fails, which is lower. "Five placed is accepted as a quality note" - a
+  // thinner landscape argues less well without being unusable, and refusing it
+  // would throw away a deck over a competitor nobody could evidence. More than
+  // nine is still a crowd no founder reads.
   const five = withCompanies([TEST_MARKET_MAP.companies[0], ...competitors().slice(0, 5)]);
-  assert.throws(() => marketMap(five), /5 competitors|six/i);
+  assert.equal(marketMap(five).companies.length, 6, 'five competitors plus the target is accepted');
 
   const ten = withCompanies([
     ...TEST_MARKET_MAP.companies,
     { ...competitors()[0], name: 'Fleetio', x: 0.8, y: 0.45 },
   ]);
   assert.throws(() => marketMap(ten), /10 competitors|nine/i);
+});
+
+test('a field too thin to argue from is refused, unless the deck is being flagged', () => {
+  // Below the floor is a critical defect, and decision 07 delivers a critical
+  // defect as a flagged deck rather than as nothing at all. Throwing here would
+  // make that impossible: there would be no file left to flag. Four
+  // competitors, one to a quadrant, so the count is the only rule broken.
+  const wanted = new Set(['US Fleet Tracking', 'Azuga', 'Linxup', 'Samsara', 'Motive']);
+  const four = withCompanies(
+    TEST_MARKET_MAP.companies.filter((company) => wanted.has(company.name)),
+  );
+
+  assert.throws(() => marketMap(four), /4 competitors/i);
+  assert.equal(
+    marketMap(four, { flagged: true }).companies.length,
+    5,
+    'the flagged path builds the map it has, and the reply says what is wrong with it',
+  );
 });
 
 test('exactly one company is the target', () => {

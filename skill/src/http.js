@@ -15,7 +15,10 @@
  *   text?: () => Promise<string>,
  *   arrayBuffer?: () => Promise<ArrayBuffer>,
  * }} FetchReply
- * @typedef {(url: string, init?: {headers?: Record<string, string>}) => Promise<FetchReply>} FetchLike
+ * @typedef {(url: string, init?: {
+ *   headers?: Record<string, string>,
+ *   signal?: AbortSignal,
+ * }) => Promise<FetchReply>} FetchLike
  */
 
 // Every sandbox fetch sends a full Chrome user-agent string. Cloudflare answers

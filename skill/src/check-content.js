@@ -23,16 +23,56 @@
 // failure by accident.
 
 const fs = require('node:fs');
+const path = require('node:path');
 const { parseArgs } = require('./args.js');
 const { checkRun } = require('./content-gate.js');
+const { openRunState, runStateFile } = require('./run-state.js');
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.input) throw new Error('usage: check-content.js --input run.json');
 
   const findings = checkRun(JSON.parse(fs.readFileSync(args.input, 'utf8')));
-  console.log(JSON.stringify({ ok: findings.length === 0, findings }, null, 2));
-  if (findings.length > 0) process.exitCode = 1;
+  const ok = findings.length === 0;
+
+  // A gate that passes is not a repair round. The budget bounds how many times
+  // a run may rewrite its way out of trouble, and copy that came out right the
+  // first time never asked for one.
+  const spend = ok ? undefined : spendRound(args.input);
+
+  console.log(JSON.stringify({ ok, findings, ...spend }, null, 2));
+  if (!ok) process.exitCode = 1;
+}
+
+/**
+ * Take one of the run's three content rounds, and say what is left.
+ *
+ * The count lives beside the run file because each round is its own process:
+ * this one cannot see the two before it except by reading what they wrote down.
+ *
+ * @param {string} input  The run file, which the run's state sits beside.
+ */
+function spendRound(input) {
+  const file = runStateFile(path.dirname(path.resolve(input)));
+
+  // The gate stands on its own. A run file with no run beside it is someone
+  // trying the rules out, and refusing it would make a started run a
+  // precondition for checking copy, which it is not.
+  if (!fs.existsSync(file)) return undefined;
+
+  const spent = openRunState({ file }).spend('content');
+  if (spent.allowed) return { round: spent.round };
+
+  // Out of rounds, with the copy still failing. Saying so is not enough on its
+  // own: a run told only "no" will try the same thing again, so it is told what
+  // to do instead.
+  return {
+    round: spent.round,
+    budgetSpent: true,
+    advice:
+      `${spent.reason}: stop repairing and deliver a flagged deck with ` +
+      'build-deck.js --flagged, listing what is still wrong by slide.',
+  };
 }
 
 try {

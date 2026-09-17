@@ -74,16 +74,20 @@ async function buildPackage({ outDir = path.join(REPO_ROOT, 'dist') } = {}) {
   }
 
   await esbuild.build({
-    // Four entry points, in the order a run reaches them: one finds and
-    // normalises the logo for the model to check, one reports what the content
-    // gate finds in the copy, the third builds the deck once both have been
-    // seen to, and the fourth renders it so the model can look at what it built
-    // before anyone is offered the file.
+    // Six entry points, in the order a run reaches them: the first asks whether
+    // this sandbox can do the job at all before any effort is spent, the second
+    // finds and normalises the logo for the model to check, the third reports
+    // what the content gate finds in the copy, the fourth builds the deck once
+    // both have been seen to, the fifth renders it so the model can look at what
+    // it built before anyone is offered the file, and the last says the one
+    // thing the run is allowed to say about how it went.
     entryPoints: [
+      path.join(SKILL_SRC, 'src', 'start-run.js'),
       path.join(SKILL_SRC, 'src', 'build-deck.js'),
       path.join(SKILL_SRC, 'src', 'fetch-logo.js'),
       path.join(SKILL_SRC, 'src', 'check-content.js'),
       path.join(SKILL_SRC, 'src', 'render-deck.js'),
+      path.join(SKILL_SRC, 'src', 'reply.js'),
     ],
     outdir: path.join(stageDir, 'scripts'),
     bundle: true,

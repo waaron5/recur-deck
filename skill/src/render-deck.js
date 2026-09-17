@@ -17,17 +17,56 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { parseArgs } = require('./args.js');
 const { renderSlides } = require('./render.js');
+const { openRunState, runStateFile } = require('./run-state.js');
 
-const USAGE = 'usage: render-deck.js --input <deck>.pptx [--out <dir>]';
+const USAGE = 'usage: render-deck.js --input <deck>.pptx [--out <dir>] [--work <dir>]';
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.input) throw new Error(USAGE);
 
+  // Before anything is spawned. A conversion is bounded at two minutes, and
+  // starting one for a deck this run has no rounds left to repair would spend
+  // them for nothing.
+  const round = spendRound(args.work);
+
   const outDir = args.out || path.join(path.dirname(path.resolve(args.input)), 'render');
   const images = renderSlides({ file: args.input, outDir });
 
-  console.log(JSON.stringify({ ok: true, images: images.map((image) => image.file) }, null, 2));
+  console.log(
+    JSON.stringify({ ok: true, images: images.map((image) => image.file), ...round }, null, 2),
+  );
+}
+
+/**
+ * Take one of the run's two render rounds.
+ *
+ * The run's state lives beside its run file rather than beside the deck, which
+ * is written to the outputs directory, so the working directory has to be named
+ * rather than inferred from the file being rendered.
+ *
+ * Rendering without a run is allowed, the same way checking copy without one is:
+ * it is how someone looks at a deck they already have.
+ *
+ * @param {string} [work]
+ */
+function spendRound(work) {
+  if (!work) return undefined;
+
+  const file = runStateFile(work);
+  if (!fs.existsSync(file)) return undefined;
+
+  // This throws where check-content.js returns its refusal as JSON, and the
+  // difference is deliberate: the gate still has findings worth printing when
+  // its budget runs out, and this has nothing to show for a render it is not
+  // going to start.
+  const spent = openRunState({ file }).spend('render');
+  if (spent.allowed) return { round: spent.round };
+
+  throw new Error(
+    `${spent.reason}: stop rendering and deliver a flagged deck with build-deck.js ` +
+      '--flagged, listing what is still wrong by slide.',
+  );
 }
 
 try {

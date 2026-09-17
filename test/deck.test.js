@@ -58,6 +58,78 @@ test('the file is named for the company, as the reply template promises', async 
   assert.equal(path.basename(file), 'Recur x US Fleet Tracking.pptx');
 });
 
+test("slide 1's notes record the companies the run ruled out", async () => {
+  // Decision 07 settles an ambiguous name without asking, which means someone
+  // reviewing the deck later has to be able to see what it decided and why. The
+  // losing candidates are part of the source record, so they go where the rest
+  // of it goes: in the notes, never on the cover a founder is mailed.
+  const { pptx } = await build({
+    identification: 'Matched the prompt to usfleettracking.com, a private fleet tracking company.',
+    rejected: [
+      'US Fleet Tracking LLC of Tulsa: no website of its own',
+      'Fleet Tracking Inc: sells hardware rather than software',
+    ],
+  });
+
+  const notes = String(await pptx.notesText(1));
+  assert.match(notes, /Tulsa/);
+  assert.match(notes, /sells hardware rather than software/);
+
+  const onCover = (await pptx.textBoxes(1)).map((box) => box.text).join(' ');
+  assert.doesNotMatch(onCover, /Tulsa/, 'the reasoning stays behind the cover, never on it');
+});
+
+test("slide 1's notes say when the cover had to leave the headquarters city", async () => {
+  // Decision 07's metro rung: "a landmark in the nearest major metro within
+  // about 60 km, with the link stated in slide 1's notes." Someone reviewing a
+  // Dallas skyline on an Oklahoma City company has to be able to find out from
+  // the deck itself that it was a decision and not a mistake - the reply that
+  // said so is long gone by then.
+  const { pptx } = await build({ landmarkFallback: 'metro landmark (Dallas, Texas)' });
+
+  assert.match(String(await pptx.notesText(1)), /metro landmark \(Dallas, Texas\)/);
+
+  const onCover = (await pptx.textBoxes(1)).map((box) => box.text).join(' ');
+  assert.doesNotMatch(onCover, /Dallas/, 'and it stays behind the cover, like the rest of the record');
+});
+
+test('a thin competitor field can still be delivered as a flagged deck', async () => {
+  // Decision 07: "Fewer than 5 after that is a critical defect and produces a
+  // flagged deck." It only produces one if the build survives long enough to
+  // write a file, so this tests a path rather than a message. Four competitors,
+  // one to a quadrant, so the only rule being broken is the count.
+  const wanted = new Set(['US Fleet Tracking', 'Azuga', 'Linxup', 'Samsara', 'Motive']);
+  const thin = {
+    ...TEST_MARKET_MAP,
+    companies: TEST_MARKET_MAP.companies.filter((company) => wanted.has(company.name)),
+  };
+
+  const { file, pptx } = await build({ flagged: true, marketMap: thin });
+
+  assert.equal(path.basename(file), 'Recur x US Fleet Tracking - NOT READY.pptx');
+  assert.equal(pptx.slideCount, 9, 'the deck is whole, and what is wrong with it goes in the reply');
+});
+
+test('a deck whose defects outlived the repair budget is named as one', async () => {
+  // Decision 07 still hands the deck over: a nearly-right deck is worth more to
+  // the person who asked than nothing at all. What it must not do is let the
+  // file leave looking finished, because the file outlives the reply that
+  // explained it - it gets forwarded to whoever is going to do the mailing.
+  const { file, pptx } = await build({ flagged: true });
+
+  assert.equal(path.basename(file), 'Recur x US Fleet Tracking - NOT READY.pptx');
+  assert.equal(pptx.slideCount, 9, 'a flagged deck is a whole deck, not a truncated one');
+
+  const onSlides = (
+    await Promise.all([1, 2, 3].map(async (slide) => (await pptx.textBoxes(slide)).map((box) => box.text).join(' ')))
+  ).join(' ');
+  assert.doesNotMatch(
+    onSlides,
+    /NOT READY/,
+    'the warning belongs on the file, never on a slide someone might print',
+  );
+});
+
 test('the page is widescreen, matching the supplied reference slides', async () => {
   const { pptx } = await build();
   const { w, h } = await pptx.pageSizeInches();
