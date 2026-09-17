@@ -40,6 +40,21 @@ PowerPoint substitutes it on machines that lack it. The sandbox renderer also
 lacks it, so the in-run render check predicts line breaks only approximately
 until the font ships inside the skill.
 
+**Fit is estimated before anything is rendered.** The content gate predicts
+where every line will break and refuses copy that overflows its box, so overlong
+text is caught and shortened before the deck is built rather than after a render
+round. The prediction measures real advance widths, generated into
+`skill/src/font-advances.js` by `scripts/derive-font-metrics.js`.
+
+Those widths are Arial's rather than the declared typeface's, because Noto Sans
+Arabic Light carries no Latin glyphs at all and so cannot draw this deck's
+English copy or offer anything to measure for it. A fallback face draws that
+copy everywhere, including on Recur's own machines. Measuring the reference
+slides identifies that fallback's metric as Arial's, at four sizes across both
+weights and to within 2%, and Arial is metric-compatible with the renderer's
+Liberation Sans as well. Which face the deck should declare is an open question,
+recorded on ticket 07.
+
 ## Cover
 
 The headquarters landmark fills the slide, under the deck's navy duotone. Over

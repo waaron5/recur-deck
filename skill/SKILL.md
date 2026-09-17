@@ -266,7 +266,43 @@ into slide 1's speaker notes, never onto a slide. So does the logo's source.
 `verified` must be `true` only because you looked at the image. A logo without
 it is never placed.
 
-### 6. Build the deck
+### 6. Check the copy, then read it yourself
+
+```
+node <skill-dir>/scripts/check-content.js --input run.json
+```
+
+It reports everything countable: word counts, the banned list, forbidden
+punctuation, a number with no source behind it, the company's name spelled some
+other way, a missing source entry, a quadrant holding too many companies, and
+text too long for the box it has to sit in. Every finding names one field.
+
+```json
+{"ok": false, "findings": [
+  {"slide": 2, "field": "thesis.here.header", "rule": "word-count",
+   "message": "14 words, and a header stays within 12 words: shorten it"}
+]}
+```
+
+**Rewrite only the fields it names, then run it again**, until it prints
+`{"ok": true, "findings": []}`. Text that does not fit gets shorter. Never ask
+for smaller type: type sizes are fixed design values and the generator will not
+change them.
+
+**Then read the copy once yourself**, for the three things code cannot judge.
+
+- **Tone.** Does this read like someone who knows the market, or like a template
+  with the company's name dropped into it?
+- **The swap test.** Would a bullet read just as true with another company's
+  name in it? Then it says nothing about this one, and it needs rewriting.
+- **Claim against source.** Does each bullet say what its sources actually say,
+  and does every "why we're excited" bullet stay a company fact rather than an
+  inference about one?
+
+Rewrite only the fields that fail, and run the check once more afterwards: a
+rewrite can break a word count.
+
+### 7. Build the deck
 
 ```
 node <skill-dir>/scripts/build-deck.js --input run.json
@@ -278,7 +314,10 @@ deck's navy duotone, builds the cover from it, and writes
 `Recur x <Company>.pptx` to the downloadable outputs directory. On success it
 prints `{"ok": true, "file": "...", "slides": 9, "landmark": "..."}`.
 
-### 7. Present that file to the user as a download.
+It runs the same content check first and refuses to build copy that fails it, so
+a skipped step 6 costs a round rather than mailing bad copy to a founder.
+
+### 8. Present that file to the user as a download.
 
 ## Reply
 

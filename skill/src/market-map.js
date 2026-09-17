@@ -514,6 +514,10 @@ module.exports = {
   COMPETITORS,
   QUADRANT_CAP,
   marketMap,
+  // Exported for the content gate, which checks the distribution on its own so
+  // a crowded quadrant is still reported when something else on the map is also
+  // wrong. marketMap() throws on its first hole, which would hide it.
+  checkDistribution,
   quadrantOf,
   placeOnMap,
   marketMapNotes,

@@ -45,6 +45,10 @@ _Avoid_: Bug, error
 **Quality note**:
 A shortcoming in a sell deck that does not make it unusable, such as a generic bullet, a weak landmark, or a debatable axis. Quality notes do not fail a run.
 
+**Finding**:
+One problem the content gate reports, naming the single field that has to change, the rule it breaks, and the slide it sits on. A finding may be a critical defect or a quality note — an overflowing bullet is one, a banned word is the other — and the gate reports both the same way, because both are repaired by rewriting the field it names.
+_Avoid_: Error, violation, warning
+
 **Evidence failure**:
 A run that cannot identify the target company, cannot establish from sources what it sells and to whom, or cannot reach the web at all. It delivers no sell deck, only an explanation and a suggested fix.
 _Avoid_: Error, crash

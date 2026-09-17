@@ -338,6 +338,46 @@ function marketMapWith(part, value) {
   return { ...TEST_MARKET_MAP, [part]: value };
 }
 
+/**
+ * A whole research object, the way a run writes one: the company, the thesis
+ * and the market map together.
+ *
+ * The content gate reads all three at once, because some of its rules span
+ * them - the company's name has to be spelled the same way on slide 2 as it is
+ * on the map, and a number anywhere has to have a source behind it.
+ */
+const TEST_RESEARCH = {
+  company: 'US Fleet Tracking',
+  thesis: TEST_THESIS,
+  marketMap: TEST_MARKET_MAP,
+};
+
+/**
+ * The research object with parts replaced, for the rejection cases.
+ *
+ * Market-map parts merge one level down and thesis sections merge two, so a
+ * test can name only the field it is breaking - a header on its own, without
+ * restating the two bullets beside it - and the rest stays the clean fixture.
+ * That keeps each test's intent readable: what it passes in is exactly what it
+ * is testing.
+ *
+ * @param {{company?: string, thesis?: Record<string, any>, marketMap?: Record<string, any>}} patch
+ */
+function researchWith(patch = {}) {
+  /** @type {Record<string, any>} */
+  const thesis = { ...TEST_RESEARCH.thesis };
+  for (const [key, section] of Object.entries(patch.thesis ?? {})) {
+    thesis[key] = { ...TEST_RESEARCH.thesis[key], ...section };
+  }
+
+  return {
+    ...TEST_RESEARCH,
+    ...patch,
+    thesis,
+    marketMap: { ...TEST_RESEARCH.marketMap, ...(patch.marketMap ?? {}) },
+  };
+}
+
 module.exports = {
   ensureBuilt,
   tempDir,
@@ -350,4 +390,6 @@ module.exports = {
   thesisWith,
   TEST_MARKET_MAP,
   marketMapWith,
+  TEST_RESEARCH,
+  researchWith,
 };

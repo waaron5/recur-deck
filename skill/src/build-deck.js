@@ -31,25 +31,10 @@ const path = require('node:path');
 const { buildDeck } = require('./deck.js');
 const { findLandmarkPhoto, cityLandmarkSearch } = require('./landmark.js');
 const { normaliseLogo } = require('./logo.js');
+const { checkRun } = require('./content-gate.js');
+const { parseArgs } = require('./args.js');
 
 const SANDBOX_OUTPUTS = '/mnt/user-data/outputs';
-
-/**
- * @param {string[]} argv
- * @returns {Record<string, string>}
- */
-function parseArgs(argv) {
-  /** @type {Record<string, string>} */
-  const args = {};
-  for (let i = 0; i < argv.length; i += 1) {
-    if (!argv[i].startsWith('--')) continue;
-    // A following flag is not this flag's value: "--company --out dir" is a
-    // mistake to report, not a company called "--out".
-    const value = argv[i + 1];
-    args[argv[i].slice(2)] = value && !value.startsWith('--') ? value : '';
-  }
-  return args;
-}
 
 /**
  * The run's inputs: what the model established about the company.
@@ -78,6 +63,19 @@ async function main() {
   // The bundle sits at <skill>/scripts/, so its assets are one level up.
   const skillDir = path.resolve(__dirname, '..');
   const outDir = args.out || (fs.existsSync(SANDBOX_OUTPUTS) ? SANDBOX_OUTPUTS : process.cwd());
+
+  // The content gate runs first: before the photo is fetched, and long before
+  // the deck is written. Copy that breaks a rule is repaired with words, and a
+  // run that skipped check-content.js should not spend a download - or get a
+  // deck - on copy that would have failed it.
+  const findings = checkRun(run);
+  if (findings.length > 0) {
+    throw new Error(
+      `the copy did not pass the content gate:\n${findings
+        .map((finding) => `  slide ${finding.slide} ${finding.field}: ${finding.message}`)
+        .join('\n')}`,
+    );
+  }
 
   const landmark = run.landmark?.file
     ? {

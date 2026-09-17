@@ -32,6 +32,7 @@ const {
   TITLE,
   COVER,
   MAP,
+  MAP_LAYOUT,
   CAP_HEIGHT_EM,
   CHAR_WIDTH_EM,
   CONFIDENTIAL_LINE,
@@ -371,10 +372,12 @@ function thesisSlide(slide, company, sections, asset) {
  */
 function marketMapSlide(slide, company, map, marks) {
   const { band, subtitle, sidebar, plot } = MAP;
-  // Where the baseline stops. The reference runs it to x 7.708in, which is
-  // under the sidebar the callout now occupies.
-  const axisEnd = sidebar.x - sidebar.pad;
-  const column = sidebar.x - sidebar.pad - TITLE.x;
+  // Both derived once in design.js, because the content gate measures against
+  // the same two edges and a value derived twice is a value that drifts. The
+  // baseline stops one sidebar inset short of the callout - the reference runs
+  // it to x 7.708in, which is under the sidebar the callout now occupies - and
+  // the copy column runs to that same edge.
+  const { axisEnd, column } = MAP_LAYOUT;
 
   // The title is held to the copy column, so a long company name wraps instead
   // of running under the sidebar.
@@ -529,7 +532,7 @@ function drawCompany(slide, box, mark) {
  */
 function axisLabels(slide, axes, axisEnd) {
   const { plot, label } = MAP;
-  const gutter = plot.x - label.gutter.gap - label.gutter.x;
+  const { gutter } = MAP_LAYOUT;
   const halfHeight = (plot.bottom - plot.top) / 2;
   const halfWidth = (axisEnd - plot.x) / 2;
 
@@ -616,7 +619,7 @@ function calloutSidebar(slide, callout) {
     {
       x: sidebar.x + sidebar.pad,
       y: box.top,
-      w: SLIDE_W - sidebar.x - 2 * sidebar.pad,
+      w: MAP_LAYOUT.calloutWidth,
       h: box.height,
       fontFace: FONT,
       fontSize: box.fontSize,

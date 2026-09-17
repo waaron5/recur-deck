@@ -16,6 +16,7 @@ const path = require('node:path');
 
 const { pickLogoCandidates, normaliseLogo } = require('./logo.js');
 const { CHROME_UA, download } = require('./http.js');
+const { parseArgs } = require('./args.js');
 
 /** @typedef {import('./http.js').FetchLike} FetchLike */
 
@@ -116,21 +117,6 @@ function worthTrying(candidates) {
       return tried <= MAX_PER_RUNG;
     })
     .slice(0, MAX_TRIED);
-}
-
-/**
- * @param {string[]} argv
- * @returns {Record<string, string>}
- */
-function parseArgs(argv) {
-  /** @type {Record<string, string>} */
-  const args = {};
-  for (let i = 0; i < argv.length; i += 1) {
-    if (!argv[i].startsWith('--')) continue;
-    const value = argv[i + 1];
-    args[argv[i].slice(2)] = value && !value.startsWith('--') ? value : '';
-  }
-  return args;
 }
 
 async function main() {

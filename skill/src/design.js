@@ -206,6 +206,22 @@ const MAP = {
   target: { padX: 0.0975, padY: 0.075, radius: 0.045, outline: 1.25 },
 };
 
+// Derived from MAP, once. The market-map slide draws with these and the content
+// gate measures against them, and a value derived twice is a value that drifts.
+const MAP_LAYOUT = {
+  // Where the baseline stops. The reference runs it under the sidebar the
+  // callout now occupies, so it stops one inset short of it.
+  axisEnd: MAP.sidebar.x - MAP.sidebar.pad,
+  // The copy column: the title and subtitle run from the left margin to the
+  // sidebar, so a long company name wraps rather than running underneath it.
+  column: MAP.sidebar.x - MAP.sidebar.pad - TITLE.x,
+  // The gutter the vertical axis's labels sit in, left of the plot.
+  gutter: MAP.plot.x - MAP.label.gutter.gap - MAP.label.gutter.x,
+  // The callout's own column, inset by the same pad on both sides of the
+  // sidebar so it reads as a column and not as a block of text.
+  calloutWidth: SLIDE_W - MAP.sidebar.x - 2 * MAP.sidebar.pad,
+};
+
 // Cap height as a fraction of the type size, for this typeface. Established in
 // ticket 01 by reading the source presentation: 20pt titles measure 0.263in.
 const CAP_HEIGHT_EM = 0.706;
@@ -322,6 +338,7 @@ module.exports = {
   TITLE,
   COVER,
   MAP,
+  MAP_LAYOUT,
   CAP_HEIGHT_EM,
   CHAR_WIDTH_EM,
   CONFIDENTIAL_LINE,

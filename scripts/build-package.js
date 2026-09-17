@@ -74,11 +74,14 @@ async function buildPackage({ outDir = path.join(REPO_ROOT, 'dist') } = {}) {
   }
 
   await esbuild.build({
-    // Two entry points: one finds and normalises the logo for the model to
-    // check, the other builds the deck once it has been checked.
+    // Three entry points, in the order a run reaches them: one finds and
+    // normalises the logo for the model to check, one reports what the content
+    // gate finds in the copy, and the third builds the deck once both have
+    // been seen to.
     entryPoints: [
       path.join(SKILL_SRC, 'src', 'build-deck.js'),
       path.join(SKILL_SRC, 'src', 'fetch-logo.js'),
+      path.join(SKILL_SRC, 'src', 'check-content.js'),
     ],
     outdir: path.join(stageDir, 'scripts'),
     bundle: true,
