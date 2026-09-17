@@ -11,11 +11,16 @@
 //     "headquarters": { "city": "Oklahoma City, Oklahoma", "source": "https://..." },
 //     "identification": "Matched the prompt to usfleettracking.com.",
 //     "thesis": { "here": {...}, "excited": {...}, "help": {...} },   // see thesis.js
+//     "marketMap": { "axes": {...}, "companies": [...], "callout": {...} },  // market-map.js
 //     "landmark": { "file": "...", "credit": { ... } }    // optional, see below
 //   }
 //
 // The thesis is three sections, each a header and exactly two bullets, and
 // every bullet carries the sources that slide 2's speaker notes pair with it.
+//
+// The market map is two categorical axes, six to nine competitors plus the
+// target with 0-1 coordinates each, and the callout. Every company may carry a
+// logo of its own, checked by the model the same way the target's is.
 //
 // The landmark is normally found here, from the headquarters city. Passing one
 // in skips the search, which is what a rebuild after a repair wants: the photo
@@ -104,6 +109,7 @@ async function main() {
     outDir,
     landmark,
     thesis: run.thesis,
+    marketMap: await readMapLogos(run.marketMap, assetsDir),
     logo,
     logoNote,
     headquarters: run.headquarters,
@@ -127,6 +133,46 @@ async function main() {
 async function readLogo(entry, assetsDir) {
   const logo = await normaliseLogo(fs.readFileSync(entry.file), { assetsDir });
   return { ...logo, source: entry.source, verified: entry.verified === true };
+}
+
+/**
+ * The market map with every company's logo normalised the way the map places
+ * one.
+ *
+ * A logo that cannot be read costs that company its mark and never the deck:
+ * the map sets the name as type instead, which is a designed outcome rather
+ * than a defect. The map itself is passed through untouched, so a run that
+ * wrote no market map fails in buildDeck, where the reason is reported.
+ *
+ * @param {any} map
+ * @param {string} assetsDir
+ */
+async function readMapLogos(map, assetsDir) {
+  if (!map || !Array.isArray(map.companies)) return map;
+
+  const companies = [];
+  for (const company of map.companies) {
+    if (!company?.logo?.file) {
+      companies.push(company);
+      continue;
+    }
+    try {
+      companies.push({ ...company, logo: await readLogo(company.logo, assetsDir) });
+    } catch (error) {
+      // Kept, not swallowed. The cover records why it fell back to type and so
+      // does the map: a competitor set as a wordmark for no stated reason reads
+      // as something that went wrong rather than as a decision.
+      companies.push({
+        ...company,
+        logo: undefined,
+        logoNote: `the logo could not be used: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      });
+    }
+  }
+
+  return { ...map, companies };
 }
 
 /** @param {string} city */

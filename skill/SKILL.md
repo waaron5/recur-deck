@@ -14,16 +14,18 @@ of asking.
 
 Slides 4-9 are Recur's fixed introduction and ship with this skill. Slide 1, the
 cover, is built from the target company's real headquarters city. Slide 2 is the
-thesis page, written from what you establish about the company. Slide 3, the
-market map, is laid out but deliberately empty of content in this version.
+thesis page and slide 3 the market map, both written from what you establish
+about the company.
 
-**Establish what this build needs: the company, its headquarters, its logo, and
-the thesis.** Do not choose competitors or add photos of your own, and do not
-write speaker notes - the generator writes those from the sources you record.
+**Establish what this build needs: the company, its headquarters, its logo, the
+thesis, and the market map.** Do not add photos of your own, and do not write
+speaker notes - the generator writes those from the sources you record.
 
-Two judgments are yours: whether a logo really belongs to the target company,
-and what the thesis says. Everything else - converting and sizing the logo,
-laying out the slide, placing the type - is the generator's.
+The judgments are yours: whether a logo really belongs to the company whose name
+is on it, what the thesis says, and which competitors and axes the market map
+argues from. Everything else - converting and sizing every logo, placing them so
+that none overlaps, laying out the slides, placing the type - is the
+generator's.
 
 ## Run
 
@@ -97,7 +99,64 @@ just as true with another company's name in it, it is too generic.
 **Sparse evidence means saying less, not inventing more.** All six bullets stay
 required; they may stay product-level and category-level.
 
-### 4. Write the run file
+### 4. Build the market map
+
+Slide 3 argues where the target sits in its landscape. Choose two axes, pick the
+competitors, place everyone, and write the callout.
+
+**Competitors: six to nine, plus the target.** Each one must currently sell,
+under the brand shown, a product solving the same core problem for an
+overlapping buyer, and you must have seen that on the company's **own site**.
+Acquired brands still trading are fine. Rule out the merely adjacent, the
+defunct, and brands absorbed out of existence. A horizontal platform with a
+minor module counts only if buyers visibly compare the two. Mix recognised
+category leaders with peers of the target's own size.
+
+**Axes: two two-sided categorical dimensions buyers actually choose on** -
+segment, commitment or delivery model, vertical depth, deployment, pricing
+model. Never a subjective quality and never a "leader" score. At least one axis
+must reflect the target's real differentiator. Choose the axes first and the
+competitors second: picking companies afterwards to fill in a flattering
+quadrant is exactly what this slide must not do.
+
+**Placement.** Give every company an `x` and a `y` between 0 and 1, where 0 is
+the axis's `low` side and 1 its `high` side. Every placement, the target's
+included, must be defensible from that company's public material. Two rules the
+generator enforces, so plan for them rather than discovering them:
+
+- at most **four** companies in any one quadrant;
+- at least **three** of the four quadrants hold a competitor.
+
+Spread the coordinates. The generator nudges overlapping logos apart inside
+their own quadrant, but it will never move a company across an axis to make room,
+because that would change what you said about it.
+
+**Each company carries its own `evidence` and `placement`**, which go into slide
+3's speaker notes: a URL on its own site showing it competes, and one line on
+why it sits where you put it. Each axis carries its own `reasoning`.
+
+**Competitor logos are optional and are fetched the same way the target's was**,
+one company at a time:
+
+```
+node <skill-dir>/scripts/fetch-logo.js --site <competitor site> --out work/<name>
+```
+
+Look at each one and confirm it is that company's own current logo before
+recording it as `verified`. A company with no logo is set as a text wordmark,
+which is a designed outcome; a company wearing someone else's logo is a critical
+defect.
+
+**The callout** is three parts, in this order: `take`, one line on where the
+target wins; `dynamics`, exactly two bullets on how the market behaves; and
+`proposal`, one bullet tying back to a How-we-can-help offer. The dynamics
+bullets criticise **categories, never named companies**. If the target ends up
+alone in its quadrant, the callout has to explain that white space.
+
+The subtitle is one neutral sentence on how the market divides. The writing
+rules from step 3 apply to every line on this slide.
+
+### 5. Write the run file
 
 Write `run.json` to a working directory, with what you established:
 
@@ -150,6 +209,49 @@ Write `run.json` to a working directory, with what you established:
       ]
     }
   },
+  "marketMap": {
+    "subtitle": "Fleet telematics splits between enterprise platforms and simple trackers",
+    "axes": {
+      "x": {
+        "name": "Commitment model",
+        "low": "Contract-bundled platform",
+        "high": "No-contract live tracking",
+        "reasoning": "Buyers choose first on whether tracking comes with a multi-year contract."
+      },
+      "y": {
+        "name": "Fleet segment focus",
+        "low": "Enterprise and large fleets",
+        "high": "SMB commercial fleets",
+        "reasoning": "Pricing and onboarding differ sharply between small and enterprise fleets."
+      }
+    },
+    "companies": [
+      {
+        "name": "US Fleet Tracking",
+        "target": true,
+        "x": 0.76,
+        "y": 0.84,
+        "evidence": "https://www.usfleettracking.com/",
+        "placement": "Sells live tracking to small fleets with no contract required.",
+        "logo": { "file": "work/logo.png", "source": "https://www.usfleettracking.com/", "verified": true }
+      },
+      {
+        "name": "Samsara",
+        "x": 0.1,
+        "y": 0.36,
+        "evidence": "https://www.samsara.com/",
+        "placement": "Prices and configures for large fleets on multi-year contracts."
+      }
+    ],
+    "callout": {
+      "take": "US Fleet Tracking wins small fleets that want fast tracking without a contract",
+      "dynamics": [
+        "Enterprise platforms bundle long contracts and features small fleets rarely use",
+        "AI-first entrants chase trucking compliance more than quick live tracking"
+      ],
+      "proposal": "Recur can add AI scoring to the GPS and video the product already streams"
+    }
+  },
   "logo": {
     "file": "work/logo.png",
     "source": "https://www.usfleettracking.com/images/usft-logo-white.webp",
@@ -164,7 +266,7 @@ into slide 1's speaker notes, never onto a slide. So does the logo's source.
 `verified` must be `true` only because you looked at the image. A logo without
 it is never placed.
 
-### 5. Build the deck
+### 6. Build the deck
 
 ```
 node <skill-dir>/scripts/build-deck.js --input run.json
@@ -176,7 +278,7 @@ deck's navy duotone, builds the cover from it, and writes
 `Recur x <Company>.pptx` to the downloadable outputs directory. On success it
 prints `{"ok": true, "file": "...", "slides": 9, "landmark": "..."}`.
 
-### 6. Present that file to the user as a download.
+### 7. Present that file to the user as a download.
 
 ## Reply
 

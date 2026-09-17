@@ -135,6 +135,77 @@ const COVER = {
   logo: { maxWidth: 2.831, maxHeight: 0.6, minHeight: 0.269 },
 };
 
+// Slide 3, the market map.
+//
+// Two sources meet here, and which one owns a value matters. The ticket 10
+// prototype was built on a 13.333 x 7.5in canvas while this deck's page is the
+// original's 10 x 5.625in. Both are 16:9, so the same physical size is a
+// different number of inches in each, and every value taken from the prototype
+// is multiplied by 0.75 - the conversion MIN_FONT_SIZE already records.
+//
+// The band, the subtitle and the axis line's ends are measured off the
+// reference Slide3.png (1300 x 731px at 130 px/in). The chart block - the plot's
+// left edge, its labels, the logo box and the type scale - is the prototype's,
+// scaled, because that is the composition the user reacted to. Taking the
+// reference's own axis origin instead would leave a quadrant 2.20in wide, which
+// is too narrow for the two 1.0875in logo boxes the crowding cap allows.
+const MAP = {
+  // Measured: the tinted band begins at y 1.7231in and runs to the foot of the
+  // slide, behind everything except the callout sidebar.
+  band: { top: 1.7231 },
+  // Measured: the subtitle's ink is centred on y 1.2538in, left-aligned with
+  // the title above it.
+  subtitle: { centreY: 1.2538, boxHeight: 0.26, fontSize: 9.75 },
+  // Decided in ticket 10: a full-height navy sidebar from x 9.45 of 13.333,
+  // which is 7.0875in here. Its copy is inset by the same pad on both sides, so
+  // the column reads as a column and not as a block of text.
+  sidebar: { x: 7.0875, pad: 0.3375 },
+  // The L-axes. The upright and the baseline are the reference's, measured; the
+  // left edge is the prototype's 2.35 of 13.333. The reference's baseline runs
+  // to x 7.7077in, which is under the decided sidebar, so it stops one pad short
+  // of it instead.
+  plot: { x: 1.7625, top: 1.9923, bottom: 4.7077, weight: 0.75 },
+  // The placement area inside the axes, so no logo sits on a line. The
+  // prototype's 0.2/0.1 and 0.12/0.12 insets, scaled.
+  inset: { left: 0.15, right: 0.075, top: 0.09, bottom: 0.09 },
+  // Axis labels. The category labels are the only bold type on the chart: they
+  // are what the reader has to read. The axis names are quiet, uppercase and
+  // tracked, which is the prototype's treatment rather than the reference's.
+  label: {
+    gutter: { x: 0.375, gap: 0.15 },
+    // Measured: the x categories' first line sits 0.196in below the baseline,
+    // which is this gap above a 7.875pt line.
+    category: { fontSize: 7.875, boxHeight: 0.36, gap: 0.105 },
+    // Measured: the vertical axis's name is centred 0.119in below the top of
+    // the upright, inside the chart rather than above it. The horizontal one
+    // cannot follow the reference, which sets it beside the baseline's right
+    // end, because the sidebar now stands there; it goes under the categories.
+    name: { fontSize: 6, boxHeight: 0.16, tracking: 0.75, insetY: 0.119, gap: 0.44 },
+  },
+  // The callout, in white on the navy sidebar.
+  callout: {
+    top: 1.5375,
+    height: 3.3,
+    fontSize: 8.625,
+    spaceAfter: 7.5,
+    lineSpacing: 1.15,
+    indent: 10.5,
+  },
+  // A logo box on the map, sized to an equal optical area rather than to a
+  // uniform width, so a wide wordmark and a square mark carry the same visual
+  // weight. Below the minimum height a company becomes a text wordmark.
+  slot: { area: 0.1406, maxWidth: 1.0875, maxHeight: 0.315, minHeight: 0.105 },
+  // A company whose logo cannot be placed is set as type, navy on the band. Its
+  // box grows with the name's length, up to the slot's own maximum width.
+  wordmark: { fontSize: 8.25, charWidth: 0.06375, pad: 0.075, height: 0.18 },
+  // The least air between two logo boxes after the nudge.
+  gap: 0.15,
+  // The target, and nothing else, gets a white pill with a thin teal outline.
+  // The outline's weight is the decided 1.25pt: a hairline is a hairline at
+  // either page size, so it is one of the few values that does not scale.
+  target: { padX: 0.0975, padY: 0.075, radius: 0.045, outline: 1.25 },
+};
+
 // Cap height as a fraction of the type size, for this typeface. Established in
 // ticket 01 by reading the source presentation: 20pt titles measure 0.263in.
 const CAP_HEIGHT_EM = 0.706;
@@ -250,6 +321,7 @@ module.exports = {
   THESIS_GEOMETRY,
   TITLE,
   COVER,
+  MAP,
   CAP_HEIGHT_EM,
   CHAR_WIDTH_EM,
   CONFIDENTIAL_LINE,

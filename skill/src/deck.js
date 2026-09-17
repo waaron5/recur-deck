@@ -20,6 +20,7 @@ const PptxGenJS = /** @type {new () => import('pptxgenjs').default} */ (
 const { coverPhoto } = require('./cover-photo.js');
 const { chooseMark } = require('./logo.js');
 const { thesisSections, thesisNotes } = require('./thesis.js');
+const { marketMap, placeOnMap, marketMapNotes } = require('./market-map.js');
 const {
   SLIDE_W,
   SLIDE_H,
@@ -30,6 +31,7 @@ const {
   THESIS_GEOMETRY,
   TITLE,
   COVER,
+  MAP,
   CAP_HEIGHT_EM,
   CHAR_WIDTH_EM,
   CONFIDENTIAL_LINE,
@@ -58,6 +60,7 @@ const {
  * @param {string} options.outDir     Where the .pptx is written.
  * @param {Landmark} [options.landmark]  The cover photo and its credit.
  * @param {import('./thesis.js').Thesis} [options.thesis]  The three sections the run wrote.
+ * @param {any} [options.marketMap]  The axes, companies and callout the run wrote.
  * @param {CoverLogo} [options.logo]     The target's logo, if one was acquired.
  * @param {string} [options.logoNote]    Why there is no logo, when there is none.
  * @param {{city?: string, source?: string}} [options.headquarters]
@@ -71,6 +74,7 @@ async function buildDeck({
   outDir,
   landmark,
   thesis,
+  marketMap: mapInput,
   logo,
   logoNote,
   headquarters = {},
@@ -83,10 +87,11 @@ async function buildDeck({
   // quietly. What to do about it - the landmark ladder - belongs to ticket 08.
   if (!landmark?.photo) throw new Error(`buildDeck needs a landmark photo for ${name}'s cover`);
 
-  // Checked before anything is written. An empty thesis page is a missing
-  // required element, so the run hears which section is wrong rather than
+  // Checked before anything is written. An empty thesis page or market map is a
+  // missing required element, so the run hears which part is wrong rather than
   // getting a deck with a hole where its argument should be.
   const sections = thesisSections(thesis);
+  const map = marketMap(mapInput);
 
   const asset = (file) => {
     const full = path.join(assetsDir, file);
@@ -100,16 +105,20 @@ async function buildDeck({
   pres.layout = 'RECUR';
 
   const generated = GENERATED_SLIDE_NUMBERS.map(() => pres.addSlide());
-  const [cover, thesisPage, marketMap] = generated;
+  const [cover, thesisPage, mapPage] = generated;
   const coverMark = chooseMark({
     logo,
     slot: COVER.logo,
     background: 'dark',
     reason: logoNote,
   });
+  // Each map company's mark is decided once: the slide draws it, and the notes
+  // record why any company fell back to type.
+  const mapMarks = new Map(map.companies.map((company) => [company.name, mapMark(company)]));
+
   coverSlide(cover, name, asset, landmark, coverMark);
   thesisSlide(thesisPage, name, sections, asset);
-  marketMapSlide(marketMap, name);
+  marketMapSlide(mapPage, name, map, mapMarks);
 
   for (const slideNumber of FIXED_SLIDE_NUMBERS) {
     pres.addSlide().addImage({
@@ -121,11 +130,13 @@ async function buildDeck({
     });
   }
 
-  // Slides 1-3 carry the run's source record. The cover's part is written here;
-  // the thesis and market map get theirs from later tickets, through notes.
+  // Slides 1-3 carry the run's source record: how the company was identified,
+  // the source behind every thesis bullet, and the evidence and reasoning
+  // behind every competitor, placement and axis.
   const record = {
     1: sourceRecord({ company: name, headquarters, identification, landmark, logo, coverMark }),
     2: thesisNotes(sections),
+    3: marketMapNotes(map, mapMarks),
     ...notes,
   };
   GENERATED_SLIDE_NUMBERS.forEach((slideNumber, i) => {
@@ -344,55 +355,288 @@ function thesisSlide(slide, company, sections, asset) {
 }
 
 /**
- * Market map: the axes, competitors and callout arrive in ticket 05.
+ * The market map: the title and subtitle over a tinted band, an L-shaped navy
+ * axis pair with the companies placed freely inside it, and the callout in a
+ * full-height navy sidebar.
+ *
+ * There are no quadrant dividers, only the two axis lines, as in the reference.
  *
  * No footer: the reference market map carries no confidentiality line, wordmark
  * or page number, and the slide reads less cluttered without them.
+ *
+ * @param {any} slide
+ * @param {string} company
+ * @param {import('./market-map.js').MarketMap} map
+ * @param {Map<string, CoverMark>} marks  What each company carries, decided once.
  */
-function marketMapSlide(slide, company) {
-  title(slide, `The opportunity for ${company}`, TITLE.y.marketMap);
+function marketMapSlide(slide, company, map, marks) {
+  const { band, subtitle, sidebar, plot } = MAP;
+  // Where the baseline stops. The reference runs it to x 7.708in, which is
+  // under the sidebar the callout now occupies.
+  const axisEnd = sidebar.x - sidebar.pad;
+  const column = sidebar.x - sidebar.pad - TITLE.x;
 
-  const sidebar = 7.2;
+  // The title is held to the copy column, so a long company name wraps instead
+  // of running under the sidebar.
+  title(slide, `The opportunity for ${company}`, TITLE.y.marketMap, column);
+  slide.addText(map.subtitle, {
+    x: TITLE.x,
+    y: subtitle.centreY - subtitle.boxHeight / 2,
+    w: column,
+    h: subtitle.boxHeight,
+    fontFace: FONT,
+    fontSize: subtitle.fontSize,
+    color: COLORS.grey,
+    valign: 'middle',
+    margin: 0,
+  });
+
   slide.addShape('rect', {
     x: 0,
-    y: 1.5,
-    w: sidebar,
-    h: SLIDE_H - 1.5,
+    y: band.top,
+    w: sidebar.x,
+    h: SLIDE_H - band.top,
     fill: { color: COLORS.band },
     line: { type: 'none' },
   });
   slide.addShape('rect', {
-    x: sidebar,
+    x: sidebar.x,
     y: 0,
-    w: SLIDE_W - sidebar,
+    w: SLIDE_W - sidebar.x,
     h: SLIDE_H,
     fill: { color: COLORS.navy },
     line: { type: 'none' },
   });
 
-  // The reference L-axes: no quadrant dividers, free placement inside them.
-  const gx = 2.2125;
-  const gy = 1.8375;
-  const gw = 4.425;
-  const gh = 2.8125;
-  slide.addShape('line', { x: gx, y: gy, w: 0, h: gh, line: { color: COLORS.navy, width: 1 } });
   slide.addShape('line', {
-    x: gx,
-    y: gy + gh,
-    w: gw,
-    h: 0,
-    line: { color: COLORS.navy, width: 1 },
+    x: plot.x,
+    y: plot.top,
+    w: 0,
+    h: plot.bottom - plot.top,
+    line: { color: COLORS.navy, width: plot.weight },
   });
+  slide.addShape('line', {
+    x: plot.x,
+    y: plot.bottom,
+    w: axisEnd - plot.x,
+    h: 0,
+    line: { color: COLORS.navy, width: plot.weight },
+  });
+
+  axisLabels(slide, map.axes, axisEnd);
+  calloutSidebar(slide, map.callout);
+
+  // How large each mark is decides the box the placement has to keep clear.
+  const placed = placeOnMap({
+    companies: map.companies.map((c) => ({ ...c, size: markSize(marks.get(c.name), c.name) })),
+    area: {
+      x: plot.x + MAP.inset.left,
+      y: plot.top + MAP.inset.top,
+      w: axisEnd - plot.x - MAP.inset.left - MAP.inset.right,
+      h: plot.bottom - plot.top - MAP.inset.top - MAP.inset.bottom,
+    },
+  });
+
+  for (const box of placed) drawCompany(slide, box, marks.get(box.name));
+}
+
+/**
+ * Which mark one company on the map carries. The map's slot sizes to an equal
+ * optical area, so a wide wordmark and a square mark read as the same weight.
+ *
+ * @param {import('./market-map.js').MapCompany} company
+ * @returns {CoverMark}
+ */
+function mapMark(company) {
+  return chooseMark({
+    logo: company.logo,
+    slot: MAP.slot,
+    background: 'light',
+    reason: company.logoNote,
+  });
+}
+
+/**
+ * The footprint a mark needs. A text wordmark has no image to measure, so its
+ * box grows with the name up to the slot's own maximum.
+ *
+ * @param {CoverMark | undefined} mark
+ * @param {string} name
+ */
+function markSize(mark, name) {
+  if (mark?.kind === 'logo') return { width: mark.width, height: mark.height };
+  const { charWidth, pad, height } = MAP.wordmark;
+  return { width: Math.min(MAP.slot.maxWidth, charWidth * name.length + pad), height };
+}
+
+/**
+ * One company on the map: the target's white pill first, then its mark.
+ *
+ * @param {{cx: number, cy: number, w: number, h: number,
+ *   company: import('./market-map.js').MapCompany}} box
+ * @param {CoverMark | undefined} mark
+ */
+function drawCompany(slide, box, mark) {
+  // The target is distinguished by this and nothing else: no cell tint, no
+  // second label.
+  if (box.company.target) {
+    slide.addShape('roundRect', {
+      x: box.cx - box.w / 2,
+      y: box.cy - box.h / 2,
+      w: box.w,
+      h: box.h,
+      fill: { color: COLORS.white },
+      line: { color: COLORS.teal, width: MAP.target.outline },
+      rectRadius: MAP.target.radius,
+    });
+  }
+
+  const { width, height } = markSize(mark, box.company.name);
+  if (mark?.kind === 'logo') {
+    slide.addImage({
+      data: `image/png;base64,${mark.png.toString('base64')}`,
+      x: box.cx - width / 2,
+      y: box.cy - height / 2,
+      w: width,
+      h: height,
+    });
+    return;
+  }
+
+  slide.addText(box.company.name, {
+    x: box.cx - width / 2,
+    y: box.cy - height / 2,
+    w: width,
+    h: height,
+    fontFace: FONT,
+    fontSize: MAP.wordmark.fontSize,
+    bold: true,
+    color: COLORS.navy,
+    align: 'center',
+    valign: 'middle',
+    margin: 0,
+  });
+}
+
+/**
+ * The four labels around the axes: each axis's name, quiet and tracked, and its
+ * two categories, which are the only bold type on the chart because they are
+ * what the reader has to read.
+ *
+ * @param {any} slide
+ * @param {import('./market-map.js').MarketMap['axes']} axes
+ * @param {number} axisEnd
+ */
+function axisLabels(slide, axes, axisEnd) {
+  const { plot, label } = MAP;
+  const gutter = plot.x - label.gutter.gap - label.gutter.x;
+  const halfHeight = (plot.bottom - plot.top) / 2;
+  const halfWidth = (axisEnd - plot.x) / 2;
+
+  axisName(slide, axes.y.name, {
+    x: label.gutter.x,
+    y: plot.top + label.name.insetY - label.name.boxHeight / 2,
+    w: gutter,
+    h: label.name.boxHeight,
+    align: 'right',
+  });
+  [axes.y.high, axes.y.low].forEach((category, half) => {
+    axisCategory(slide, category, {
+      x: label.gutter.x,
+      y: plot.top + half * halfHeight,
+      w: gutter,
+      h: halfHeight,
+      align: 'right',
+      valign: 'middle',
+    });
+  });
+
+  [axes.x.low, axes.x.high].forEach((category, half) => {
+    axisCategory(slide, category, {
+      x: plot.x + half * halfWidth,
+      y: plot.bottom + label.category.gap,
+      w: halfWidth,
+      h: label.category.boxHeight,
+      align: 'center',
+      valign: 'top',
+    });
+  });
+  axisName(slide, axes.x.name, {
+    x: plot.x,
+    y: plot.bottom + label.name.gap,
+    w: axisEnd - plot.x,
+    h: label.name.boxHeight,
+    align: 'center',
+  });
+}
+
+/** An axis's own name: small, grey, uppercase and tracked. */
+function axisName(slide, text, box) {
+  slide.addText(text.toUpperCase(), {
+    fontFace: FONT,
+    fontSize: MAP.label.name.fontSize,
+    color: COLORS.grey,
+    charSpacing: MAP.label.name.tracking,
+    valign: 'middle',
+    margin: 0,
+    ...box,
+  });
+}
+
+/** One side of an axis: bold navy, because this is what has to be read. */
+function axisCategory(slide, text, box) {
+  slide.addText(text, {
+    fontFace: FONT,
+    fontSize: MAP.label.category.fontSize,
+    bold: true,
+    color: COLORS.navy,
+    margin: 0,
+    ...box,
+  });
+}
+
+/**
+ * The callout: "Our take" and where the target wins, two bullets on how the
+ * market behaves, and one underlined bullet tying back to a proposal.
+ *
+ * @param {any} slide
+ * @param {import('./market-map.js').MarketMap['callout']} callout
+ */
+function calloutSidebar(slide, callout) {
+  const { sidebar, callout: box } = MAP;
+  const bullet = { code: THESIS_GEOMETRY.bullet.square, indent: box.indent };
+
+  slide.addText(
+    [
+      { text: 'Our take: ', options: { bold: true } },
+      { text: callout.take, options: { breakLine: true } },
+      ...callout.dynamics.map((text) => ({ text, options: { bullet, breakLine: true } })),
+      { text: callout.proposal, options: { bullet, underline: { style: 'sng' } } },
+    ],
+    {
+      x: sidebar.x + sidebar.pad,
+      y: box.top,
+      w: SLIDE_W - sidebar.x - 2 * sidebar.pad,
+      h: box.height,
+      fontFace: FONT,
+      fontSize: box.fontSize,
+      color: COLORS.white,
+      valign: 'top',
+      margin: 0,
+      paraSpaceAfter: box.spaceAfter,
+      lineSpacingMultiple: box.lineSpacing,
+    },
+  );
 }
 
 // ---------- shared furniture ----------
 
 /** A slide title, matching the reference: 20pt, not bold, navy. */
-function title(slide, text, y) {
+function title(slide, text, y, w = TITLE.w) {
   slide.addText(text, {
     x: TITLE.x,
     y,
-    w: TITLE.w,
+    w,
     h: TITLE.h,
     fontFace: FONT,
     fontSize: TITLE.fontSize,

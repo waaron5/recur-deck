@@ -76,8 +76,12 @@ test('transparent padding is trimmed away, so the rules measure the mark', async
 const COVER_SLOT = { maxWidth: 2.831, maxHeight: 0.6, minHeight: 0.269 };
 
 // Market map: equal optical area rather than a uniform box, so a wide wordmark
-// and a square mark carry the same weight, capped at 1.45 x 0.42in.
-const MAP_SLOT = { area: 0.25, maxWidth: 1.45, maxHeight: 0.42, minHeight: 0.14 };
+// and a square mark carry the same weight, capped at 1.0875 x 0.315in.
+//
+// These are the ticket 10 prototype's sizes scaled by 0.75. The prototype was
+// drawn on a 13.333in canvas and this deck's page is the original's 10in, so
+// the same physical size is a different number of inches in each.
+const MAP_SLOT = { area: 0.1406, maxWidth: 1.0875, maxHeight: 0.315, minHeight: 0.105 };
 
 test("US Fleet Tracking's logo is too coarse for the cover but holds up on the map", async () => {
   // The rule is 150px per inch of placed width. This mark is 258 x 27px, so it
@@ -86,9 +90,9 @@ test("US Fleet Tracking's logo is too coarse for the cover but holds up on the m
   // therefore gets a text wordmark, which is what the prototype's upscaled logo
   // looked wrong enough to earn: "an instant signal of lack of care".
   //
-  // The same mark on the map is sized by area to 1.55in, capped to 1.45in, and
-  // lands 0.152in tall - above that slot's 0.14in floor, and still inside its
-  // sharp maximum. One rule, two honest outcomes.
+  // The same mark on the map is sized by area to 1.159in, capped to 1.0875in,
+  // and lands 0.114in tall - above that slot's 0.105in floor, and still inside
+  // its sharp maximum. One rule, two honest outcomes.
   const logo = await normaliseLogo(fixture('usft-logo.png'), { assetsDir: await assetsDir() });
 
   const onCover = logoPlacement({ logo, slot: COVER_SLOT });
@@ -98,14 +102,14 @@ test("US Fleet Tracking's logo is too coarse for the cover but holds up on the m
   const onMap = logoPlacement({ logo, slot: MAP_SLOT });
   assert.equal(onMap.kind, 'logo', 'the same mark is sharp enough at map size');
   assert.ok(
-    Math.abs(Number(onMap.width) - 1.45) < 0.01,
-    `map width ${onMap.width}, expected the 1.45in cap`,
+    Math.abs(Number(onMap.width) - 1.0875) < 0.01,
+    `map width ${onMap.width}, expected the 1.0875in cap`,
   );
   assert.ok(
-    Math.abs(Number(onMap.height) - 0.152) < 0.01,
-    `map height ${onMap.height}, expected about 0.152in`,
+    Math.abs(Number(onMap.height) - 0.114) < 0.01,
+    `map height ${onMap.height}, expected about 0.114in`,
   );
-  assert.ok(Number(onMap.height) >= 0.14, 'and no smaller than the map is allowed to go');
+  assert.ok(Number(onMap.height) >= 0.105, 'and no smaller than the map is allowed to go');
 });
 
 test('only a mark made for a dark ground reaches the cover unrecoloured', async () => {

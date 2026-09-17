@@ -19,7 +19,15 @@ const { buildDeck } = require('../skill/src/deck.js');
 const { coverPhoto } = require('../skill/src/cover-photo.js');
 const { normaliseLogo } = require('../skill/src/logo.js');
 const { SLIDE_W, SLIDE_H } = require('../skill/src/design.js');
-const { ensureBuilt, tempDir, openPptx, sha256, testPhoto, TEST_THESIS } = require('./helpers.js');
+const {
+  ensureBuilt,
+  tempDir,
+  openPptx,
+  sha256,
+  testPhoto,
+  TEST_THESIS,
+  TEST_MARKET_MAP,
+} = require('./helpers.js');
 
 const WORDMARK_RIGHT = 4.638;
 const WORDMARK_CAP_HEIGHT = 0.4;
@@ -54,6 +62,7 @@ async function build(options = {}) {
     identification: 'Matched the prompt to usfleettracking.com, a private fleet tracking company.',
     landmark: { photo, credit: CREDIT, width: 480 },
     thesis: TEST_THESIS,
+    marketMap: TEST_MARKET_MAP,
     ...options,
   });
   return { file, photo, stageDir, pptx: await openPptx(file) };

@@ -101,6 +101,48 @@ Each text box is centred on the ink the reference puts there, and each bullet is
 its own box, so a box taller than its line cannot move the type off the
 measurement.
 
+## Market map
+
+The title and subtitle sit on the left over a tinted band, the companies are
+placed freely between an L-shaped navy axis pair, and the callout fills a
+full-height navy sidebar on the right. There are **no quadrant dividers**, only
+the two axis lines.
+
+**Geometry.** The band, the subtitle and the axis ends are measured off the
+reference Slide3.png. The chart block is the ticket 10 prototype scaled by 0.75:
+that prototype was drawn on a 13.333in canvas and this deck's page is the
+original's 10in, and since both are 16:9 the same physical size is a different
+number of inches in each.
+
+| Element | Where |
+| --- | --- |
+| Tinted band | y 1.723in to the foot of the slide, behind all but the sidebar |
+| Callout sidebar | from x 7.088in, full height, its copy inset 0.338in each side |
+| Axis upright | x 1.763in, running y 1.992-4.708in |
+| Axis baseline | y 4.708in, stopping one sidebar inset short, at x 6.750in |
+| Subtitle ink | centred on y 1.254in, left-aligned with the title |
+
+**Type**: title 20pt, subtitle 9.75pt grey, axis categories 7.875pt bold navy,
+axis names 6pt grey uppercase with 0.75pt tracking, callout 8.625pt white. The
+categories are the only bold type on the chart, because they are what the reader
+has to read. The reference sets the horizontal axis's name beside the end of the
+baseline; here the sidebar stands there, so it goes under the categories.
+
+**Placement.** The model gives each company two coordinates between 0 and 1, and
+code keeps the picture clean without changing the judgment: each logo is a box,
+overlapping pairs are pushed apart, and every box is clamped inside its own
+quadrant, so no cleanup ever moves a company across an axis. Overlaps are
+measured in units of the box that has to clear them rather than in inches, which
+is what lets a crowded quadrant settle into two rows instead of one column too
+tall to fit.
+
+Crowding is capped in the brief rather than absorbed by the render: at most four
+logos to a quadrant, with at least three quadrants carrying a competitor. A map
+that breaks either rule is refused, and repaired with text.
+
+**The target** is marked by a white pill with a thin teal outline, 1.25pt, drawn
+behind its mark. Nothing else distinguishes it: no cell tint, no second label.
+
 ## Palette
 
 | Name | Hex | Used for |
@@ -145,8 +187,16 @@ On the cover a logo fills the name's 2.831in slot, is never taller than the
 0.600in divider beside it, and is never shorter than 0.269in, which is the cap
 height of the wordmark it replaces.
 
+On the market map a logo is sized to an equal optical **area** of 0.1406 sq in
+rather than to a uniform box, so a wide wordmark and a square mark carry the
+same visual weight. The result is capped at 1.0875 x 0.315in, capped again by
+the resolution rule, and becomes a text wordmark below 0.105in tall.
+
 US Fleet Tracking's own logo is 258 x 27px, so it stays sharp only to 1.72in
-wide, which is 0.180in tall. It becomes a text wordmark on the cover.
+wide. On the cover that is 0.180in tall against a 0.269in minimum, so it becomes
+a text wordmark. On the map the area rule sets it 1.0875in wide and 0.114in
+tall, which clears that slot's 0.105in floor, so the same mark stays a logo.
+One rule, two honest outcomes.
 
 ## Wordmarks
 

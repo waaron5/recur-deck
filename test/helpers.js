@@ -225,6 +225,119 @@ function thesisWith(section, copy) {
   return { ...TEST_THESIS, [section]: copy };
 }
 
+/**
+ * A research object's market map, shaped the way the model is asked to write
+ * one: two categorical axes, nine competitors plus the target, 0-1 coordinates
+ * for each, and the callout in its decided three-part structure.
+ *
+ * The companies and placements are the illustrative US Fleet Tracking set from
+ * the ticket 10 prototype. Its distribution is a legal one: four in the busiest
+ * quadrant, and all four quadrants carrying a competitor.
+ */
+const TEST_MARKET_MAP = {
+  subtitle: 'Fleet telematics splits between enterprise platforms and simple trackers',
+  axes: {
+    x: {
+      name: 'Commitment model',
+      low: 'Contract-bundled platform',
+      high: 'No-contract live tracking',
+      reasoning: 'Buyers choose first on whether tracking comes with a multi-year contract.',
+    },
+    y: {
+      name: 'Fleet segment focus',
+      low: 'Enterprise and large fleets',
+      high: 'SMB commercial fleets',
+      reasoning: 'Pricing and onboarding differ sharply between small and enterprise fleets.',
+    },
+  },
+  companies: [
+    {
+      name: 'US Fleet Tracking',
+      target: true,
+      x: 0.76,
+      y: 0.84,
+      evidence: 'https://www.usfleettracking.com/',
+      placement: 'Sells live tracking to small fleets with no contract required.',
+    },
+    {
+      name: 'Azuga',
+      x: 0.1,
+      y: 0.86,
+      evidence: 'https://www.azuga.com/',
+      placement: 'Sells fleet tracking to small fleets on an annual plan.',
+    },
+    {
+      name: 'GPS Insight',
+      x: 0.39,
+      y: 0.86,
+      evidence: 'https://www.gpsinsight.com/',
+      placement: 'Targets small and mid-size fleets on term agreements.',
+    },
+    {
+      name: 'Force Fleet Tracking',
+      x: 0.24,
+      y: 0.62,
+      evidence: 'https://www.forcefleettracking.com/',
+      placement: 'Sells a simple tracker to small fleets on a subscription.',
+    },
+    {
+      name: 'Linxup',
+      x: 0.66,
+      y: 0.62,
+      evidence: 'https://www.linxup.com/',
+      placement: 'Sells month-to-month tracking to small fleets.',
+    },
+    {
+      name: 'Samsara',
+      x: 0.1,
+      y: 0.36,
+      evidence: 'https://www.samsara.com/',
+      placement: 'Prices and configures for large fleets on multi-year contracts.',
+    },
+    {
+      name: 'Verizon Connect',
+      x: 0.39,
+      y: 0.36,
+      evidence: 'https://www.verizonconnect.com/',
+      placement: 'Bundles telematics into enterprise contracts.',
+    },
+    {
+      name: 'Geotab',
+      x: 0.1,
+      y: 0.13,
+      evidence: 'https://www.geotab.com/',
+      placement: 'Sells through resellers to enterprise fleets.',
+    },
+    {
+      name: 'Teletrac Navman',
+      x: 0.39,
+      y: 0.13,
+      evidence: 'https://www.teletracnavman.com/',
+      placement: 'Sells compliance-led telematics to large fleets.',
+    },
+    {
+      name: 'Motive',
+      x: 0.76,
+      y: 0.2,
+      evidence: 'https://gomotive.com/',
+      placement: 'Sells fleet and driver safety to larger fleets without long lock-in.',
+    },
+  ],
+  callout: {
+    take: 'US Fleet Tracking wins small fleets that want fast tracking without a contract',
+    dynamics: [
+      'Enterprise platforms bundle long contracts and features small fleets rarely use',
+      'AI-first entrants chase trucking compliance more than quick live tracking',
+    ],
+    proposal: 'Recur can add AI scoring to the GPS and video the product already streams',
+  },
+};
+
+/** The test market map with one part replaced, for the rejection cases. */
+function marketMapWith(part, value) {
+  return { ...TEST_MARKET_MAP, [part]: value };
+}
+
 module.exports = {
   ensureBuilt,
   tempDir,
@@ -235,4 +348,6 @@ module.exports = {
   TEST_CREDIT,
   TEST_THESIS,
   thesisWith,
+  TEST_MARKET_MAP,
+  marketMapWith,
 };

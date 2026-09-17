@@ -24,6 +24,7 @@ const {
   TEST_HEADQUARTERS,
   TEST_CREDIT,
   TEST_THESIS,
+  TEST_MARKET_MAP,
 } = require('./helpers.js');
 
 const REFERENCE_DIR = path.join(__dirname, '..', 'Recur x US Fleet Tracking_vS');
@@ -40,6 +41,7 @@ async function build(options = {}) {
     identification: 'Matched the prompt to usfleettracking.com.',
     landmark: { photo: testPhoto(), credit: TEST_CREDIT },
     thesis: TEST_THESIS,
+    marketMap: TEST_MARKET_MAP,
     ...options,
   });
   return { file, pptx: await openPptx(file) };
@@ -127,13 +129,16 @@ test('slides 1-3 carry a notes field that later tickets can write into', async (
   }
 });
 
-test('the cover writes its own source record, and the market map waits for its ticket', async () => {
+test('the cover and the market map each write their own source record', async () => {
   const { pptx } = await build();
 
   const cover = await pptx.notesText(1);
   if (cover === null) assert.fail('slide 1 should carry speaker notes');
   assert.match(cover, /Headquarters: Oklahoma City/);
-  assert.equal(await pptx.notesText(3), '');
+
+  const map = await pptx.notesText(3);
+  if (!map) assert.fail('slide 3 should carry speaker notes');
+  assert.match(map, /Commitment model/, 'the map notes should name the axes it reasons');
 });
 
 test('the cover sets the company name as a text wordmark', async () => {

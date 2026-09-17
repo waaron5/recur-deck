@@ -166,9 +166,9 @@ function backgroundFit({ logo, background }) {
     };
   }
 
-  // Only the cover has a ground of its own today. What a pale ground asks of a
-  // logo is the market map's question, and decision 06 sets no rule for it, so
-  // nothing is invented here: the company's own version is used as it is.
+  // The market map's pale band is the light ground. Decision 06 sets no rule
+  // for one, and nothing is invented here: the company's own version is used as
+  // it is, which is what all but a near-white mark is drawn for.
   return { treatment: 'as-is' };
 }
 

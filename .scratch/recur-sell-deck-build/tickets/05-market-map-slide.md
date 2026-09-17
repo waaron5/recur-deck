@@ -14,11 +14,29 @@ Decisions this implements: [Choose the market-map chart treatment](../../recur-s
 
 **Blocked by:** 03 (Logo acquisition pipeline), 04 (Thesis slide from sourced research).
 
-**Status:** ready-for-agent
+**Scale note:** decision 10's sizes were set on the prototype's 13.333 x 7.5in
+canvas while this deck's page is the original's 10 x 5.625in. Both are 16:9, so
+the same physical size is a different number of inches in each. The user chose
+to scale every prototype-derived value by 0.75 (logo box 1.45 x 0.42in becomes
+1.0875 x 0.315in, area 0.25 becomes 0.1406 sq in, callout 11.5pt becomes
+8.625pt), keeping the title at the reference-measured 20pt and the pill's
+hairline outline at 1.25pt. Recorded in `design.js` and `visual-rules.md`.
 
-- [ ] Slide 3 shows two labelled axes, a subtitle, a callout in the decided structure, and six to nine competitors plus the target placed on the map.
+**Status:** ready-for-human
+
+- [x] Slide 3 shows two labelled axes, a subtitle, a callout in the decided structure, and six to nine competitors plus the target placed on the map.
 - [ ] Every placed competitor exists, currently competes, and is evidenced from its own site; the target is distinguished only by the white pill with a thin teal outline.
-- [ ] Logos carry equal optical weight regardless of shape, stay sharp, and drop to a text wordmark below the minimum legible height.
-- [ ] No two logos overlap after the deterministic nudge, and no logo is moved out of the quadrant its coordinates put it in.
-- [ ] Slide 3's speaker notes give evidence for each competitor, reasoning for each placement, and reasoning for both axes.
+      _The pill half is done and tested. Whether a competitor really competes is
+      the model's judgment, brief in SKILL.md: code enforces only that evidence
+      and placement reasoning are present. Judging the judgment needs the real
+      runs of tickets 09 and 11._
+- [x] Logos carry equal optical weight regardless of shape, stay sharp, and drop to a text wordmark below the minimum legible height.
+- [x] No two logos overlap after the deterministic nudge, and no logo is moved out of the quadrant its coordinates put it in.
+- [x] Slide 3's speaker notes give evidence for each competitor, reasoning for each placement, and reasoning for both axes.
 - [ ] Type sizes match the fixed design values, and the slide reads with the intended negative space in real PowerPoint.
+      _Type sizes are done and tested. The visual half is **not verified**: this
+      machine has no LibreOffice, poppler or ImageMagick, PowerPoint's AppleScript
+      export writes nothing, and Quick Look renders only a file's first page. The
+      slide was verified by measurement instead - no overlaps, closest pair
+      0.400in apart, every mark inside the plot, 90.5% of the plot left empty.
+      Someone should open a built deck in real PowerPoint and look at slide 3._
