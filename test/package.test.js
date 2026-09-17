@@ -52,6 +52,9 @@ test('the skill folder carries its instructions, script, reference and assets', 
     'scripts/build-deck.js',
     'scripts/fetch-logo.js',
     'scripts/check-content.js',
+    // Without this a run cannot look at what it built, and decision 07 delivers
+    // no deck unseen.
+    'scripts/render-deck.js',
     'reference/visual-rules.md',
     'assets/recur-wordmark-white.png',
     'assets/recur-wordmark-navy.png',
@@ -66,17 +69,24 @@ test('the skill folder carries its instructions, script, reference and assets', 
   }
 });
 
-test('generation ships bundled, with nothing left to resolve at run time', async () => {
+test('every entry point ships bundled, with nothing left to resolve at run time', async () => {
+  // All four, not just the generator: the sandbox installs nothing, so an entry
+  // point that still reaches for node_modules is one a run cannot call at all.
   const { stageDir } = await ensureBuilt();
-  const script = fs.readFileSync(path.join(stageDir, 'scripts', 'build-deck.js'), 'utf8');
-  const bareRequires = [...script.matchAll(/require\(["']([^."'][^"']*)["']\)/g)]
-    .map((m) => m[1])
-    .filter((id) => !id.startsWith('node:'));
-  assert.deepEqual(
-    [...new Set(bareRequires)].filter((id) => !require('node:module').builtinModules.includes(id)),
-    [],
-    'the bundle must not require anything from node_modules',
-  );
+  const scripts = fs.readdirSync(path.join(stageDir, 'scripts'));
+  assert.ok(scripts.length >= 4, `expected the four entry points, found ${scripts.join(', ')}`);
+
+  for (const name of scripts) {
+    const script = fs.readFileSync(path.join(stageDir, 'scripts', name), 'utf8');
+    const bareRequires = [...script.matchAll(/require\(["']([^."'][^"']*)["']\)/g)]
+      .map((m) => m[1])
+      .filter((id) => !id.startsWith('node:'));
+    assert.deepEqual(
+      [...new Set(bareRequires)].filter((id) => !require('node:module').builtinModules.includes(id)),
+      [],
+      `${name} must not require anything from node_modules`,
+    );
+  }
 });
 
 test('the sources stay text, so diffs and review keep working', async () => {

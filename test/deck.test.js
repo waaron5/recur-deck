@@ -11,6 +11,7 @@ const {
   FIXED_SLIDE_NUMBERS,
   SLIDE_W,
   SLIDE_H,
+  FONT,
   MIN_FONT_SIZE,
   CONFIDENTIAL_LINE,
   THESIS_GEOMETRY,
@@ -302,6 +303,40 @@ test("slide 2's type sizes come from the reference's measured cap heights", asyn
     THESIS_GEOMETRY.bullet.fontSize >= MIN_FONT_SIZE,
     `bullets at ${THESIS_GEOMETRY.bullet.fontSize}pt fall below the ${MIN_FONT_SIZE}pt floor`,
   );
+});
+
+test('the deck is set in the same face the fit estimate measures', async () => {
+  // The fault ticket 07 fixed: design.js declared Noto Sans Arabic Light, which
+  // carries no Latin glyphs and so drew none of this deck, while the content
+  // gate measured Arial. A face the gate does not measure makes every wrap
+  // prediction - and every rendered line break - a guess about a substitution.
+  const provenance = fs.readFileSync(
+    path.join(__dirname, '..', 'skill', 'src', 'font-advances.js'),
+    'utf8',
+  );
+  const measured = [...provenance.matchAll(/^\/\/ (?:regular|bold)\s+(\S+)\.ttf/gm)].map((m) =>
+    m[1].replace(/ Bold$/, ''),
+  );
+
+  assert.ok(measured.length > 0, 'the generated metrics should record which files they came from');
+  for (const face of measured) {
+    assert.equal(face, FONT, `the gate measures ${face} while the deck declares ${FONT}`);
+  }
+});
+
+test('every line on slides 1-3 declares that face, so none falls back silently', async () => {
+  const { pptx } = await build();
+  for (const slideNumber of [1, 2, 3]) {
+    const declared = new Set(
+      [...(await pptx.slideXml(slideNumber)).matchAll(/typeface="([^"]*)"/g)].map((m) => m[1]),
+    );
+    declared.delete('');
+    assert.deepEqual(
+      [...declared],
+      [FONT],
+      `slide ${slideNumber} should set every run in ${FONT}`,
+    );
+  }
 });
 
 test("slide 2's speaker notes pair every bullet with its sources", async () => {

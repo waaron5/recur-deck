@@ -10,13 +10,26 @@ Decisions this implements: stages 6 and 7 of [Define unattended generation and f
 
 **Blocked by:** 05 (Market map slide).
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
 - [ ] Every run renders slides 1–3 and the model inspects the images before the file is offered.
+      _`render-deck.js` ships as a fourth bundled entry point and step 8 of
+      SKILL.md makes the render and the look at it a required step. Whether a run
+      actually performs it is a question only the real runs of tickets 09 and 11
+      can answer; this machine has no LibreOffice._
 - [ ] Overflowing, clipped, overlapping, or illegible text is detected and fixed by shortening copy, with type sizes unchanged.
-- [ ] Structural checks fail the build when the deck is not exactly nine slides, when slides 4–9 are missing or out of order, or when slides 1–3 lack notes.
+      _Step 8 names the four things to look for and allows only shorter copy as a
+      repair. The half that is verified here is that nothing in the package
+      offers a smaller-type escape; the half that is not is the model's eye._
+- [x] Structural checks fail the build when the deck is not exactly nine slides, when slides 4–9 are missing or out of order, or when slides 1–3 lack notes.
 - [ ] A deck with a deliberately overlong bullet is caught by the inspection and comes out clean after repair.
+      _Needs a real render. The content gate's fit estimate already catches an
+      overlong bullet before the build, so the render round is the backstop for
+      what the estimate cannot see._
 - [ ] The rendered image matches what real PowerPoint shows closely enough to trust, confirmed by opening the same deck in PowerPoint.
+      _Needs a person, a rendered image and PowerPoint. The change below makes
+      this testable for the first time: the deck is now set in a face the
+      renderer has a metric-compatible substitute for._
 
 ## Comments
 
@@ -60,9 +73,78 @@ the finding with:
 node scripts/derive-font-metrics.js
 ```
 
-**What this ticket still has to decide:** whether `FONT` keeps naming a face that
-cannot render the deck, or changes to the Latin face that actually draws it. The
-cover and title geometry were matched to the reference by cap height, which is
-within 1.5% across Noto, Arial and Tahoma alike, so that measurement does not
-settle it. Someone should open a built deck in real PowerPoint and see which
-face it substitutes.
+**Decided September 17, 2026: `FONT` is Arial.** Declaring a face that cannot
+set a single Latin letter of this deck was not a neutral default - it handed the
+choice of substitute to whatever machine opened the file, which is how the gate
+came to measure one face while the deck named another. Arial is the face the
+reference's own Latin measures as, so the deck now declares what it has always
+been set in.
+
+The cap height stays at the measured 0.706 em rather than Arial's own 0.7163.
+That number came from the reference slides and the cover and title geometry were
+matched to it the same way; 1.4% of a 20pt cap is 0.003in. Changing it would move
+type that is currently where the reference puts it.
+
+Bundling the OFL Noto file, which ticket 01 left open here, is **not** done and
+would not have helped: the file has no Latin in it to draw.
+
+**Built September 17, 2026.**
+
+`structure.js` runs at the end of `buildDeck`, between writing the file and
+rendering it: it reopens the written bytes and checks nine slides, slides 4-9
+carrying the shipped reference PNGs in order, and notes on slides 1-3. It reads
+the presentation's own slide list rather than part names, because the order a
+reader sees is the list and not the numbering, and it compares each fixed slide's
+image by digest, because two swapped reference slides both still carry a picture.
+Unlike the content gate these findings are not repairable by rewriting copy - a
+deck that came out with eight slides is a fault in this package - so they fail
+the build instead of costing a repair round. Decision 07 names python-pptx for
+the reopen; reading the package in the bundle asks the same question of the same
+bytes and needs nothing installed.
+
+`render-deck.js` ships as a fourth bundled entry point: LibreOffice to PDF, then
+`pdftoppm` to PNG at 150 px/in, which is a 1500px-wide image of this page. Both
+tools were confirmed present by decision 09's capability probe. The converters
+are driven through an injectable seam, so the tests check what is asked of them
+on a machine that has neither. Page numbers are read back off the directory
+rather than predicted, because `pdftoppm` pads them to the document's page count.
+A page that produced no image fails rather than returning quietly, since a slide
+that reached a founder unseen is the one thing this step exists to prevent.
+
+`build-deck.js` now keeps the downloaded landmark beside the run file and prints
+its path, so a rebuild after a render repair keeps the same cover photo instead
+of searching Commons again and possibly getting a different one - which would
+make the rebuilt cover a new thing to inspect rather than the same one with
+shorter text.
+
+**Changed after review.** The two-axis review found six things, all fixed:
+
+- The reopen claimed more than it did. The header said the parts "parse" while
+  the code only unzipped and regex-scanned, so a slide truncated on write would
+  have passed. Each slide part is now checked for a complete `<p:sld>` element,
+  and the comment says exactly that and no more: the container opens and every
+  slide came out whole, with no schema validation, which would mean shipping a
+  parser inside the 200-file cap to catch a failure PptxGenJS cannot produce.
+- These were called findings, which is the content gate's word. CONTEXT.md
+  already had the right one: a wrong slide count or order, or a missing or
+  unopenable file, is a **critical defect**. They carry no `field` now, because
+  no field rewrite repairs one, and the unused `field` was going out with it.
+- "Fails the build" was untested. The formatting and the throw moved into
+  `assertStructure`, beside what a defect is, and are now tested directly rather
+  than reached only through a successful build.
+- `collect()` returned every `slide-*.png` in the directory, so a second render
+  round could hand back a stale image from the first. Prior images are cleared
+  before rendering and only the requested pages are collected. The test that
+  cited pdftoppm's zero-padding now actually renders a padded name.
+- SKILL.md told the model to deliver the deck unrendered when a converter is
+  missing. That is ticket 08's call, and it contradicted this ticket's own first
+  line. Removed.
+- `renderSlides` took `slides` and `dpi` that nothing ever passed.
+
+`saveLandmark` was flagged as leaning into ticket 08 and is **kept**: without it
+a render round re-searches Commons and can come back with a different photo,
+which would make the rebuilt cover a new thing to inspect rather than the same
+one with shorter text. Say so if it should move to 08.
+
+Verified here: 157 tests, typecheck clean, package 16 files. Not verified: any of
+it under a real renderer.

@@ -16,12 +16,27 @@ const SLIDE_H = 5.625;
 const GENERATED_SLIDE_NUMBERS = [1, 2, 3];
 const FIXED_SLIDE_NUMBERS = [4, 5, 6, 7, 8, 9];
 
-// The original deck's typeface, read from the source presentation. It is not an
-// OS default on macOS or Windows, so PowerPoint substitutes it on machines that
-// lack it; Recur has it and prints the mailers. Note this also means the sandbox
-// renderer substitutes during the in-run render check, so predicted line breaks
-// are approximate until the font ships inside the skill (ticket 07).
-const FONT = 'Noto Sans Arabic Light';
+// The deck's typeface.
+//
+// Ticket 01 read "Noto Sans Arabic Light" off the source presentation, and that
+// is the name the original carries. It cannot be the face that draws this deck:
+// it has no Latin glyphs in any weight - no A-Z, no a-z - so it can set none of
+// the English copy on slides 1-3. Something else drew that copy on every machine
+// that has ever opened the reference, Recur's own included, and declaring a face
+// that cannot render the deck left the choice of substitute to each machine.
+//
+// Which face actually sets the reference deck's Latin was settled by measuring
+// it. Four strings, at four sizes across both weights, all land within 2% of
+// Arial's advances, while Verdana runs 9% wide, Tahoma 4% narrow and Arial
+// Narrow 18% narrow; scripts/derive-font-metrics.js records the samples. So the
+// deck now declares the face it has always been set in.
+//
+// Naming Arial is also what makes the in-run render check worth running. Arial
+// is metric-compatible with Liberation Sans, which is what the sandbox renderer
+// substitutes, so a rendered image breaks its lines where PowerPoint will.
+// Bundling the OFL Noto file, which ticket 01 left open to ticket 07, would not
+// have bought that: the file has no Latin in it to draw.
+const FONT = 'Arial';
 
 const COLORS = {
   navy: '09142F',
@@ -223,7 +238,14 @@ const MAP_LAYOUT = {
 };
 
 // Cap height as a fraction of the type size, for this typeface. Established in
-// ticket 01 by reading the source presentation: 20pt titles measure 0.263in.
+// ticket 01 by measuring the reference slides: 20pt titles measure 0.197in of
+// cap on this page size.
+//
+// Arial's own OS/2 table says 0.7163 em, which is 1.4% above this. The measured
+// value is kept: it is what the reference actually shows, the geometry built on
+// it was matched to the reference the same way, and 1.4% of a 20pt cap is
+// 0.003in. Ticket 07's font decision does not disturb it, which is the point of
+// recording where each number came from.
 const CAP_HEIGHT_EM = 0.706;
 
 // Average character width, as a fraction of the type size, for this typeface
@@ -305,6 +327,15 @@ const LOGO = {
   singleInkDistance: 40,
 };
 
+// The in-run render check. Slides 1-3 are rasterised for the model to look at
+// before the deck is offered to anyone.
+//
+// 150 px/in makes a 1500 x 844px image of this 10in page, which is enough to
+// read 9pt type and see a logo sitting on a line. The timeout is a bound on a
+// converter that hangs rather than an expected duration: the capability probe
+// measured this whole step at about 2 seconds, and a run has 15 minutes total.
+const RENDER = { dpi: 150, timeoutMs: 120000 };
+
 // Logos arrive as SVG and WebP, which PptxGenJS cannot place. Both are
 // converted by WebAssembly rasterizers carried inside the package, because the
 // skill installs as one bundled script with no package installs at run time.
@@ -346,6 +377,7 @@ module.exports = {
   MIN_FONT_SIZE,
   COVER_PHOTO,
   LOGO,
+  RENDER,
   RASTERIZER_ASSETS,
   deckFileName,
   safeCompany,

@@ -85,6 +85,13 @@ async function main() {
       }
     : await findLandmark(city);
 
+  // Keep the photo beside the run file once it has been found. A render round
+  // repairs copy and builds again, and searching Commons a second time would
+  // spend a download to arrive at the same picture - or at a different one,
+  // which would make the rebuilt cover a new thing to inspect rather than the
+  // same one with shorter text on it.
+  const landmarkFile = run.landmark?.file ?? saveLandmark(args.input, landmark);
+
   const assetsDir = path.join(skillDir, 'assets');
 
   // A logo that cannot be converted costs the deck its logo, never its deck.
@@ -115,8 +122,40 @@ async function main() {
   });
 
   console.log(
-    JSON.stringify({ ok: true, file, slides: 9, landmark: landmark.credit?.fileName }, null, 2),
+    JSON.stringify(
+      {
+        ok: true,
+        file,
+        slides: 9,
+        landmark: landmark.credit?.fileName,
+        // Where the photo was kept, so a rebuild after a render repair can pass
+        // it back in and leave the cover's picture alone.
+        landmarkFile,
+      },
+      null,
+      2,
+    ),
   );
+}
+
+/**
+ * Keep the downloaded cover photo next to the run file it was found for.
+ *
+ * A photo that cannot be saved is not worth failing a built deck over: the run
+ * simply pays for the download again if it rebuilds.
+ *
+ * @param {string} input  The run file's path.
+ * @param {{photo: Buffer}} landmark
+ * @returns {string | undefined}
+ */
+function saveLandmark(input, landmark) {
+  try {
+    const file = path.join(path.dirname(path.resolve(input)), 'landmark.jpg');
+    fs.writeFileSync(file, landmark.photo);
+    return file;
+  } catch {
+    return undefined;
+  }
 }
 
 /**

@@ -19,6 +19,7 @@ const PptxGenJS = /** @type {new () => import('pptxgenjs').default} */ (
 
 const { coverPhoto } = require('./cover-photo.js');
 const { chooseMark } = require('./logo.js');
+const { assertStructure } = require('./structure.js');
 const { thesisSections, thesisNotes } = require('./thesis.js');
 const { marketMap, placeOnMap, marketMapNotes } = require('./market-map.js');
 const {
@@ -147,6 +148,14 @@ async function buildDeck({
   fs.mkdirSync(outDir, { recursive: true });
   const file = path.join(outDir, deckFileName(name));
   await pres.writeFile({ fileName: file });
+
+  // Stage 6 ends here: the file is reopened and checked before anything is
+  // rendered, and long before it is offered to anyone. None of what this finds
+  // is repairable by rewriting copy - a deck that came out with eight slides is
+  // a fault in this package - so it fails the build rather than costing a run
+  // one of its repair rounds.
+  await assertStructure(file, { assetsDir });
+
   return file;
 }
 

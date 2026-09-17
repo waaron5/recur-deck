@@ -6,8 +6,9 @@
 // regular Arial.ttf  sha256:525979822591a344  2048 units/em  cap 0.7163 em
 // bold    Arial Bold.ttf  sha256:d72db21f9242aedd  2048 units/em  cap 0.7158 em
 //
-// Why these faces and not the deck's declared Noto Sans Arabic Light, which
-// carries no Latin glyphs at all, is recorded in the deriving script.
+// These are the faces design.js declares, so what the gate measures and what
+// the deck is set in cannot drift apart. Why the original presentation's own
+// font name is not one of them is recorded in the deriving script.
 
 /** @type {Record<'regular' | 'bold', Record<string, number>>} */
 const ADVANCES = {

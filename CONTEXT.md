@@ -49,6 +49,13 @@ A shortcoming in a sell deck that does not make it unusable, such as a generic b
 One problem the content gate reports, naming the single field that has to change, the rule it breaks, and the slide it sits on. A finding may be a critical defect or a quality note — an overflowing bullet is one, a banned word is the other — and the gate reports both the same way, because both are repaired by rewriting the field it names.
 _Avoid_: Error, violation, warning
 
+**Render check**:
+The step that rasterises slides 1–3 of a built deck so the model can look at them before the file is offered to anyone. It catches what only an eye sees: text that overflows, is clipped, overlaps something, or is illegible, and logos that landed wrong. Its repairs are shorter copy, never smaller type.
+_Avoid_: Screenshot test, visual regression
+
+**Structural check**:
+The deterministic check a built deck passes before it is rendered: exactly nine slides, slides 4–9 in order, speaker notes on slides 1–3, and a file that reopens. What it reports are critical defects rather than findings, because no rewrite of the copy repairs them; they fail the build instead of costing a repair round.
+
 **Evidence failure**:
 A run that cannot identify the target company, cannot establish from sources what it sells and to whom, or cannot reach the web at all. It delivers no sell deck, only an explanation and a suggested fix.
 _Avoid_: Error, crash

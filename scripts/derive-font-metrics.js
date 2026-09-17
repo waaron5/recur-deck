@@ -4,14 +4,14 @@
 //
 //   node scripts/derive-font-metrics.js
 //
-// Why Arial. The deck declares Noto Sans Arabic Light (design.js FONT), read
-// off the original presentation in ticket 01. That face carries no Latin
-// glyphs at all - no A-Z, no a-z, in any weight - so it cannot draw this deck's
-// English copy and cannot be measured for it. A fallback draws that copy, both
-// in the sandbox renderer and in PowerPoint.
+// Why Arial. Ticket 01 read "Noto Sans Arabic Light" off the original
+// presentation, and design.js declared it until ticket 07. That face carries no
+// Latin glyphs at all - no A-Z, no a-z, in any weight - so it cannot draw this
+// deck's English copy and cannot be measured for it. Something else always drew
+// that copy, in the sandbox renderer and in PowerPoint alike.
 //
-// Which fallback was settled by measurement, not assumption. Four strings on
-// the reference PNGs, at four sizes and both weights, against Arial's real
+// Which face was settled by measurement, not assumption. Four strings on the
+// reference PNGs, at four sizes and both weights, against Arial's real
 // advances:
 //
 //   cover name "USFleetTracking"   design.js 27.4pt   Arial implies 27.30pt
@@ -27,7 +27,10 @@
 //
 // Arial is additionally metric-compatible with Liberation Sans, which is what
 // the sandbox renderer substitutes, so an estimate taken from these numbers
-// predicts the line breaks ticket 07's render check will show.
+// predicts the line breaks ticket 07's render check will show. That is why
+// ticket 07 made design.js declare Arial: the deck is now set in the face this
+// script measures, so the gate, the render and PowerPoint all break lines in
+// the same places.
 //
 // The table is generated rather than hand-copied, and records the source file
 // and its digest, so the numbers can always be traced back and regenerated.
@@ -224,8 +227,9 @@ function main() {
 //
 ${provenance}
 //
-// Why these faces and not the deck's declared Noto Sans Arabic Light, which
-// carries no Latin glyphs at all, is recorded in the deriving script.
+// These are the faces design.js declares, so what the gate measures and what
+// the deck is set in cannot drift apart. Why the original presentation's own
+// font name is not one of them is recorded in the deriving script.
 
 /** @type {Record<'regular' | 'bold', Record<string, number>>} */
 const ADVANCES = {

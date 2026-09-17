@@ -312,12 +312,51 @@ Use it as-is. Do not install packages; everything it needs is bundled. It
 searches Wikimedia Commons for a photo of the headquarters city, gives it the
 deck's navy duotone, builds the cover from it, and writes
 `Recur x <Company>.pptx` to the downloadable outputs directory. On success it
-prints `{"ok": true, "file": "...", "slides": 9, "landmark": "..."}`.
+prints `{"ok": true, "file": "...", "slides": 9, "landmark": "...",
+"landmarkFile": "work/landmark.jpg"}`.
 
 It runs the same content check first and refuses to build copy that fails it, so
-a skipped step 6 costs a round rather than mailing bad copy to a founder.
+a skipped step 6 costs a round rather than mailing bad copy to a founder. It then
+reopens the file it wrote and checks it: nine slides, slides 4-9 in order, notes
+on slides 1-3. A deck that fails this is a fault in the package, not in your
+copy; report the error rather than rewriting the deck around it.
 
-### 8. Present that file to the user as a download.
+### 8. Render the slides, and look at them
+
+**No deck is delivered unseen.**
+
+```
+node <skill-dir>/scripts/render-deck.js --input "<the file build-deck.js printed>" --out work/render
+```
+
+It renders slides 1-3 to PNGs in about two seconds and prints where they landed.
+
+**Now open those three images and look at them.** You are checking for things
+only an eye catches:
+
+- text that overflows its box, is clipped, or runs under another element;
+- anything overlapping: a logo on an axis line, two logos touching, copy over
+  the callout sidebar;
+- text too small or too low-contrast to read;
+- a logo that landed wrong, stretched, or in the wrong place.
+
+The rendered image predicts PowerPoint. The deck is set in Arial and the
+renderer substitutes Liberation Sans, which has the same metrics, so lines break
+in the image where they break for the founder.
+
+**Every fix is shorter copy.** Rewrite the offending field in `run.json` to say
+the same thing in fewer words, then run step 6, step 7 and this step again. Never
+ask for smaller type, a wider box, or a moved element: type sizes and geometry
+are fixed design values.
+
+On the rebuild, add the photo you already have to `run.json` so the cover keeps
+the same picture and the run does not pay for the download twice:
+
+```json
+"landmark": { "file": "work/landmark.jpg" }
+```
+
+### 9. Present that file to the user as a download.
 
 ## Reply
 

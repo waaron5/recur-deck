@@ -25,8 +25,7 @@ excited", "How we can help".
 
 ## Type
 
-**Noto Sans Arabic Light**, the original deck's typeface, read from the source
-presentation.
+**Arial**, which is the face the reference deck's Latin is actually set in.
 
 Slide titles are **20pt, not bold**, in navy, matching the reference exactly.
 
@@ -34,11 +33,19 @@ Body text never goes below about 9pt, which is the visual bar's 12pt floor
 expressed in these 10-inch units. **Type sizes are fixed design values: text
 that does not fit gets shorter, it never gets smaller.**
 
-Noto Sans Arabic Light is not an OS default on macOS or Windows. Recur has it
-and prints the mailers, so the deck renders correctly where it matters, but
-PowerPoint substitutes it on machines that lack it. The sandbox renderer also
-lacks it, so the in-run render check predicts line breaks only approximately
-until the font ships inside the skill.
+The original presentation *names* Noto Sans Arabic Light, which ticket 01 read
+off it, but that face carries no Latin glyphs in any weight and so can draw none
+of this deck's English copy. Something else has always drawn it, on Recur's
+machines as much as anywhere. Measuring the reference slides identifies that
+face's metric as Arial's, at four sizes across both weights and to within 2%,
+while Verdana lands 9% wide, Tahoma 4% narrow and Arial Narrow 18% narrow. So
+the deck declares Arial: the alternative is naming a face that cannot set the
+page and leaving the substitution to each machine that opens it.
+
+Arial is also metric-compatible with Liberation Sans, which is what the sandbox
+renderer substitutes. That is what makes the in-run render check predictive
+rather than decorative: lines break in the rendered image where they break in
+PowerPoint.
 
 **Fit is estimated before anything is rendered.** The content gate predicts
 where every line will break and refuses copy that overflows its box, so overlong
@@ -46,14 +53,19 @@ text is caught and shortened before the deck is built rather than after a render
 round. The prediction measures real advance widths, generated into
 `skill/src/font-advances.js` by `scripts/derive-font-metrics.js`.
 
-Those widths are Arial's rather than the declared typeface's, because Noto Sans
-Arabic Light carries no Latin glyphs at all and so cannot draw this deck's
-English copy or offer anything to measure for it. A fallback face draws that
-copy everywhere, including on Recur's own machines. Measuring the reference
-slides identifies that fallback's metric as Arial's, at four sizes across both
-weights and to within 2%, and Arial is metric-compatible with the renderer's
-Liberation Sans as well. Which face the deck should declare is an open question,
-recorded on ticket 07.
+## Render check
+
+Every run renders slides 1-3 and looks at them before the deck is offered to
+anyone. LibreOffice converts the deck to PDF and `pdftoppm` rasterises those
+three pages at 150 px per inch, which takes about two seconds.
+
+The model checks the images for overflowing, clipped, overlapping or illegible
+text and for logos that landed wrong. **Every repair is shorter copy**, rewritten
+in the run file and rebuilt: never smaller type, a wider box, or a moved element.
+
+The build is also checked structurally before it is rendered: the written file is
+reopened and has to carry exactly nine slides, slides 4-9 in order, and speaker
+notes on slides 1-3.
 
 ## Cover
 
