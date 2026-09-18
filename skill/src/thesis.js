@@ -12,9 +12,9 @@
 // the source record: a reviewer reads the claim beside what backs it.
 //
 // What this module checks is the object's shape, so a malformed research object
-// fails before a deck is built from it. The copy itself - word counts, banned
-// words, punctuation, and whether a number has a source - is the content gate's
-// job in ticket 06. Ticket 05 extends this object with the market map.
+// fails before a deck is built from it. The copy itself - word counts, the
+// question mark, how the six bullets are built, and whether a number has a
+// source - is the content gate's job in ticket 06. Ticket 05 extends this object with the market map.
 
 const { THESIS_SECTIONS } = require('./design.js');
 

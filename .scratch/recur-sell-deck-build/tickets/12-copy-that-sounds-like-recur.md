@@ -28,14 +28,14 @@ pitch](../../recur-sell-deck/issues/05-define-investment-judgment.md).
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] The banned word list, the suffix matcher, the banned phrase patterns and the punctuation rules are gone from the content gate, and the question-mark rule remains.
-- [ ] A bullet may run to 16 words; a header stays at 12.
-- [ ] The gate refuses a thesis whose six bullets carry fewer than two subordinate or participial clauses, reporting it against the slide rather than one field, because no single bullet is at fault.
-- [ ] `reference/voice.md` is bundled into the ZIP and reachable from SKILL.md's reference list.
-- [ ] SKILL.md states the writing rules as "sound like the exemplar" rather than as a list of banned words, and step 6 measures the copy against it by name.
-- [ ] Tests covering the deleted rules are deleted rather than skipped, and the new structural rule has tests of its own.
+- [x] The banned word list, the suffix matcher, the banned phrase patterns and the punctuation rules are gone from the content gate, and the question-mark rule remains.
+- [x] A bullet may run to 16 words; a header stays at 12.
+- [x] The gate refuses a thesis whose six bullets carry fewer than two subordinate or participial clauses, reporting it against the slide rather than one field, because no single bullet is at fault.
+- [x] `reference/voice.md` is bundled into the ZIP and reachable from SKILL.md's reference list.
+- [x] SKILL.md states the writing rules as "sound like the exemplar" rather than as a list of banned words, and step 6 measures the copy against it by name.
+- [x] Tests covering the deleted rules are deleted rather than skipped, and the new structural rule has tests of its own.
 - [ ] The copy from the next practice run is read against the exemplar by eye. _Needs a run on the supported host; belongs with ticket 09's reruns, not to a terminal session._
 
 ## Comments
@@ -65,3 +65,32 @@ Length variance was measured and is not what separates the human copy from the
 generated copy: the reference's bullets vary *less* in length than the generated
 ones. A floor on length was considered and rejected, because a minimum is a
 target and models write to targets.
+
+**Implemented September 18, 2026.** The code half is done, and the ticket moves
+to `ready-for-human` because its last criterion is a practice run read by eye,
+which belongs with ticket 09's reruns.
+
+The gate lost the banned word list, the suffix matcher, both phrase patterns and
+every punctuation rule but the question mark, with their tests deleted. A test
+now puts five lines in the style of slides 4-9 through it, "unlock", en dash,
+parentheses, semicolon and exclamation mark included, and none is refused.
+Bullets run to 16 words.
+
+The new `sentence-structure` finding names `thesis` on slide 2 rather than a
+field, and `CONTEXT.md`'s definition of a finding now says so. It counts four
+shapes: a fronted subordinate clause, a fronted participle, a trailing
+participle or "which"/"so" after a comma, and a mid-sentence relative or
+subordinate word. On the reference slide's own six bullets it counts exactly
+the three the amendment names: 2, 3 and 4. Bullet 6's contact clause ("the data
+USFT already captures") goes uncounted, as the measurement assumed. It leans
+generous, with one exception: a comma followed by a noun list ("tracking,
+routing and billing") is not counted, because two such lists would otherwise
+let six flat bullets pass. Mid-sentence "as", "after", "before" and "once" are
+left out on purpose. They are prepositions or adverbs more often than clause
+openers, so counting them would let flat copy through.
+
+`voice.md` is in `build-package.js`'s list, and a package test now fails if any
+shipped reference file is missing from SKILL.md's reference list. The test
+fixture and SKILL.md's example run file each gained two of the reference deck's
+own clause-carrying bullets, because the old six were flat and the new rule
+refuses them.

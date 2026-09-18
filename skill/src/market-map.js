@@ -13,8 +13,8 @@
 // that breaks the cap is repaired with text, not with pixels.
 //
 // As in thesis.js, what this module checks is the object's shape and its
-// countable rules. The copy itself - word counts, banned words, the swap test -
-// is the content gate's job in ticket 06.
+// countable rules. The copy itself - word counts, fit, the swap test - is the
+// content gate's job in ticket 06.
 
 const { MAP } = require('./design.js');
 

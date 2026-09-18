@@ -22,10 +22,10 @@ test('a run that follows the writing rules produces no findings', () => {
   assert.deepEqual(checkRun(TEST_RESEARCH), []);
 });
 
-test('a header over twelve words and a bullet over fourteen are both caught, by field', () => {
-  // The limits are decision 05's: headers within 12 words, bullets within 14.
-  // A founder reads a header as a claim and a bullet as its support, and both
-  // stop working at the length where they need re-reading.
+test('a header over twelve words is caught, by field', () => {
+  // The limits are decision 05's, as amended: headers within 12 words, bullets
+  // within 16. A founder reads a header as a claim and a bullet as its support,
+  // and both stop working at the length where they need re-reading.
   const research = researchWith({
     thesis: {
       here: {
@@ -60,20 +60,68 @@ test('an overlong bullet is caught in every section that carries one', () => {
 
   const findings = under(checkRun(research), 'word-count');
   assert.deepEqual(fieldsIn(findings), ['thesis.excited.bullets.0']);
-  assert.match(findings[0].message, /14 words/);
+  assert.match(findings[0].message, /16 words/);
 });
 
-test('a banned word is caught and named, so the repair knows what to replace', () => {
-  // The banned list is decision 05's, and it exists because these words are
-  // what an AI writes when it is filling space. A founder who reads one stops
-  // believing a human wrote the page.
+test('a bullet may run to sixteen words', () => {
+  // The September 18 amendment moved the limit from 14 to 16, which is what the
+  // box holds. The fit estimate still catches a long line of long words.
+  const research = researchWith({
+    thesis: {
+      excited: {
+        bullets: [
+          {
+            text: 'Dispatchers see every truck in the fleet on one live map that refreshes every ten seconds',
+            sources: ['https://www.usfleettracking.com/'],
+          },
+          TEST_RESEARCH.thesis.excited.bullets[1],
+        ],
+      },
+    },
+  });
+
+  assert.deepEqual(under(checkRun(research), 'word-count'), []);
+});
+
+test("the gate lets through the words and punctuation Recur's own slides use", () => {
+  // The banned list and every punctuation rule but the question mark are gone.
+  // Measured before they went: Recur's own introduction failed them on
+  // "unlock", an en dash, parentheses and a semicolon. A gate that refuses the
+  // voice exemplar is policing the wrong thing, so these lines pass on
+  // vocabulary and punctuation. The first four are slides 4-9's own, shortened
+  // where the original ran wider than a bullet column.
+  for (const text of [
+    'We partner with mission-critical software companies to unlock latent growth potential',
+    "We've spent our careers in software – we know what great looks like",
+    'Backed by top technology investors (our alma mater)',
+    "We're thought partners to our teams; we're in it for the long haul",
+    'Fleets that switch keep tracking seamlessly - no new hardware!',
+  ]) {
+    const research = researchWith({
+      thesis: {
+        help: {
+          bullets: [
+            { text, sources: ['Recur introduction, slide 9'] },
+            TEST_RESEARCH.thesis.help.bullets[1],
+          ],
+        },
+      },
+    });
+    const findings = checkRun(research).filter((f) => f.field === 'thesis.help.bullets.0');
+    assert.deepEqual(findings, [], `refused: ${text}`);
+  }
+});
+
+test('a question mark is still refused, because every line on these slides is a statement', () => {
+  // The one punctuation rule left standing. It stands in for decision 05's ban
+  // on rhetorical questions: nothing on slides 4-9 asks one, and neither does
+  // the copy written to sit in front of them.
   const research = researchWith({
     thesis: {
       here: {
-        header: 'Commercial fleets are mid-cycle in adopting telematics',
         bullets: [
           {
-            text: 'Small fleets leverage homegrown tools to coordinate dispatch',
+            text: 'Why do small fleets still coordinate dispatch on paper?',
             sources: ['https://www.fleetowner.com/technology/telematics'],
           },
           TEST_RESEARCH.thesis.here.bullets[1],
@@ -82,129 +130,9 @@ test('a banned word is caught and named, so the repair knows what to replace', (
     },
   });
 
-  const findings = under(checkRun(research), 'banned-word');
+  const findings = under(checkRun(research), 'punctuation');
   assert.deepEqual(fieldsIn(findings), ['thesis.here.bullets.0']);
-  assert.match(findings[0].message, /leverage/i);
-});
-
-test('the banned list reaches the market map, not just the thesis', () => {
-  // Every line on slide 3 is written by the same run, under the same rules.
-  const research = researchWith({
-    marketMap: {
-      callout: {
-        take: 'US Fleet Tracking delivers a seamless experience for small fleets',
-        dynamics: TEST_RESEARCH.marketMap.callout.dynamics,
-        proposal: TEST_RESEARCH.marketMap.callout.proposal,
-      },
-    },
-  });
-
-  const findings = under(checkRun(research), 'banned-word');
-  assert.deepEqual(fieldsIn(findings), ['marketMap.callout.take']);
-  assert.equal(findings[0].slide, 3);
-});
-
-test('a banned word is caught in the forms a writer actually uses it in', () => {
-  // "Unlocking" is the same word as "unlock", and banning only the bare stem
-  // would let every one of these through.
-  for (const text of [
-    'Recur can unlock new revenue for the live tracking product',
-    'Recur can build seamlessly on the tracking data the product captures',
-    'Recur can apply its go-to-market team to empower the sales motion',
-  ]) {
-    const research = researchWith({
-      thesis: {
-        help: {
-          header: TEST_RESEARCH.thesis.help.header,
-          bullets: [
-            { text, sources: ['Recur introduction, slide 5'] },
-            TEST_RESEARCH.thesis.help.bullets[1],
-          ],
-        },
-      },
-    });
-    assert.equal(under(checkRun(research), 'banned-word').length, 1, `missed: ${text}`);
-  }
-});
-
-test('the AI-sounding patterns are caught as well as the words', () => {
-  const patterns = {
-    'Recur can build AI on the tracking data, not just the video but the routes':
-      'not just X but Y',
-    "In today's fleet landscape small operators still coordinate on paper":
-      "in today's ... landscape",
-  };
-
-  for (const [text, what] of Object.entries(patterns)) {
-    const research = researchWith({
-      thesis: {
-        excited: {
-          header: TEST_RESEARCH.thesis.excited.header,
-          bullets: [
-            { text, sources: ['https://www.usfleettracking.com/'] },
-            TEST_RESEARCH.thesis.excited.bullets[1],
-          ],
-        },
-      },
-    });
-    assert.equal(under(checkRun(research), 'banned-pattern').length, 1, `missed ${what}: ${text}`);
-  }
-});
-
-test('the strengths a help bullet draws from are not mistaken for a triad', () => {
-  // Decision 05 tells both help bullets to draw from Recur's go-to-market,
-  // product, payments and AI strengths. Every deterministic test for "a triad
-  // of adjectives" fired on exactly that list, so the triad is left to the
-  // model's judgment pass: spending a repair round on the copy the brief asks
-  // for is worse than missing a triad the tone check can still catch.
-  const research = researchWith({
-    thesis: {
-      help: {
-        bullets: [
-          {
-            text: 'Recur brings go-to-market, product, payments and AI to the company',
-            sources: ['Recur introduction, slide 5'],
-          },
-          TEST_RESEARCH.thesis.help.bullets[1],
-        ],
-      },
-    },
-  });
-
-  assert.deepEqual(under(checkRun(research), 'banned-pattern'), []);
-});
-
-test('forbidden punctuation is caught, and the hyphens the copy needs are not', () => {
-  // Semicolons, dashes, parentheses, exclamation marks and rhetorical questions
-  // are out. Hyphens are not: "go-to-market", "real-time" and "no-contract" are
-  // how the company's own material words these, and the controlled vocabulary
-  // says to use the company's words.
-  const banned = [
-    'Live tracking refreshes every ten seconds; the map never goes stale',
-    'Live tracking and video run in one app (with no extra hardware)',
-    'Small fleets want tracking without a contract - not a platform',
-    'Why do small fleets still coordinate dispatch on paper?',
-    'Live tracking refreshes every ten seconds!',
-  ];
-
-  for (const text of banned) {
-    const research = researchWith({
-      thesis: {
-        excited: {
-          header: TEST_RESEARCH.thesis.excited.header,
-          bullets: [
-            { text, sources: ['https://www.usfleettracking.com/'] },
-            TEST_RESEARCH.thesis.excited.bullets[1],
-          ],
-        },
-      },
-    });
-    assert.ok(under(checkRun(research), 'punctuation').length >= 1, `missed: ${text}`);
-  }
-
-  // The clean fixture is full of hyphenated compounds and possessives, and must
-  // stay clean.
-  assert.deepEqual(under(checkRun(TEST_RESEARCH), 'punctuation'), []);
+  assert.match(findings[0].message, /question/i);
 });
 
 test('every problem comes back at once, across fields and rules', () => {
@@ -216,11 +144,12 @@ test('every problem comes back at once, across fields and rules', () => {
       here: {
         // Kept comfortably inside its box: this test is about several rules
         // reporting together, and a header that also overflowed would tie it to
-        // the fit allowance.
-        header: 'Commercial fleets are truly mid-cycle in adopting telematics',
+        // the fit allowance. "Traking" is the misspelling the company-name rule
+        // catches; the bullet's question mark is what the punctuation rule does.
+        header: 'US Fleet Traking customers are mid-cycle in adopting telematics',
         bullets: [
           {
-            text: 'Small commercial fleets leverage homegrown tools; dispatch stays manual',
+            text: 'Why do small commercial fleets still coordinate dispatch by hand?',
             sources: ['https://www.fleetowner.com/technology/telematics'],
           },
           TEST_RESEARCH.thesis.here.bullets[1],
@@ -232,7 +161,7 @@ test('every problem comes back at once, across fields and rules', () => {
   const findings = checkRun(research);
   assert.deepEqual(
     [...new Set(findings.map((f) => f.rule))].sort(),
-    ['banned-word', 'punctuation'],
+    ['company-name', 'punctuation'],
   );
   assert.deepEqual(
     [...new Set(fieldsIn(findings))].sort(),
@@ -481,8 +410,8 @@ test('the reference run fits every box it has to sit in', () => {
 });
 
 test('a bullet too wide for its column is caught before anything is rendered', () => {
-  // Fourteen words, so the word count is satisfied and only the fit rule can
-  // catch this. Long words fill a column that short ones would not.
+  // Fourteen words, inside the limit of 16, so only the fit rule can catch
+  // this. Long words fill a column that short ones would not.
   const research = researchWith({
     thesis: {
       excited: {
@@ -557,4 +486,128 @@ test('a finding names the slide it sits on, so a repair round can report by slid
 
   const [finding] = under(checkRun(research), 'word-count');
   assert.equal(finding.slide, 2);
+});
+
+/**
+ * A thesis whose six bullets are the given texts, in section order, each
+ * sourced, so a test can talk about the six as the set they are.
+ *
+ * @param {string[]} texts
+ */
+function thesisOf(texts) {
+  const source = ['https://www.usfleettracking.com/'];
+  const pair = (at) => [texts[at], texts[at + 1]].map((text) => ({ text, sources: source }));
+  return researchWith({
+    thesis: {
+      here: { bullets: pair(0) },
+      excited: { bullets: pair(2) },
+      help: { bullets: pair(4) },
+    },
+  });
+}
+
+// A bullet already known to count, for tests that need one alongside the flat
+// set.
+const TRAILING = 'Enterprise platforms price for large fleets, leaving small ones out';
+
+// Six bullets built to one pattern: subject, verb, object, and nothing hung off
+// any of them. This is what the practice runs shipped, and what read as rote.
+const FLAT = [
+  'Small commercial fleets still coordinate dispatch on homegrown tools',
+  'Enterprise telematics platforms price and configure for large fleets',
+  'Vehicle locations refresh on a live map every ten seconds',
+  'Live tracking and in-vehicle video run in one app',
+  "Apply Recur's go-to-market team to the live tracking product",
+  'Build AI features on the tracking and video data the product captures',
+];
+
+test('six flat thesis bullets are refused as a set, against the slide', () => {
+  // Every other rule here is a rule about one field, and no single one of these
+  // bullets is at fault: each is fine alone, and the six together read as a
+  // form. So the finding names slide 2 and the thesis, not a bullet.
+  const findings = under(checkRun(thesisOf(FLAT)), 'sentence-structure');
+  assert.equal(findings.length, 1);
+  assert.equal(findings[0].slide, 2);
+  assert.equal(findings[0].field, 'thesis');
+  assert.match(findings[0].message, /0 of the 6/);
+});
+
+test("the reference deck's own bullets clear the floor, at three of six", () => {
+  // Slide 2 of the reference presentation, as Recur wrote it. It hangs a clause
+  // off three bullets - a trailing consequence, a fronted condition and a
+  // qualifier - and the rule is measured against exactly that.
+  //
+  // The fifth bullet asserts a weakness of the target, which the brief forbids.
+  // It is here because it is what the reference says, and this test counts
+  // sentence shapes rather than judging claims.
+  const reference = [
+    'Small commercial fleets still coordinate dispatch on low-complexity or homegrown tools',
+    'The enterprise telematics platforms price and configure for large fleets, leaving SMBs out',
+    'Once installed in every vehicle, it becomes the daily dispatch and accountability layer',
+    "Fastest-refresh live tracking and in-vehicle video that commodity trackers can't match",
+    "Strengthen US Fleet Tracking's organic product growth with a dedicated outbound motion",
+    'Build seachange AI on the tracking and video data USFT already captures each day',
+  ];
+
+  assert.deepEqual(under(checkRun(thesisOf(reference)), 'sentence-structure'), []);
+});
+
+test('each shape of clause counts: fronted, trailing, or qualifying the main one', () => {
+  const shapes = {
+    'a fronted condition': 'Once a truck is installed, dispatch runs from one live map',
+    'a fronted participle': 'Installed in every vehicle, the tracker becomes the dispatch layer',
+    'an irregular participle': 'Built for small fleets, the app sells without a contract',
+    'a trailing consequence': 'Enterprise platforms price for large fleets, so small ones buy trackers',
+    'a qualifier': 'Live tracking and video that commodity trackers cannot match',
+    'a qualifying reason': 'Small fleets switch trackers often because contracts rarely bind them',
+  };
+
+  for (const [what, text] of Object.entries(shapes)) {
+    // One flat bullet swapped for the shape, alongside one bullet already known
+    // to count, so the shape alone decides whether the floor of two is met.
+    const texts = [...FLAT];
+    texts[1] = TRAILING;
+    texts[3] = text;
+    assert.deepEqual(
+      under(checkRun(thesisOf(texts)), 'sentence-structure'),
+      [],
+      `${what} was not counted: ${text}`,
+    );
+  }
+});
+
+test('one clause across the six is still refused, and two is enough', () => {
+  const one = [...FLAT];
+  one[1] = TRAILING;
+  const [finding] = under(checkRun(thesisOf(one)), 'sentence-structure');
+  assert.match(finding.message, /1 of the 6/);
+
+  const two = [...one];
+  two[2] = 'Once installed in every vehicle, the tracker becomes the dispatch layer';
+  assert.deepEqual(under(checkRun(thesisOf(two)), 'sentence-structure'), []);
+});
+
+test('there is no ceiling on clauses: six of six passes', () => {
+  // The reference sits at three, with nothing stopping it going higher. The
+  // rule is a floor against flatness, not a target to write to.
+  const texts = [
+    'Once installed in every vehicle, the tracker becomes the dispatch layer',
+    TRAILING,
+    'Live tracking and video that commodity trackers cannot match',
+    'Because contracts are short, small fleets switch trackers often',
+    'Build AI on the tracking data the product captures, turning routes into scores',
+    "Apply Recur's go-to-market team where the product already wins",
+  ];
+  assert.deepEqual(under(checkRun(thesisOf(texts)), 'sentence-structure'), []);
+});
+
+test('a list of nouns after a comma is not mistaken for a clause', () => {
+  // "tracking, routing and billing" has an -ing word after a comma, which is
+  // what a trailing consequence looks like. Counting it would let six flat
+  // bullets through on two lists.
+  const texts = [...FLAT];
+  texts[1] = 'Fleets buy tracking, routing and billing from one vendor';
+  texts[3] = 'Dispatchers juggle phones, routing, and paper logs every day';
+  const [finding] = under(checkRun(thesisOf(texts)), 'sentence-structure');
+  assert.match(finding?.message ?? '', /0 of the 6/);
 });

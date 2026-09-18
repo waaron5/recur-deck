@@ -30,6 +30,10 @@ function assetPlan() {
       to: 'reference/visual-rules.md',
     },
     {
+      from: path.join(SKILL_SRC, 'reference', 'voice.md'),
+      to: 'reference/voice.md',
+    },
+    {
       from: path.join(SKILL_SRC, 'assets', 'recur-wordmark-white.png'),
       to: 'assets/recur-wordmark-white.png',
     },

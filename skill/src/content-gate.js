@@ -1,11 +1,20 @@
 // The content gate: the countable writing rules, checked before a deck is built.
 //
 // Decision 05 split enforcement in two, and this module is the deterministic
-// half. It checks everything countable - word counts, the banned list,
-// punctuation, unsourced numbers, name spelling, the source record's
-// completeness, the map's distribution, and whether the copy fits the box it
-// has to sit in. The model then judges what code cannot: tone, the swap test,
+// half. It checks everything countable - word counts, the question mark,
+// unsourced numbers, name spelling, the source record's completeness, the map's
+// distribution, whether the copy fits the box it has to sit in, and whether the
+// six thesis bullets are all built the same flat way. The model then judges what
+// code cannot: whether the copy sounds like the voice exemplar, the swap test,
 // and whether each claim matches its source.
+//
+// Vocabulary is deliberately not policed here. Decision 05's September 18
+// amendment deleted the banned word list, its phrase patterns and every
+// punctuation rule but the question mark: forbidding a word only moves a model
+// to the next one, and Recur's own introduction failed those rules on
+// "unlock", an en dash, parentheses and a semicolon. That bet is provisional,
+// and rules come back here only if the practice runs show the writing needs
+// them.
 //
 // Two things separate this module from thesis.js and market-map.js, which also
 // refuse bad input. Those check an object's *shape* and throw on the first hole,
@@ -59,84 +68,44 @@ const { MAP, MAP_LAYOUT, THESIS_GEOMETRY, THESIS_SECTIONS } = require('./design.
  */
 const finding = (field, slide, rule, message) => ({ field, slide, rule, message });
 
-// Decision 05's limits. A header is a claim and a bullet is its support, and
-// both stop working at the length where a founder has to re-read them.
-const LIMITS = { header: 12, bullet: 14 };
+// Decision 05's limits, as amended. A header is a claim and a bullet is its
+// support, and both stop working at the length where a founder has to re-read
+// them. Sixteen is what a bullet's box holds; the header's twelve never binds,
+// because after its bold section label the fit estimate stops it first.
+const LIMITS = { header: 12, bullet: 16 };
 
-// Decision 05's banned list: the words an AI reaches for when it is filling
-// space rather than saying something. A founder who reads one stops believing a
-// human wrote the page, which is the whole thing this deck is trying to be.
-//
-// "Unlock" is banned everywhere despite Recur's own slide 5 using it. The last
-// six are the decision's "hedges or intensifiers" category: it names truly,
-// incredibly and potentially, and the other three are the same move.
-const BANNED_WORDS = [
-  'leverage',
-  'seamless',
-  'robust',
-  'empower',
-  'unlock',
-  'delve',
-  'cutting-edge',
-  'best-in-class',
-  'game-changer',
-  'revolutionize',
-  'revolutionise',
-  'synergy',
-  'holistic',
-  'innovative',
-  'world-class',
-  'truly',
-  'incredibly',
-  'potentially',
-  'very',
-  'really',
-  'arguably',
-];
-
-// A writer does not type the dictionary form. "Leveraging", "seamlessly" and
-// "unlocked" are the same words as their stems, and banning only the stem would
-// let every one of them through.
-const SUFFIXES = '(?:e|es|ed|d|s|ing|ingly|ely|ally|ly|er|ers|ion|ions|ies|y)?';
-
-/**
- * One matcher per banned word, covering the forms it is actually written in.
- *
- * A trailing "e" or "y" is dropped before the suffixes are added, so "delve"
- * reaches "delving" and "synergy" reaches "synergies" without either needing
- * its own entry.
- */
-const BANNED_WORD_PATTERNS = BANNED_WORDS.map((word) => ({
-  word,
-  pattern: new RegExp(`\\b${word.replace(/[ey]$/, '')}${SUFFIXES}\\b`, 'i'),
-}));
-
-// The shapes, rather than the words. Each is a habit of AI prose that survives
-// any amount of word substitution.
-//
-// Decision 05 also bans triads of adjectives. That one is left to the model's
-// judgment pass: every deterministic form of it fired on "go-to-market,
-// product, payments and AI", which is the exact list of strengths the decision
-// tells help bullets to draw from. Spending a repair round on the copy the
-// brief asks for is worse than missing a triad the tone check can still catch.
-const BANNED_PATTERNS = [
-  { what: 'the "not just X but Y" shape', pattern: /\bnot just\b[^.]*\bbut\b/i },
-  { what: '"in today\'s ... landscape"', pattern: /\bin today['’]s\b[^.]*\blandscape\b/i },
-];
-
-// Decision 05's punctuation rules. A question mark stands in for the decision's
-// "rhetorical questions": every line on these slides is a statement, so a
+// The one punctuation rule left. A question mark stands in for decision 05's
+// ban on rhetorical questions: every line on these slides is a statement, so a
 // question mark in one is the rhetorical kind.
+const QUESTION = /\?/;
+
+// How many of the six thesis bullets must hang a second clause off the main
+// one. The reference deck sits at 3 of 6 and what the practice runs shipped sat
+// at 0. It is a floor and nothing more: there is no ceiling, and no rule about
+// length, because the reference's bullets vary less in length than the flat
+// ones did and a length target is one a model would write to.
+const MIN_CLAUSED_BULLETS = 2;
+
+// The shapes a clause hung off the main one takes on slide 2, each the way the
+// reference deck writes it.
 //
-// Hyphens are deliberately absent: the controlled vocabulary says to use the
-// company's own words, and those words are "go-to-market" and "no-contract".
-const FORBIDDEN_PUNCTUATION = [
-  { what: 'a semicolon', pattern: /;/ },
-  { what: 'an em or en dash', pattern: /[–—]/ },
-  { what: 'a dash', pattern: /(?:^|\s)-(?:\s|$)|--/ },
-  { what: 'parentheses', pattern: /[()]/ },
-  { what: 'an exclamation mark', pattern: /!/ },
-  { what: 'a question mark', pattern: /\?/ },
+// These lean generous, because a clause the gate failed to see spends a repair
+// round rewriting copy that was already right. The one exception is a list of
+// nouns: "tracking, routing and billing" has an -ing word after a comma, and
+// counting it would let six flat bullets through on two lists.
+const CLAUSE_SHAPES = [
+  // "Once installed in every vehicle, it becomes ...": a subordinate clause set
+  // in front of the main one, closed by its comma.
+  /^(?:once|when|whenever|while|if|unless|because|although|though|since|as|after|before|until|wherever|whereas)\b[^,]*,/i,
+  // "Installed in every vehicle, the tracker ...", "Built for small fleets, ...".
+  /^(?:[a-z]+(?:ing|ed)|built|made|sold|known|grown|run|held|kept|paid|bought)\b[^,]*,/i,
+  // "..., leaving SMBs out" - but not "..., routing and billing", where the
+  // word after the comma is the next item in a list.
+  /,\s+(?:[a-z]+(?:ing|ed)\b(?!,|\s+(?:and|or)\b)|(?:which|so)\b)/i,
+  // "... that commodity trackers can't match", "... because contracts rarely
+  // bind them". Only mid-sentence: at the start these words are a fronted
+  // clause or a demonstrative, and both are covered or not a clause.
+  /\s(?:that|which|who|whose|where|when|while|because|although|though|unless|until|whereas|if)\s/i,
 ];
 
 // Decision 05 bans aggregator *estimates* - Crunchbase and ZoomInfo revenue,
@@ -180,11 +149,7 @@ function checkRun(research) {
 
   for (const field of copyFields(research)) {
     findings.push(...checkWordCount(field));
-    findings.push(...checkBannedWords(field));
-    findings.push(...matched(field, 'banned-pattern', BANNED_PATTERNS, 'falls into', 'rewrite the sentence'));
-    findings.push(
-      ...matched(field, 'punctuation', FORBIDDEN_PUNCTUATION, 'uses', "which this deck's copy does not use"),
-    );
+    findings.push(...checkQuestion(field));
     findings.push(...checkUnsourcedNumber(field));
     findings.push(...checkCompanyName(field, company));
     findings.push(...checkFit(field));
@@ -199,7 +164,12 @@ function checkRun(research) {
   // restated. Anything only they can see - a wrong bullet count, a coordinate
   // that is not a number - resurfaces next round once the named fields are
   // repaired.
+  //
+  // The clause floor is added after the slides are noted, because it is not a
+  // hole restated: a thesis with a missing bullet and a flat set should hear
+  // about both in one round.
   const caught = new Set(findings.map((problem) => problem.slide));
+  findings.push(...checkClauses(research?.thesis));
   findings.push(...checkShape(research).filter((problem) => !caught.has(problem.slide)));
 
   return findings;
@@ -371,46 +341,58 @@ function checkWordCount({ field, slide, kind, text }) {
 }
 
 /**
- * One field against the banned list.
- *
- * Every banned word in the field comes back in one finding rather than one
- * each, because the repair rewrites the field as a whole. A rewrite that fixed
- * one word and left the next would just spend another round.
+ * One field against the question mark.
  *
  * @param {CopyField} field
  * @returns {Finding[]}
  */
-function checkBannedWords({ field, slide, text }) {
-  const found = BANNED_WORD_PATTERNS.map(({ pattern }) => text.match(pattern)?.[0]).filter(Boolean);
-  if (found.length === 0) return [];
-
+function checkQuestion({ field, slide, text }) {
+  if (!QUESTION.test(text)) return [];
   return [
     finding(
       field,
       slide,
-      'banned-word',
-      `uses ${list(found)}, which the banned list rules out: say it plainly instead`,
+      'punctuation',
+      'asks a question, and every line on these slides is a statement: say what the question was getting at',
     ),
   ];
 }
 
 /**
- * One field against a list of patterns, each with a name a person can read.
+ * The six thesis bullets as a set: at least two must hang a second clause off
+ * the main one.
  *
- * The banned shapes and the punctuation rules are the same check over different
- * lists: match, and say which ones matched.
+ * This is the one rule here about more than one field, and it exists because
+ * the defect the practice runs shipped was a property of all six at once. Each
+ * bullet was fine alone; six built subject-verb-object, one after another, read
+ * as a form. So the finding names the slide, and the repair chooses which
+ * bullets to rebuild.
  *
- * @param {CopyField} field
- * @param {string} rule
- * @param {{what: string, pattern: RegExp}[]} entries
- * @param {string} verb
- * @param {string} tail
+ * @param {any} thesis
  * @returns {Finding[]}
  */
-function matched({ field, slide, text }, rule, entries, verb, tail) {
-  const found = entries.filter(({ pattern }) => pattern.test(text)).map((entry) => entry.what);
-  if (found.length === 0) return [];
-  return [finding(field, slide, rule, `${verb} ${list(found)}, ${tail}`)];
+function checkClauses(thesis) {
+  const texts = thesisFields(thesis)
+    .filter((field) => field.kind === 'bullet')
+    .map((field) => field.text);
+  // No bullets at all is a shape problem, and the backstop says so in its own
+  // words.
+  if (texts.length === 0) return [];
+
+  const claused = texts.filter((text) => CLAUSE_SHAPES.some((shape) => shape.test(text)));
+  if (claused.length >= MIN_CLAUSED_BULLETS) return [];
+
+  return [
+    finding(
+      'thesis',
+      2,
+      'sentence-structure',
+      `${claused.length} of the ${texts.length} thesis bullets hang a second clause off the main one, ` +
+        `and at least ${MIN_CLAUSED_BULLETS} must: rebuild ${MIN_CLAUSED_BULLETS - claused.length} more around ` +
+        'a fronted condition ("Once ..., ..."), a trailing consequence ("..., leaving ...") ' +
+        'or a qualifier ("... that ..."), the way reference/voice.md varies its sentences',
+    ),
+  ];
 }
 
 /**

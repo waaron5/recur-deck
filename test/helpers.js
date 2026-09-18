@@ -173,7 +173,9 @@ const TEST_CREDIT = {
  * carrying the sources that slide 2's speaker notes pair it with.
  *
  * The help bullets cite the Recur introduction rather than the target's site,
- * because they are Recur proposals and not company facts.
+ * because they are Recur proposals and not company facts. Two of the six hang a
+ * clause off the main one, as the reference deck's own bullets do, which is the
+ * floor the content gate holds a thesis to.
  */
 const TEST_THESIS = {
   here: {
@@ -184,7 +186,7 @@ const TEST_THESIS = {
         sources: ['https://www.fleetowner.com/technology/telematics'],
       },
       {
-        text: 'Enterprise telematics platforms price and configure for large fleets',
+        text: 'Enterprise telematics platforms price and configure for large fleets, leaving SMBs out',
         sources: ['https://www.samsara.com/pricing'],
       },
     ],
@@ -197,7 +199,7 @@ const TEST_THESIS = {
         sources: ['https://www.usfleettracking.com/'],
       },
       {
-        text: 'Live tracking and in-vehicle video run in one app',
+        text: 'Once installed in every vehicle, it becomes the daily dispatch layer',
         sources: ['https://www.usfleettracking.com/products'],
       },
     ],

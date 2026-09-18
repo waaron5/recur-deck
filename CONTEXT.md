@@ -54,7 +54,7 @@ _Avoid_: Bug, error
 A shortcoming in a sell deck that does not make it unusable, such as a generic bullet, a weak landmark, or a debatable axis. Quality notes do not fail a run.
 
 **Finding**:
-One problem the content gate reports, naming the single field that has to change, the rule it breaks, and the slide it sits on. A finding may be a critical defect or a quality note — an overflowing bullet is one, a banned word is the other — and the gate reports both the same way, because both are repaired by rewriting the field it names.
+One problem the content gate reports, naming the single field that has to change, the rule it breaks, and the slide it sits on. The one exception is a rule about a set of fields rather than any one of them — six thesis bullets all built the same flat way — which names the section instead, and the repair chooses which fields to rewrite. A finding may be a critical defect or a quality note — an overflowing bullet is one, a flat thesis is the other — and the gate reports both the same way, because both are repaired by rewriting what it names.
 _Avoid_: Error, violation, warning
 
 **Render check**:

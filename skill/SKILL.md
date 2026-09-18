@@ -133,13 +133,18 @@ go-to-market, product, payments and AI strengths, and promise only what slides
 coverage. Crunchbase and ZoomInfo estimates are never facts. Use a number only
 when a primary source states it.
 
-**Writing rules.** Headers stay within 12 words and bullets within 14. One idea
-per bullet, active voice, present tense, plain investor English a human would
-write. No semicolons, dashes, parentheses or exclamation marks. Avoid *leverage,
-seamless, robust, empower, unlock, delve, cutting-edge, best-in-class,
-game-changer, revolutionize, synergy, holistic, innovative, world-class*, "not
-just X but Y", and hedges like *truly* or *potentially*. If a bullet would read
-just as true with another company's name in it, it is too generic.
+**Writing rules: sound like Recur.** Read `reference/voice.md` before you write
+a line. It is Recur's own introduction, slides 4-9, which follows your two slides
+in every deck. Copy that reads as though a different company wrote it is the
+defect to avoid. Write the way those lines do: commit to the claim, use ordinary
+English confidently, and let names and numbers carry the weight. Vary how the
+sentences are built. Across the six bullets, at least two hang a second clause
+off the main one - a fronted condition, a trailing consequence, or a
+qualifier - and the content check counts them.
+
+Headers stay within 12 words and bullets within 16, and each has to fit its box.
+Every line is a statement, never a question. If a bullet would read just as true
+with another company's name in it, it is too generic.
 
 **Sparse evidence means saying less, not inventing more.** All six bullets stay
 required; they may stay product-level and category-level.
@@ -207,8 +212,8 @@ target wins; `dynamics`, exactly two bullets on how the market behaves; and
 bullets criticise **categories, never named companies**. If the target ends up
 alone in its quadrant, the callout has to explain that white space.
 
-The subtitle is one neutral sentence on how the market divides. The writing
-rules from step 3 apply to every line on this slide.
+The subtitle is one neutral sentence on how the market divides. Every line on
+this slide is held to `reference/voice.md` as well.
 
 ### 5. Write the run file
 
@@ -237,7 +242,7 @@ you established:
           "sources": ["https://www.fleetowner.com/technology/telematics"]
         },
         {
-          "text": "Enterprise telematics platforms price and configure for large fleets",
+          "text": "Enterprise telematics platforms price and configure for large fleets, leaving SMBs out",
           "sources": ["https://www.samsara.com/pricing"]
         }
       ]
@@ -250,7 +255,7 @@ you established:
           "sources": ["https://www.usfleettracking.com/"]
         },
         {
-          "text": "Live tracking and in-vehicle video run in one app",
+          "text": "Once installed in every vehicle, it becomes the daily dispatch layer",
           "sources": ["https://www.usfleettracking.com/products"]
         }
       ]
@@ -338,15 +343,20 @@ it is never placed.
 node <skill-dir>/scripts/check-content.js --input run.json
 ```
 
-It reports everything countable: word counts, the banned list, forbidden
-punctuation, a number with no source behind it, the company's name spelled some
-other way, a missing source entry, a quadrant holding too many companies, and
-text too long for the box it has to sit in. Every finding names one field.
+It reports everything countable: word counts, a question mark, a number with no
+source behind it, the company's name spelled some other way, a missing source
+entry, a quadrant holding too many companies, text too long for the box it has
+to sit in, and a thesis with fewer than two bullets that hang a clause off the
+main one. Every finding names one field, except that last one: it names the
+`thesis`, because no single bullet is at fault, and you choose which bullets to
+rebuild.
 
 ```json
 {"ok": false, "findings": [
   {"slide": 2, "field": "thesis.here.header", "rule": "word-count",
-   "message": "14 words, and a header stays within 12 words: shorten it"}
+   "message": "14 words, and a header stays within 12 words: shorten it"},
+  {"slide": 2, "field": "thesis", "rule": "sentence-structure",
+   "message": "0 of the 6 thesis bullets hang a second clause off the main one, ..."}
 ]}
 ```
 
@@ -360,10 +370,16 @@ one it was. When they are gone it prints `"budgetSpent": true` and an `advice`
 line: stop rewriting and deliver a flagged deck. A check that passes costs
 nothing.
 
-**Then read the copy once yourself**, for the three things code cannot judge.
+**Then read the copy once yourself, against `reference/voice.md`**, for what code
+cannot judge.
 
-- **Tone.** Does this read like someone who knows the market, or like a template
-  with the company's name dropped into it?
+- **Voice.** Put slides 2 and 3 beside the lines in `reference/voice.md`. Do they
+  read as though the company that wrote slides 4-9 also wrote these, or like a
+  template with the company's name dropped into it?
+- **The failures the practice runs produced.** One word opening several bullets
+  in a row, such as "Now" three times down the page. Six bullets built to the
+  same pattern, even once the check passes. Three headers alike in shape and
+  length. Each bullet can be fine alone and the page still reads as a form.
 - **The swap test.** Would a bullet read just as true with another company's
   name in it? Then it says nothing about this one, and it needs rewriting.
 - **Claim against source.** Does each bullet say what its sources actually say,
@@ -543,6 +559,9 @@ Outside the covered scope (<reason>); treat as best-effort.
 
 ## Reference
 
+- `reference/voice.md` - the voice exemplar: the prose of slides 4-9, what
+  makes those lines land, and what not to copy from them. Every line you write
+  on slides 2 and 3 is held against it.
 - `reference/visual-rules.md` - page geometry, palette, type, the cover's
   treatment and its landmark ladder, and the rule that overflow is fixed by
   shortening copy, never by shrinking type.

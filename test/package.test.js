@@ -63,6 +63,10 @@ test('the skill folder carries its instructions, script, reference and assets', 
     // the model remembers recording.
     'scripts/reply.js',
     'reference/visual-rules.md',
+    // The voice exemplar. The build lists every file it ships by name, so a
+    // file dropped into skill/reference/ does not travel by itself, and
+    // without this one the copy review has nothing to measure against.
+    'reference/voice.md',
     'assets/recur-wordmark-white.png',
     'assets/recur-wordmark-navy.png',
     // The logo rasterizers. Without these a run can place no SVG or WebP logo,
@@ -73,6 +77,16 @@ test('the skill folder carries its instructions, script, reference and assets', 
   ];
   for (const file of expected) {
     assert.ok(entries.has(`${SKILL_NAME}/${file}`), `missing ${file}`);
+  }
+});
+
+test("every shipped reference file is reachable from SKILL.md's reference list", async () => {
+  // A reference the instructions never name is one a run never opens.
+  const { stageDir } = await ensureBuilt();
+  const skill = fs.readFileSync(path.join(stageDir, 'SKILL.md'), 'utf8');
+  const list = skill.slice(skill.indexOf('## Reference'));
+  for (const name of fs.readdirSync(path.join(stageDir, 'reference'))) {
+    assert.ok(list.includes(`reference/${name}`), `SKILL.md's reference list omits ${name}`);
   }
 });
 

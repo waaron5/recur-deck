@@ -51,8 +51,8 @@ const FACES = {
 
 // The copy this deck carries is English. Printable ASCII covers it, and the few
 // characters beyond it that a model tends to type are listed so their width is
-// measured rather than guessed - even though the gate's punctuation rule bans
-// most of them outright.
+// measured rather than guessed. The dashes especially: Recur's own slides use
+// them, and the gate lets them through.
 const EXTRA = ['‘', '’', '“', '”', '–', '—', '…'];
 
 /**
