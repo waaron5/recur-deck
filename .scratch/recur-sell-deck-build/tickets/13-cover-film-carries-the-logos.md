@@ -15,12 +15,12 @@ prototype](../../recur-sell-deck/issues/06-prototype-slide-and-asset-strategy.md
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] `COVER_PHOTO.highlight` is `828F9C`, with the measurement and the rejected alternative recorded beside it the way the other values in `design.js` are.
-- [ ] The cover treatment paragraph in `reference/visual-rules.md` matches the new value, including the mean luminance a real skyline now lands at.
-- [ ] A test pins the contrast floor: white type over the treated band clears the reference cover's own 5.83:1 on a bright photograph, not only on a skyline.
-- [ ] A cover built from a bright photograph is looked at, and the city still reads.
+- [x] `COVER_PHOTO.highlight` is `828F9C`, with the measurement and the rejected alternative recorded beside it the way the other values in `design.js` are.
+- [x] The cover treatment paragraph in `reference/visual-rules.md` matches the new value, including the mean luminance a real skyline now lands at.
+- [x] A test pins the contrast floor: white type over the treated band clears the reference cover's own 5.83:1 on a bright photograph, not only on a skyline.
+- [x] A cover built from a bright photograph is looked at, and the city still reads.
 
 ## Comments
 
@@ -38,3 +38,18 @@ Do not turn this into a per-photograph correction. That option was measured, it
 works better, and the user rejected it for run time — one fixed value that holds
 every time was worth more than matching the reference on every cover. The
 accepted cost is that a typical cover now sits deeper than the reference does.
+
+**Implemented September 18, 2026.** `COVER_PHOTO.highlight` is `828F9C`, exactly
+65% of `C8DCF0`. The contrast test ships the bright Glendale photograph ("Casa
+Adobe de San Rafael", CC0) as a full-resolution fixture cut to the cover's 16:9
+window. At 512px wide, downscaling averaged away the bright detail: under the old
+value it measured 4.69:1 against the real cover's 3.35:1, which would have hidden
+the failure. At full resolution it measures 3.41:1 at the old value and 5.97:1
+at the new one, over the band x 2.823–8.154in by the divider's height.
+
+The covers were looked at through macOS Quick Look, since LibreOffice is not
+installed on the build machine. I built decks from the bright landmark, the
+Oklahoma City skyline and the dark Glendale riverside, at both values. At the new
+value all three read and the marks stand clear. The dark photograph keeps its
+detail rather than going to mud. The ticket moves to `ready-for-human` so a cover
+can be seen as the supported host renders it, on the next practice run.
