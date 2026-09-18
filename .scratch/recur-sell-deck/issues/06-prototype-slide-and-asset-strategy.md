@@ -65,3 +65,56 @@ Resolved September 15, 2026, through the user's live reaction to the three-varia
 **Landmark.** The HQ city comes from the official site, per [Define the evidence and investment judgment behind each pitch](05-define-investment-judgment.md). The landmark is a Wikimedia Commons photo of a recognisable landmark or skyline in that city, found through the Commons API. Download a 1920 px thumbnail, falling back to 1280 px, then crop to 16:9 and apply the navy duotone. The file name, author, and licence go only in slide 1's speaker notes, never on the slide.
 
 **Evidence.** The prototype is captured on the throwaway branch `prototype/06-slide-layouts`, under `.scratch/recur-sell-deck/assets/06-slide-prototype/`. It holds the generator, the logo discovery trial, the viewer, three decks, and their renders. Its copy is illustrative and unverified.
+
+## Amendment — September 18, 2026
+
+Amended after the ticket 09 practice runs, in a live grilling exchange with the
+user. On the delivered covers the Recur wordmark and the target's mark did not
+carry against the photograph. The user's instruction was a slightly darker film,
+with the reference cover as the exact target.
+
+**What the measurements showed.** The treatment is not uniformly too light. It
+has no target at all.
+
+The reference cover's ground, with its white type masked out, measures a band
+luminance of 101 where the wordmarks sit — a contrast ratio of 5.83:1 against
+white type — and a whole-slide mean of 77.8. Running the shipped treatment over
+real Commons photographs:
+
+| Cover photo | Band p90 | White-on-band | Whole-slide mean |
+| --- | --- | --- | --- |
+| Reference (the target) | 101 | 5.83:1 | 77.8 |
+| Oklahoma City skyline | 117 | 4.59:1 | 78 |
+| Glendale landmark, a bright subject | 140 | **3.35:1** | 93 |
+| Glendale skyline, a dark subject | 72 | 9.20:1 | 66 |
+
+`exposure` is a multiplier, not a target: it preserves whatever brightness the
+photograph arrived with. On an Oklahoma City-like skyline the treatment already
+reproduces the reference almost exactly, which is why `design.js` could honestly
+record it as "tuned so a real Commons skyline lands at about 77" — true of that
+skyline, and an accident for every other. Across three real photographs the band
+the logos sit in ranged from 48 to 107 against a reference of 101.
+
+**What changes.** The duotone's highlight end drops to 65% of its value, from
+`C8DCF0` to `828F9C`. Measured across the same three photographs, every cover
+then clears the reference's own contrast, worst case 5.90:1.
+
+**What was rejected, and why.** Measuring each photograph at run time and
+correcting exposure to land on the reference's band would match the reference on
+every cover rather than only on the bright ones. The user ruled it out: runs
+already take five minutes or more, and one value that works every time is worth
+more than a per-photo match. Lowering the *highlight* end rather than `exposure`
+is what stops that choice turning dark photographs to mud — it compresses the
+bright end and leaves the shadows where they are.
+
+**The accepted cost.** A typical cover now sits deeper than the reference does:
+the Oklahoma City skyline lands at a whole-slide mean of 57 against the
+reference's 77.8. No single fixed value can both match the reference's tone on a
+typical photograph and hold the contrast floor on a bright one. The floor was
+chosen.
+
+**Out of scope, and still open.** Which photograph the ladder chooses was not
+addressed here. A ServiceTitan run covered its deck with a residential house — a
+defensible answer to "Glendale California landmark" and a poor sales cover. See
+the note appended to [Define unattended generation and failure
+behavior](07-define-unattended-run.md).

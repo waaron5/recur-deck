@@ -63,3 +63,24 @@ Resolved September 15, 2026 with the user in a live grilling exchange. Terms (ru
 - **Best-effort targets** run the same pipeline under the same gates and add one line: `Outside the covered scope (<reason>); treat as best-effort.`
 
 The clean deck file is `Recur x <Company>.pptx`.
+
+## Note — September 18, 2026
+
+**One clause of this decision was never implemented.** The landmark ladder above
+says that "a photo that is watermarked, narrower than about 1,600 px, or too
+somber for a sales cover moves the search down a rung". Only the width is
+enforced, by the `fileres` filter in the Commons query. Nothing in the package or
+in SKILL.md ever puts a candidate photograph in front of the model, and
+`ladder.js` steps down only when a search returns nothing usable — never on a
+judgment about what came back. A watermarked photograph, or one whose subject is
+wrong for a sales cover, is placed without objection.
+
+Found during the ticket 09 practice runs: a ServiceTitan run covered its deck
+with a photograph of a residential house, which is a reasonable answer to
+"Glendale California landmark" and a poor cover. The user set photo choice aside
+for now, so this is recorded rather than fixed.
+
+Whoever picks it up should know the shape of it: the decision was made, and the
+code never carried it out. Fixing it means giving the model a look at the
+candidates before the build — the run file already accepts a `landmark` the model
+supplies, so the mechanism exists; what is missing is the step that chooses.

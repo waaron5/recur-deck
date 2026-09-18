@@ -150,3 +150,27 @@ search, a real LibreOffice, or a model actually following the brief.
 
 **Ticket 10 is blocked on this one**, and what it is waiting for is the runs — its
 tested-on table has nothing to say until they exist.
+
+**September 18, 2026 — the runs happened, and here is what they produced.** The
+practice runs this ticket is mostly made of were carried out by the user on the
+packaged ZIP and judged by eye in PowerPoint. They are **not** recorded as rows in
+`practice/practice-log.md`: the delivered files and their work directories were
+not kept, so there is no structural verdict and no timeline to write down. The log
+says so plainly rather than carrying numbers reconstructed from memory, and the
+first thing the next set of runs should do differently is keep each file and its
+work directory. The observations survived; the timings, which are the one thing
+tickets 10 and 11 actually need from here, did not.
+
+What the runs did produce is three recurring quality notes, now in the log with
+the workflow fix each one asks for. Two became tickets:
+[12](12-copy-that-sounds-like-recur.md) rewrites the writing rules around a voice
+exemplar drawn from slides 4-9, and [13](13-cover-film-carries-the-logos.md)
+lowers the cover film so the wordmarks carry on any photograph. The third — a
+cover photograph whose subject is wrong for a sales cover, found on a ServiceTitan
+run — was set aside by the user and is recorded as an unimplemented clause of
+decision 07 rather than as a ticket of its own.
+
+Decisions 05 and 06 now carry dated amendments describing what changed and why,
+including the measurements behind each. This ticket's own criteria are unchanged
+and it stays `ready-for-human`: what closes it is still a set of runs with the
+delivered files kept.

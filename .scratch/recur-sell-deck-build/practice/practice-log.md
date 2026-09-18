@@ -58,6 +58,22 @@ last recorded mark.
 | --- | --- | --- | --- | --- | --- |
 | | | | | | |
 
+**Runs happened on September 17, 2026 and produced no rows here.** The user ran
+the workflow against several companies on the packaged ZIP and judged the decks
+by eye. What came back was recorded as quality notes below, because the
+mechanical half was never captured: the delivered `.pptx` files and their work
+directories were not kept, so there is no `judge-run.js` report, no timeline, and
+no defect list to write down. This log's own rule holds — a row is written from
+an actual delivered deck or not at all — so the table stays empty rather than
+carrying numbers reconstructed from memory.
+
+For the next set of runs, keep each delivered file and its work directory. The
+observations below were the valuable part and they survived; the timings, which
+are the one thing tickets 10 and 11 need, did not.
+
+ServiceTitan was among the companies run. It is not on the practice roster above,
+and it is not on the release set either, so no release slot was spent.
+
 ## Recurring quality notes
 
 A note that appears in two or more runs goes here, with the workflow fix it
@@ -67,7 +83,9 @@ that the bullet needs rewriting one more time.
 
 | Note | Runs it appeared in | Workflow fix | Fixed in |
 | --- | --- | --- | --- |
-| | | | |
+| Slide 2 and 3 copy reads rote and machine-written. "Now" opened three consecutive sub-bullets; the three headers were alike in length and shape; all six bullets were built to one pattern | Multiple runs, September 17, 2026 | The writing rules are rewritten around a voice exemplar drawn from slides 4–9. Decision 05's sentence-shape mandate is withdrawn, its word, phrase and punctuation lists deleted, and one structural check added in their place | Ticket 12 |
+| The Recur wordmark and the company mark do not carry against the cover photograph | Multiple runs, September 17, 2026 | The duotone's highlight end drops to `828F9C`, which holds white type above the reference cover's own contrast on every photograph measured | Ticket 13 |
+| The cover photograph's subject is wrong for a sales cover — a ServiceTitan run returned a residential house | ServiceTitan, September 17, 2026 | None. Decision 07 already requires a photo "too somber for a sales cover" to step down a rung, and that clause was never implemented. The user set photo choice aside; see the note appended to decision 07 | Not fixed |
 
 ## The four thresholds
 

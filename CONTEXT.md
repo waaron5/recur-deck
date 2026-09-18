@@ -102,3 +102,7 @@ _Avoid_: Claude API, generic AI tool, multi-host workflow
 **Workflow package**:
 The browser-uploadable Recur sell-deck custom-skill ZIP, containing its instructions, deterministic deck-generation code, validation code, reference rules, and fixed Recur assets. The handoff also includes a short installation guide and an example sell deck.
 _Avoid_: Source repository, hosted application, API integration
+
+**Voice exemplar**:
+The prose of the Recur introduction, slides 4–9, carried inside the workflow package as the writing a run's copy is held against. It replaces the banned word list: a run imitates writing rather than avoiding words.
+_Avoid_: Style guide, tone guidelines, house style

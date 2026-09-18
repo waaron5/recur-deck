@@ -48,3 +48,67 @@ Resolved September 15, 2026 with the user in a live grilling exchange. Terms (co
 **Sparse evidence.** Say less rather than invent more. "Why we're excited" may stay product-level, "Why we're here" leans on category sources, "How we can help" stays anchored to the product type; all six bullets remain required. If sources cannot establish what the company sells and to whom, the run's evidence has failed; its terminal behavior belongs to [Define unattended generation and failure behavior](07-define-unattended-run.md).
 
 **Contradictory evidence.** Current primary material beats third-party; newer beats older; an unresolved conflict keeps the claim off the slide and is noted in the source record. HQ, which the landmark requires, comes from the official site's own headquarters designation (about, contact, or legal footer), is recorded in slide 1 notes, and is stated in the chat reply.
+
+## Amendment — September 18, 2026
+
+Amended after the ticket 09 practice runs, in a live grilling exchange with the
+user. The runs produced decks whose slide 2 and slide 3 copy read, in the user's
+words, "rote and AI generated": the word "now" opening three consecutive
+sub-bullets, the three headers alike in length and shape, and all six bullets
+built the same way.
+
+**What the measurements showed.** The rules above were not being strained by the
+model. They were producing the defect.
+
+- The reference deck's own human copy already fits the limits it was assumed to
+  be fighting: headers of 8, 8 and 11 words, bullets of 11 to 14. The generated
+  copy was *shorter* than the cap, not pressed against it.
+- The reference's six bullets vary *less* in length than the generated ones
+  (character spread sd 3.0 against sd 7.3). Length variance is not what makes
+  the reference read as human, so requiring it would not have helped.
+- What differs is structure. The reference carries a subordinate or participial
+  clause in 3 of its 6 bullets and a comma in 2; the generated copy carried
+  neither in any bullet. "One idea and one main clause per bullet;
+  subject–verb–object; active voice; present tense" produces precisely that
+  flatness, and the present-tense mandate applied to a market observation is
+  what produced "now".
+- Recur's own introduction slides fail the gate that polices copy written to
+  imitate them. Of 23 transcribed lines from slides 4–9, 10 are refused: on the
+  banned list ("unlock" on slide 5, which this decision already acknowledged
+  overriding), on punctuation (an en dash on slide 7, parentheses on 8, a
+  semicolon on 9), and on the word counts.
+
+**What changes.**
+
+- **Sentence shape.** The subject–verb–object, one-main-clause and present-tense
+  mandates are withdrawn. In their place: across the six thesis bullets, at
+  least two must carry a subordinate or participial clause — a fronted
+  condition, a trailing consequence, or a qualifier. Enforced in code, because
+  it is the one property of the set that no per-field rule could ever see.
+- **The banned word list is deleted**, in full, with the suffix matching behind
+  it. The user's reasoning, which this decision adopts: forbidding a word only
+  moves the model to the next one, "until there are no words left to take away".
+- **The punctuation rules are deleted**, except the question mark, which still
+  stands in for the ban on rhetorical questions. Semicolons, dashes, parentheses
+  and exclamation marks are permitted, as they are on slides 4–9.
+- **The banned phrase patterns are deleted** ("not just X but Y", "in today's …
+  landscape"), for the same reason as the word list.
+- **Word limits.** Bullets move from 14 to 16 words, which is what the box
+  holds. Headers stay at 12, now understood as slack rather than a limit: after
+  the bold section label the header line fits about 9 to 10 words, so the fit
+  estimate binds first and the number never does.
+- **A voice exemplar is introduced.** `reference/voice.md` carries the prose of
+  slides 4–9 with the writing annotated, and the model's copy review measures
+  against it instead of against a list of prohibitions.
+
+**The bet, stated plainly.** This decision originally held that "leaving all
+judgment to the model drifts", and deleting two lists moves the other way. That
+is deliberate and provisional. The user's instruction: "start with few
+regulations, and just enforce sounding like 4-9, and we'll add regulations if the
+writing turns out to be bad." The next practice runs decide whether rules come
+back, and which ones.
+
+After this amendment the content gate still enforces word counts, the fit
+estimate, unsourced numbers, the company's name, source-record completeness, the
+market map's distribution, and the new sentence-structure check. Every judgment
+about vocabulary and tone now belongs to the model, against the exemplar.
