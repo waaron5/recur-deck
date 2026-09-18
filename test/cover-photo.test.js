@@ -10,7 +10,7 @@ const path = require('node:path');
 const jpeg = require('jpeg-js');
 
 const { coverPhoto } = require('../skill/src/cover-photo.js');
-const { SLIDE_W, SLIDE_H } = require('../skill/src/design.js');
+const { SLIDE_W, SLIDE_H, COVER } = require('../skill/src/design.js');
 
 // A real Commons photo, downscaled to 512px to keep the repo light:
 // "Downtown Oklahoma City skyline.jpg" by Urbanative, CC0.
@@ -21,6 +21,57 @@ const { SLIDE_W, SLIDE_H } = require('../skill/src/design.js');
 const REAL_PHOTO = fs.readFileSync(
   path.join(__dirname, 'fixtures', 'oklahoma-city-skyline.jpg'),
 );
+
+// A bright photograph, the case a skyline hides: "Casa Adobe de San Rafael
+// (Glendale, California).jpg" by Alexis Doine, CC0, which a ServiceTitan
+// practice run put on its cover. Unlike the skyline it ships at full
+// resolution, cut to the 16:9 window the cover keeps: downscaling averages away
+// the bright detail the contrast floor is about, and at 512px wide it measured
+// 4.69:1 under the old treatment against 3.35:1 on the real cover.
+const BRIGHT_PHOTO = fs.readFileSync(
+  path.join(__dirname, 'fixtures', 'glendale-casa-adobe.jpg'),
+);
+
+// White type over the reference cover's own ground, with the type masked out:
+// the band the wordmarks sit in measures 101 of 255 at its 90th percentile,
+// which is 5.83:1. Measured in the September 18, 2026 amendment to decision 06.
+const REFERENCE_CONTRAST = 5.83;
+
+/**
+ * The contrast of white type against the brighter end of the band the two
+ * marks sit in.
+ *
+ * The band runs from the reference's wordmark ink (x 2.823in) to the end of the
+ * company's slot, over the divider's height. The 90th percentile rather than
+ * the mean, because a mark is lost where the ground is brightest, not where it
+ * is typical.
+ *
+ * @param {Buffer} buffer  A treated cover.
+ */
+function bandContrast(buffer) {
+  const { data, width, height } = jpeg.decode(buffer, { useTArray: true });
+  const across = (inches) => Math.round((inches / SLIDE_W) * width);
+  const down = (inches) => Math.round((inches / SLIDE_H) * height);
+  const x0 = across(2.823);
+  const x1 = across(COVER.name.left + COVER.name.width);
+  const y0 = down(COVER.divider.y);
+  const y1 = down(COVER.divider.y + COVER.divider.h);
+
+  const lumas = [];
+  for (let y = y0; y < y1; y += 1) {
+    for (let x = x0; x < x1; x += 1) {
+      const i = (y * width + x) * 4;
+      lumas.push(0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]);
+    }
+  }
+  lumas.sort((a, b) => a - b);
+  const p90 = lumas[Math.floor(lumas.length * 0.9)];
+
+  // WCAG relative luminance, taking the band's grey as all three channels.
+  const c = p90 / 255;
+  const linear = c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  return 1.05 / (linear + 0.05);
+}
 
 /**
  * A colourful test photo: bands of unrelated hues, bright at the top and dark
@@ -165,21 +216,20 @@ test('the one ramp it collapses onto is navy', async () => {
 });
 
 test('the ground is dark enough for white type to read over it', async () => {
-  // The reference cover's own ground measures a mean luminance of about 77 of
-  // 255. Anything much brighter and the white wordmarks stop standing out.
+  // A coarse bound on a synthetic photo. The floor that matters is measured
+  // where the marks sit, on real photographs, further down.
   const after = measure(coverPhoto(vividPhoto(800, 450)));
 
   assert.ok(
     after.luma > 20 && after.luma < 110,
-    `mean luminance ${after.luma.toFixed(1)}, wanted the reference's neighbourhood of 77`,
+    `mean luminance ${after.luma.toFixed(1)}, wanted a dark ground`,
   );
 });
 
-test('a real photograph lands where the reference cover sits', async () => {
-  // The reference cover's own ground measures a mean luminance of about 77 of
-  // 255 at a mean saturation of 0.19. This is the assertion that would have
-  // caught the treatment being too bright, and the one the ticket's claims
-  // about real photographs rest on.
+test('a real skyline sits deeper than the reference cover', async () => {
+  // The accepted cost of one fixed treatment that holds the contrast floor on a
+  // bright photograph: a typical skyline lands at a whole-slide mean of about
+  // 57, against the reference ground's 77.8.
   const before = measure(REAL_PHOTO);
   const after = measure(coverPhoto(REAL_PHOTO));
 
@@ -192,9 +242,28 @@ test('a real photograph lands where the reference cover sits', async () => {
     `a real photo should collapse onto one ramp, got ${after.hueConcentration.toFixed(3)}`,
   );
   assert.ok(
-    Math.abs(after.luma - 77) < 15,
-    `mean luminance ${after.luma.toFixed(1)}, reference ground is about 77`,
+    Math.abs(after.luma - 57) < 8,
+    `mean luminance ${after.luma.toFixed(1)}, wanted about 57`,
   );
+});
+
+test('white type over the marks clears the reference contrast, bright photo and skyline alike', async () => {
+  // A skyline alone cannot hold this: under the first treatment the Oklahoma
+  // City skyline nearly matched the reference while a bright subject fell to
+  // 3.35:1, and the wordmarks stopped reading.
+  /** @type {[string, Buffer][]} */
+  const photos = [
+    ['bright photograph', BRIGHT_PHOTO],
+    ['skyline', REAL_PHOTO],
+  ];
+  for (const [name, photo] of photos) {
+    const contrast = bandContrast(coverPhoto(photo));
+    assert.ok(
+      contrast >= REFERENCE_CONTRAST,
+      `${name}: white type sits at ${contrast.toFixed(2)}:1 over the marks' band, ` +
+        `the reference cover's own is ${REFERENCE_CONTRAST}:1`,
+    );
+  }
 });
 
 test('a photo already the right shape keeps its full width', async () => {

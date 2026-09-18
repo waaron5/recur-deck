@@ -99,11 +99,18 @@ critical defect**, reached only when every rung fails, and it produces a flagged
 deck rather than a quiet navy slide.
 
 **The treatment** crops to the slide's 16:9, sitting high in the frame because a
-skyline wants more sky than foreground, then maps every pixel onto one navy-to-
-pale-blue ramp, returns 16% of the photo's own colour, and pulls the whole
-ground down. Measured: a real Commons skyline lands at a mean luminance of about
-77 of 255, which is what the reference cover's own ground measures, and its hue
-concentration goes from 0.42 to 0.99 - one ramp, not a dimmed photograph.
+skyline wants more sky than foreground, then maps every pixel onto one ramp from
+navy (`09142F`) to a muted blue (`828F9C`), returns 16% of the photo's own
+colour, and pulls the whole ground down. A real skyline's hue concentration goes
+from 0.42 to 0.99 - one ramp, not a dimmed photograph.
+
+What the treatment holds is contrast where the wordmarks sit, not a tone. The
+reference cover's band behind its marks measures 5.83:1 against white type.
+Each of three real Commons photos clears it, a bright landmark as well as a
+skyline, the worst at 5.90:1. The cost is depth: a real Commons skyline now
+lands at a whole-slide mean luminance of about 57 of 255, against the
+reference's 77.8. The value is fixed rather than corrected per photograph,
+which was rejected for run time.
 
 **Geometry**, measured off the reference cover (1300 x 731px at 130 px/in):
 

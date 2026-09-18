@@ -47,7 +47,7 @@ function coverPhoto(jpegBuffer) {
 }
 
 /**
- * One pixel, desaturated onto the navy-to-pale ramp, given back a little of its
+ * One pixel, desaturated onto the navy-to-blue ramp, given back a little of its
  * own colour, then pulled down so white type carries the slide.
  *
  * @param {number} r

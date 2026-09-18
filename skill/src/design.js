@@ -276,22 +276,35 @@ const MIN_FONT_SIZE = 9;
 // take most of the colour out and apply a stronger, premium blue filter, so the
 // wordmarks stand out and the city reads cleanly.
 //
-// The reference cover's own ground measures a mean luminance of about 77 of 255
-// at a mean saturation of 0.19, which is the neighbourhood these values aim at.
+// What these values hold is a contrast floor, not a tone. The reference cover's
+// ground, with its white type masked out, measures 101 of 255 at the 90th
+// percentile of the band the wordmarks sit in: white type at 5.83:1. Every
+// photograph has to clear that, whatever it arrived as.
 const COVER_PHOTO = {
   // The dark and light ends of the duotone ramp. The shadow is the deck's navy;
-  // the highlight is a cool pale blue rather than white, so a bright sky keeps
-  // the same cast as the rest of the photo.
+  // the highlight is a cool blue rather than white, so a bright sky keeps the
+  // same cast as the rest of the photo.
   shadow: { r: 0x09, g: 0x14, b: 0x2f },
-  highlight: { r: 0xc8, g: 0xdc, b: 0xf0 },
+  // The highlight is 65% of the pale blue it began as, C8DCF0, because that
+  // value carried no target: on three real Commons photos the marks' band ran
+  // from 3.35:1 on a bright landmark to 9.20:1 on a dark skyline. At 65% the
+  // worst of the three clears the reference at 5.90:1. Lowering this end rather
+  // than exposure compresses the bright end and leaves the shadows where they
+  // are, so a dark photograph does not turn to mud.
+  //
+  // Rejected: measuring each photograph at run time and correcting it onto the
+  // reference's band. It matched the reference on every cover, and the user
+  // chose one fixed value over it for run time. The cost is that a typical
+  // cover sits deeper than the reference: a real skyline now lands at a
+  // whole-slide mean of about 57, against the reference's 77.8.
+  highlight: { r: 0x82, g: 0x8f, b: 0x9c },
   // How much of the photo's own colour survives: 0 is a pure two-colour image,
   // 1 is the untouched photo. Enough to keep a city legible, not enough to
   // bring the untidy colour back.
   colourKept: 0.16,
   // The whole ground is pulled down so the white wordmarks carry the slide.
-  // Tuned against the reference rather than by eye: at this value a real 1920px
-  // Commons skyline lands at a mean luminance of about 77 of 255, which is what
-  // the reference cover's own ground measures.
+  // A multiplier, so it keeps whatever brightness a photograph arrived with;
+  // the highlight above is what holds the floor.
   exposure: 0.64,
   // Where the 16:9 window sits vertically: 0 keeps the top of the photo, 1 the
   // bottom. Skylines want more sky than foreground.
