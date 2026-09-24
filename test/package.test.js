@@ -23,6 +23,22 @@ const {
   RASTERIZER_ASSETS,
 } = require('../skill/src/design.js');
 
+/**
+ * The fixture map with a logo on its target, which is the only place a run puts
+ * one now: decision 01 of the tightening map took the logo off the cover, so a
+ * test of the logo pipeline is a test of slide 3.
+ *
+ * @param {{file: string, source: string, verified: boolean}} logo
+ */
+function mapWithTargetLogo(logo) {
+  return {
+    ...TEST_MARKET_MAP,
+    companies: TEST_MARKET_MAP.companies.map((company) =>
+      company.target ? { ...company, logo } : company,
+    ),
+  };
+}
+
 /** Every file in the ZIP, as posix paths relative to the archive root. */
 async function zipEntries(zipPath) {
   const JSZip = require('jszip');
@@ -135,6 +151,9 @@ test('the unpacked skill converts SVG and WebP logos with nothing installed', as
   // bundle could call. This runs the shipped bundle the way the sandbox does,
   // with no node_modules anywhere near it, and reads the result back out of the
   // .pptx rather than trusting the generator's own report.
+  //
+  // The logo goes on the market map because that is the only slide that places
+  // one now: decision 01 of the tightening map took the logo off the cover.
   const { zipPath } = await ensureBuilt();
   const room = tempDir('recur-logo-');
   execFileSync('unzip', ['-q', zipPath, '-d', room]);
@@ -164,9 +183,12 @@ test('the unpacked skill converts SVG and WebP logos with nothing installed', as
         headquarters: TEST_HEADQUARTERS,
         identification: 'Matched the prompt to acme.example.',
         thesis: TEST_THESIS,
-        marketMap: TEST_MARKET_MAP,
+        marketMap: mapWithTargetLogo({
+          file: logoFile,
+          source: 'https://acme.example/',
+          verified: true,
+        }),
         landmark: { file: photoFile, credit: TEST_CREDIT },
-        logo: { file: logoFile, source: 'https://acme.example/', verified: true },
       }),
     );
 
@@ -178,11 +200,20 @@ test('the unpacked skill converts SVG and WebP logos with nothing installed', as
 
     const file = path.join(outDir, `Recur x Acme ${format}.pptx`);
     assert.ok(fs.existsSync(file), `a ${format} logo should still produce a deck`);
-    const notes = String(await (await openPptx(file)).notesText(1));
+
+    const pptx = await openPptx(file);
     assert.match(
-      notes,
+      String(await pptx.notesText(3)),
       new RegExp(`from ${format}`),
-      `slide 1 should record that the logo came from ${format}`,
+      `slide 3 should record that the logo came from ${format}`,
+    );
+    // The note alone would pass on a mark that fell back to type, so the image
+    // itself is what proves the conversion: the map's other companies carry no
+    // logo, so the one placed picture is this one.
+    assert.equal(
+      (await pptx.imageHashes(3)).length,
+      1,
+      `the converted ${format} logo should be placed on the map`,
     );
   }
 });
@@ -191,6 +222,8 @@ test('a logo that cannot be converted still delivers a deck, with the reason rec
   // Every path through the logo pipeline ends in something placeable. A format
   // the package cannot convert is a text wordmark, which is a designed outcome;
   // delivering no file at all would be a critical defect instead.
+  //
+  // On the market map, which is where the deck places logos now.
   const { zipPath } = await ensureBuilt();
   const room = tempDir('recur-badlogo-');
   execFileSync('unzip', ['-q', zipPath, '-d', room]);
@@ -216,9 +249,12 @@ test('a logo that cannot be converted still delivers a deck, with the reason rec
       headquarters: TEST_HEADQUARTERS,
       identification: 'Matched the prompt to acme.example.',
       thesis: TEST_THESIS,
-      marketMap: TEST_MARKET_MAP,
+      marketMap: mapWithTargetLogo({
+        file: logoFile,
+        source: 'https://acme.example/logo.gif',
+        verified: true,
+      }),
       landmark: { file: photoFile, credit: TEST_CREDIT },
-      logo: { file: logoFile, source: 'https://acme.example/logo.gif', verified: true },
     }),
   );
 
@@ -233,12 +269,12 @@ test('a logo that cannot be converted still delivers a deck, with the reason rec
 
   const pptx = await openPptx(file);
   assert.equal(pptx.slideCount, 9);
-  const onSlide = (await pptx.textBoxes(1)).map((box) => box.text).join(' ');
-  assert.ok(onSlide.includes('Acme'), 'the cover should fall back to the text wordmark');
+  const onSlide = (await pptx.textBoxes(3)).map((box) => box.text).join(' ');
+  assert.ok(onSlide.includes('Acme'), 'the map should fall back to the text wordmark');
   assert.match(
-    String(await pptx.notesText(1)),
+    String(await pptx.notesText(3)),
     /gif/i,
-    'and slide 1 should record why the logo was not used',
+    'and slide 3 should record why the logo was not used',
   );
 });
 

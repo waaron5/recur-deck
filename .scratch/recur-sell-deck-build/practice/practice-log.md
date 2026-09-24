@@ -97,12 +97,19 @@ inherited from an earlier ticket or deferred to a later one.
 **Sharpness threshold — `LOGO.sharpPixelsPerInch`, currently 150.** Grounded in
 ticket 03's measurement rather than guessed: US Fleet Tracking's mark trims to
 258 x 27px, so at 150px per placed inch it stays sharp to 1.72in wide, which is
-0.180in tall. That is under the 0.269in the cover wordmark it replaces sets, so
-the cover gets type; on the market map the same mark sizes to 1.45 x 0.152in,
-above that slot's 0.14in floor, so it stays a logo. Both are the outcomes
-decisions 06 and 10 ask for, from one rule. What the practice runs decide is
-whether any company's mark lands the wrong side of it — a logo that reads as
-soft in PowerPoint at 150, or a clean mark needlessly dropped to type.
+0.180in tall.
+
+**Its justification narrowed on September 24, 2026.** What made this number look
+well chosen was that one rule gave two slots the outcomes decisions 06 and 10
+each asked for: 0.180in was under the cover wordmark's 0.269in so the cover got
+type, while on the market map the same mark sized to 1.45 x 0.152in, above that
+slot's 0.14in floor, so it stayed a logo. [Decision 01 of the tightening
+map](../../recur-sell-deck-tune/issues/01-cover-name-in-the-brands-own-hand.md)
+took the logo off the cover, so the cover half of that argument is gone. Only
+the map's half remains, and with it a narrower question for the practice runs:
+whether any competitor's mark lands the wrong side of 150 — a logo that reads as
+soft in PowerPoint, or a clean mark needlessly dropped to type. The number is
+unchanged; what it now rests on is one case, not two.
 
 **Slide 2 type sizes.** Already measured off the reference `Slide2.png`
 (1300 x 731px, 130 px/in) through `CAP_HEIGHT_EM`, not estimated: the section

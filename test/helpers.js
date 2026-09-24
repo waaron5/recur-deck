@@ -363,7 +363,7 @@ const TEST_RESEARCH = {
  * That keeps each test's intent readable: what it passes in is exactly what it
  * is testing.
  *
- * @param {{company?: string, thesis?: Record<string, any>, marketMap?: Record<string, any>}} patch
+ * @param {{company?: string, writtenForm?: string, thesis?: Record<string, any>, marketMap?: Record<string, any>}} patch
  */
 function researchWith(patch = {}) {
   /** @type {Record<string, any>} */

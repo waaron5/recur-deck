@@ -46,11 +46,7 @@ const {
 /**
  * @typedef {{fileName: string, artist: string, licence: string, descriptionUrl: string}} PhotoCredit
  * @typedef {{photo: Buffer, credit?: PhotoCredit, width?: number}} Landmark
- * @typedef {import('./logo.js').NormalisedLogo & {
- *   source?: string,
- *   verified?: boolean,
- * }} CoverLogo
- * @typedef {import('./logo.js').PlacedMark} CoverMark
+ * @typedef {import('./logo.js').PlacedMark} PlacedMark
  */
 
 /**
@@ -63,8 +59,7 @@ const {
  * @param {Landmark} [options.landmark]  The cover photo and its credit.
  * @param {import('./thesis.js').Thesis} [options.thesis]  The three sections the run wrote.
  * @param {any} [options.marketMap]  The axes, companies and callout the run wrote.
- * @param {CoverLogo} [options.logo]     The target's logo, if one was acquired.
- * @param {string} [options.logoNote]    Why there is no logo, when there is none.
+ * @param {string} [options.writtenForm]  The company's name as it writes it itself.
  * @param {{city?: string, source?: string}} [options.headquarters]
  * @param {string} [options.identification]  How the company was identified.
  * @param {string[]} [options.rejected]  Candidates ruled out, and why each lost.
@@ -80,8 +75,7 @@ async function buildDeck({
   landmark,
   thesis,
   marketMap: mapInput,
-  logo,
-  logoNote,
+  writtenForm,
   headquarters = {},
   identification = '',
   rejected = [],
@@ -114,17 +108,17 @@ async function buildDeck({
 
   const generated = GENERATED_SLIDE_NUMBERS.map(() => pres.addSlide());
   const [cover, thesisPage, mapPage] = generated;
-  const coverMark = chooseMark({
-    logo,
-    slot: COVER.logo,
-    background: 'dark',
-    reason: logoNote,
-  });
+  // The name the cover sets. The run supplies the company's own written form -
+  // "USFleetTracking" for the name typed as "US Fleet Tracking" - and a run
+  // that could not read one off the masthead supplies nothing, which leaves the
+  // name exactly as it was given. Either way the cover sets type: decision 01
+  // of the tightening map took the logo off slide 1.
+  const coverName = coverNameFrom(writtenForm, name);
   // Each map company's mark is decided once: the slide draws it, and the notes
   // record why any company fell back to type.
   const mapMarks = new Map(map.companies.map((company) => [company.name, mapMark(company)]));
 
-  coverSlide(cover, name, asset, landmark, coverMark);
+  coverSlide(cover, coverName, asset, landmark);
   thesisSlide(thesisPage, name, sections, asset);
   marketMapSlide(mapPage, name, map, mapMarks);
 
@@ -149,8 +143,7 @@ async function buildDeck({
       rejected,
       landmarkFallback,
       landmark,
-      logo,
-      coverMark,
+      coverName,
     }),
     2: thesisNotes(sections),
     3: marketMapNotes(map, mapMarks),
@@ -189,8 +182,7 @@ async function buildDeck({
  * @param {string[]} [options.rejected]
  * @param {string} [options.landmarkFallback]
  * @param {Landmark} options.landmark
- * @param {CoverLogo} [options.logo]
- * @param {CoverMark} [options.coverMark]
+ * @param {string} [options.coverName]  The name the cover actually set.
  */
 function sourceRecord({
   company,
@@ -199,11 +191,18 @@ function sourceRecord({
   rejected = [],
   landmarkFallback = '',
   landmark,
-  logo,
-  coverMark,
+  coverName,
 }) {
   const lines = [`Company: ${company}`];
   if (identification) lines.push(`Identified: ${identification}`);
+
+  // Only when the cover departs from the name the run was given. A reviewer
+  // seeing "GPSINSIGHT" on a deck built for "GPS Insight" needs to be able to
+  // tell that it was read off the company's own masthead, not mistyped; a
+  // cover that sets the name unchanged has nothing to explain.
+  if (coverName && coverName !== company) {
+    lines.push(`Cover sets: ${coverName}, the company's own written form`);
+  }
 
   // The companies the run decided against, and why each lost. A run settles an
   // ambiguous name without asking, so this is the only place a reviewer can see
@@ -235,15 +234,9 @@ function sourceRecord({
   // long gone by then.
   if (landmarkFallback) lines.push(`Cover fallback: ${landmarkFallback}`);
 
-  // Where the logo came from, and - when the cover fell back to type - why.
-  // A reviewer checking a deck needs to see the logo's provenance without
-  // going back to the site, and the reason is what makes a wordmark read as a
-  // decision rather than as something that went wrong.
-  if (logo?.source) lines.push(`Logo source: ${logo.source}`);
-  if (logo) lines.push(`Logo: ${logo.width}x${logo.height}px, from ${logo.sourceFormat}`);
-  if (coverMark?.kind === 'wordmark') {
-    lines.push(`Cover mark: text wordmark, because ${coverMark.reason}`);
-  }
+  // The target's logo is no longer part of slide 1. It is one of the nine marks
+  // on the market map now, so its provenance is recorded in slide 3's notes
+  // beside every other company's.
 
   return lines.join('\n');
 }
@@ -252,15 +245,14 @@ function sourceRecord({
 
 /**
  * The cover: the headquarters landmark under the navy duotone, the Recur
- * wordmark, a thin divider, and the target company.
+ * wordmark, a thin divider, and the target company set as type.
  *
  * @param {any} slide
- * @param {string} company
+ * @param {string} company  The name as the cover should set it.
  * @param {(file: string) => string} asset
  * @param {Landmark} landmark
- * @param {CoverMark} coverMark
  */
-function coverSlide(slide, company, asset, landmark, coverMark) {
+function coverSlide(slide, company, asset, landmark) {
   // Navy behind the photo, so a slide that somehow loses its image still reads
   // as the deck rather than as a white page.
   slide.background = { color: COLORS.navy };
@@ -300,20 +292,12 @@ function coverSlide(slide, company, asset, landmark, coverMark) {
 
   const slot = COVER.name;
 
-  // The company's own logo, left-aligned in the name's slot and centred on the
-  // same line, so the cover reads the same whichever mark it carries.
-  if (coverMark.kind === 'logo') {
-    slide.addImage({
-      data: `image/png;base64,${coverMark.png.toString('base64')}`,
-      x: slot.left,
-      y: slot.centreY - coverMark.height / 2,
-      w: coverMark.width,
-      h: coverMark.height,
-    });
-    return;
-  }
-
-  // The terminal fallback, and never a blank slot: the name set as type.
+  // The treatment, not a fallback: bold white at the reference's cap height,
+  // and nothing else. Tracking, a two-tone split at an internal capital and an
+  // invented case were each built and looked at on five real companies, and
+  // each was rejected - tracking blurs the target into RECUR's own tracked
+  // mark beside it, and a second colour drops half the name off the contrast
+  // floor the cover photo's treatment is measured to hold.
   slide.addText(company, {
     x: slot.left,
     y: slot.centreY - slot.boxHeight / 2,
@@ -423,7 +407,7 @@ function thesisSlide(slide, company, sections, asset) {
  * @param {any} slide
  * @param {string} company
  * @param {import('./market-map.js').MarketMap} map
- * @param {Map<string, CoverMark>} marks  What each company carries, decided once.
+ * @param {Map<string, PlacedMark>} marks  What each company carries, decided once.
  */
 function marketMapSlide(slide, company, map, marks) {
   const { band, subtitle, sidebar, plot } = MAP;
@@ -503,22 +487,17 @@ function marketMapSlide(slide, company, map, marks) {
  * optical area, so a wide wordmark and a square mark read as the same weight.
  *
  * @param {import('./market-map.js').MapCompany} company
- * @returns {CoverMark}
+ * @returns {PlacedMark}
  */
 function mapMark(company) {
-  return chooseMark({
-    logo: company.logo,
-    slot: MAP.slot,
-    background: 'light',
-    reason: company.logoNote,
-  });
+  return chooseMark({ logo: company.logo, slot: MAP.slot, reason: company.logoNote });
 }
 
 /**
  * The footprint a mark needs. A text wordmark has no image to measure, so its
  * box grows with the name up to the slot's own maximum.
  *
- * @param {CoverMark | undefined} mark
+ * @param {PlacedMark | undefined} mark
  * @param {string} name
  */
 function markSize(mark, name) {
@@ -532,7 +511,7 @@ function markSize(mark, name) {
  *
  * @param {{cx: number, cy: number, w: number, h: number,
  *   company: import('./market-map.js').MapCompany}} box
- * @param {CoverMark | undefined} mark
+ * @param {PlacedMark | undefined} mark
  */
 function drawCompany(slide, box, mark) {
   // The target is distinguished by this and nothing else: no cell tint, no
@@ -761,6 +740,24 @@ function pngSize(file) {
   }
   if (head.toString('ascii', 1, 4) !== 'PNG') throw new Error(`not a PNG: ${file}`);
   return { width: head.readUInt32BE(16), height: head.readUInt32BE(20) };
+}
+
+/**
+ * The name the cover sets: the company's own written form when the run read one
+ * off its masthead, and otherwise the name the run was given.
+ *
+ * The run supplies the form; this only decides what to do without one. An empty
+ * or blank field is the same as no field, because a run that could not read the
+ * masthead and a run that wrote "" mean the same thing, and a cover with a
+ * blank slot is never an outcome.
+ *
+ * @param {string | undefined} writtenForm
+ * @param {string} company
+ * @returns {string}
+ */
+function coverNameFrom(writtenForm, company) {
+  const written = typeof writtenForm === 'string' ? writtenForm.trim() : '';
+  return written || company;
 }
 
 /**

@@ -15,7 +15,7 @@ inch.
 
 | Slides | What they are | Editable |
 | --- | --- | --- |
-| 1 | Cover: headquarters landmark, Recur wordmark, target company | yes, native text and shapes |
+| 1 | Cover: headquarters landmark, Recur wordmark, target company's name as type | yes, native text and shapes |
 | 2 | Thesis: three fixed sections, each a header and two bullets | yes |
 | 3 | Market map: axes, subtitle, competitor logos, callout | yes |
 | 4-9 | Recur's introduction, supplied as fixed PNGs | no, placed full-bleed |
@@ -70,7 +70,12 @@ notes on slides 1-3.
 ## Cover
 
 The headquarters landmark fills the slide, under the deck's navy duotone. Over
-it sit the Recur wordmark, a thin white divider, and the target company.
+it sit the Recur wordmark, a thin white divider, and the target company's name
+set as type. **The cover carries no logo.** One large mark in a 2.831in slot on
+a photograph is the thing the eye lands on, and it fails hard - wrong shape,
+wrong weight for a dark ground, or too coarse to scale takes the whole cover
+with it. The same mark on the market map is one of nine and fails softly, which
+is why slide 3 keeps its logos and slide 1 does not.
 
 **The photo** comes from Wikimedia Commons, searched for the headquarters city
 and filtered to JPEG files over 1600px, then downloaded at 1920px wide. JPEG is
@@ -119,6 +124,19 @@ which was rejected for run time.
 | Recur wordmark ink | right edge x 4.638in, cap height 0.400in, centred on y 2.835in |
 | Divider | x 4.927in, running y 2.508-3.108in |
 | Company name ink | from x 5.323in, 2.831in wide, centred on y 2.808in |
+
+**The name** is set in the company's own written form - the reference cover
+reads `USFleetTracking`, closed up with internal capitals, for a company the
+deck calls "US Fleet Tracking". The form is the same letters in the same order
+as the name the run was given, restyled only in case, spacing and punctuation;
+a run that cannot read one off the masthead sets the name as given.
+
+Bold, white, at the measured 0.269in cap height, and nothing else. Tracking, a
+two-tone split at an internal capital and an invented case were each built and
+looked at on five real companies before being rejected: tracking blurs the
+target into RECUR's own tracked mark across the divider, and a second colour
+drops half the name to 5.20:1 over a bright photograph, under the 5.83:1 the
+cover treatment exists to hold.
 
 The bundled wordmark PNG cannot match both of the reference's dimensions: its
 ink is 5.41 wide to 1 high against the reference wordmark's 4.54, because it is
@@ -229,18 +247,15 @@ cannot be converted becomes a text wordmark.
 company's own current logo. An unconfirmed logo is never placed.
 
 **Background fit.** Use the version the company drew for that background; never
-recolour a whole logo. On the dark cover a light mark is used as it is, a mark
-drawn in a single ink may be whitened through its alpha channel, and anything
-multicolour becomes a text wordmark.
+recolour a whole logo. The market map's pale band is the only ground a logo
+lands on, and a company's own version is what it is drawn for — so nothing in
+the package recolours a mark at all, which is the strongest form this rule can
+take. Choosing which file to take is the model's job, in step 2.
 
 **Resolution.** Never enlarge a logo past the size at which it still looks
 sharp: 150px per inch of placed width. A logo is placed at the smaller of its
 slot and that maximum, its shape is never distorted, and if the result is
 shorter than its slot's minimum legible height it becomes a text wordmark.
-
-On the cover a logo fills the name's 2.831in slot, is never taller than the
-0.600in divider beside it, and is never shorter than 0.269in, which is the cap
-height of the wordmark it replaces.
 
 On the market map a logo is sized to an equal optical **area** of 0.1406 sq in
 rather than to a uniform box, so a wide wordmark and a square mark carry the
@@ -248,21 +263,25 @@ same visual weight. The result is capped at 1.0875 x 0.315in, capped again by
 the resolution rule, and becomes a text wordmark below 0.105in tall.
 
 US Fleet Tracking's own logo is 258 x 27px, so it stays sharp only to 1.72in
-wide. On the cover that is 0.180in tall against a 0.269in minimum, so it becomes
-a text wordmark. On the map the area rule sets it 1.0875in wide and 0.114in
-tall, which clears that slot's 0.105in floor, so the same mark stays a logo.
-One rule, two honest outcomes.
+wide. The area rule sets it 1.0875in wide and 0.114in tall, which clears the
+slot's 0.105in floor, so it stays a logo. A coarser mark would not, and would be
+set as type instead.
 
 ## Wordmarks
 
 The Recur wordmark ships prerendered as transparent PNGs, white and navy, and is
 placed as an image. It never depends on a font being installed.
 
-A **text wordmark** - the company name set bold, sized to its slot, white on the
-cover and navy on light slides - is the terminal fallback whenever a logo image
-cannot be verified, converted, or kept sharp. A broken image or an empty slot is
-never acceptable. Never enlarge a logo past the size at which it still looks
-sharp.
+A **text wordmark** is a company's name set bold and sized to its slot: white on
+the cover, navy on light slides.
+
+On the **cover** it is the treatment, not a fallback. It is what slide 1 sets
+every time, in the company's own written form.
+
+On the **market map** it is the fallback, and the terminal one: a company whose
+logo cannot be verified, converted, or kept sharp is set as type, with the
+reason in slide 3's speaker notes. A broken image or an empty slot is never
+acceptable.
 
 ## Footer
 

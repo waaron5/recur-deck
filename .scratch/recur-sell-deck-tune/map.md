@@ -40,7 +40,14 @@ the September 2026 practice failures cannot recur.
 
 <!-- one line per closed ticket: the gist, then the link -->
 
-_Nothing resolved yet; the map was charted September 24, 2026._
+- The cover sets the company's name as type in the company's own written form —
+  bold white Arial at the reference's cap height and nothing else, from a new
+  `writtenForm` field in `run.json` that must be the given name's own letters. The
+  logo path leaves slide 1 entirely, taking `COVER.logo`, the top-level `logo`
+  block and the dark-ground fit rules with it; logo provenance moves to slide
+  3's notes, where the marks now live. Still owed: one of these covers through
+  the supported host's own renderer, since the five were looked at under Quick
+  Look. [01](issues/01-cover-name-in-the-brands-own-hand.md)
 
 ## Not yet specified
 

@@ -12,6 +12,7 @@
 //
 //   {
 //     "company": "US Fleet Tracking",
+//     "writtenForm": "USFleetTracking",        // optional, see below
 //     "headquarters": { "city": "Oklahoma City, Oklahoma", "source": "https://..." },
 //     "identification": "Matched the prompt to usfleettracking.com.",
 //     "thesis": { "here": {...}, "excited": {...}, "help": {...} },   // see thesis.js
@@ -24,7 +25,13 @@
 //
 // The market map is two categorical axes, six to nine competitors plus the
 // target with 0-1 coordinates each, and the callout. Every company may carry a
-// logo of its own, checked by the model the same way the target's is.
+// logo of its own, the target included - slide 3 is the only slide that places
+// one, so there is no top-level logo block any more.
+//
+// The written form is the company's name as it writes it on its own masthead,
+// which is what the cover sets. It is optional because a masthead is sometimes an
+// image with no readable letters in it; left out, the cover sets the name the
+// run was given.
 //
 // The landmark is normally found here, from the headquarters city. Passing one
 // in skips the search, which is what a rebuild after a repair wants: the photo
@@ -120,20 +127,6 @@ async function main() {
 
   const assetsDir = path.join(skillDir, 'assets');
 
-  // A logo that cannot be converted costs the deck its logo, never its deck.
-  // The cover falls back to a text wordmark and slide 1 records why.
-  let logo;
-  let logoNote;
-  if (run.logo?.file) {
-    try {
-      logo = await readLogo(run.logo, assetsDir);
-    } catch (error) {
-      logoNote = `the logo could not be used: ${
-        error instanceof Error ? error.message : String(error)
-      }`;
-    }
-  }
-
   const file = await buildDeck({
     company: run.company,
     assetsDir,
@@ -141,8 +134,7 @@ async function main() {
     landmark,
     thesis: run.thesis,
     marketMap: await readMapLogos(run.marketMap, assetsDir),
-    logo,
-    logoNote,
+    writtenForm: run.writtenForm,
     headquarters: run.headquarters,
     identification: run.identification,
     rejected: run.rejected,
@@ -196,10 +188,10 @@ function saveLandmark(input, landmark) {
 }
 
 /**
- * The logo the model looked at, normalised the way the cover needs it.
+ * The logo the model looked at, normalised the way the market map needs it.
  *
  * `verified` has to be said explicitly: a run that never showed the logo to the
- * model has not confirmed anything, and the cover falls back to type.
+ * model has not confirmed anything, and the map sets that company as type.
  *
  * @param {{file: string, source?: string, verified?: boolean}} entry
  * @param {string} assetsDir
@@ -233,9 +225,9 @@ async function readMapLogos(map, assetsDir) {
     try {
       companies.push({ ...company, logo: await readLogo(company.logo, assetsDir) });
     } catch (error) {
-      // Kept, not swallowed. The cover records why it fell back to type and so
-      // does the map: a competitor set as a wordmark for no stated reason reads
-      // as something that went wrong rather than as a decision.
+      // Kept, not swallowed. The map records why a company fell back to type:
+      // a competitor set as a wordmark for no stated reason reads as something
+      // that went wrong rather than as a decision.
       companies.push({
         ...company,
         logo: undefined,

@@ -22,15 +22,19 @@ cover, is built from the target company's real headquarters city. Slide 2 is the
 thesis page and slide 3 the market map, both written from what you establish
 about the company.
 
-**Establish what this build needs: the company, its headquarters, its logo, the
-thesis, and the market map.** Do not add photos of your own, and do not write
-speaker notes - the generator writes those from the sources you record.
+**Establish what this build needs: the company, how it writes its own name, its
+headquarters, its logo, the thesis, and the market map.** Do not add photos of
+your own, and do not write speaker notes - the generator writes those from the
+sources you record.
 
-The judgments are yours: whether a logo really belongs to the company whose name
-is on it, what the thesis says, and which competitors and axes the market map
-argues from. Everything else - converting and sizing every logo, placing them so
-that none overlaps, laying out the slides, placing the type - is the
-generator's.
+The judgments are yours: how the company writes its own name, whether a logo
+really belongs to the company whose name is on it, what the thesis says, and
+which competitors and axes the market map argues from. Everything else -
+converting and sizing every logo, placing them so that none overlaps, laying out
+the slides, placing the type - is the generator's.
+
+**The cover carries no logo.** It sets the company's name as type, in the
+company's own written form. Logos appear on slide 3 and nowhere else.
 
 ## Run
 
@@ -87,7 +91,34 @@ If you can establish neither, that is an **evidence failure**: build nothing and
 reply with the evidence failure template. A deck whose facts were invented is
 worse than no deck, because a founder reads it.
 
-### 2. Find the company's logo, and check it yourself
+### 2. Read how the company writes its own name, and find its logo
+
+Both come off the same page: the company's own masthead.
+
+**The written form is what the cover sets.** The reference deck's cover reads
+`USFleetTracking` for a company called "US Fleet Tracking" - closed up, internal
+capitals - because that is how the company writes itself. Record it as
+`writtenForm` in the run file.
+
+**It must be the same letters, in the same order, as the name the run was
+given.** Only the case, the spacing and the punctuation may change:
+
+| Given | Written form | Why |
+| --- | --- | --- |
+| US Fleet Tracking | `USFleetTracking` | closed up, internal capitals |
+| GPS Insight | `GPSINSIGHT` | closed up, all capitals |
+| Shopmonkey | `shopmonkey` | set lowercase |
+| Teletrac Navman | `Teletrac Navman` | written the way it was given |
+
+Nothing else comes along. Not the tagline beside it, not a legal suffix the
+masthead adds, not a word the mark drops. `GPSINSIGHT Experience you can trust`,
+`azuga a Bridgestone Company` and `Shopmonkey Inc` are all the same mistake, and
+the check in step 6 catches it.
+
+**If the masthead is an image with no readable letters in it** - a symbol, or
+lettering you cannot make out - leave `writtenForm` out of the run file. The cover
+then sets the name exactly as the user typed it, which is a designed outcome and
+not a defect. Never guess at a form you cannot see, and never ask the user.
 
 ```
 node <skill-dir>/scripts/fetch-logo.js --site <company site> --out work --work work
@@ -97,15 +128,18 @@ It fetches the company's home page, ranks the logo candidates on it, and writes
 the best one to `work/logo.png` as a trimmed transparent PNG, converting from
 SVG or WebP as needed. It prints where the image came from.
 
-**Now look at `work/logo.png`.** Candidates are ranked by pattern, and patterns
-pick the wrong company: on a ten-site trial the ranking alone chose a customer's
-logo three times and a product sub-brand once. Confirm the image is the target
-company's own current logo - not a customer's, not a partner's, not a sub-brand
-of its product.
+**Now look at `work/logo.png`.** Two things to read off it. The company's
+written form, if the mark spells the name out and you had not already found it
+in text. And whether this is the right company at all: candidates are ranked by
+pattern, and patterns pick the wrong company - on a ten-site trial the ranking
+alone chose a customer's logo three times and a product sub-brand once. Confirm
+the image is the target company's own current logo, not a customer's, not a
+partner's, not a sub-brand of its product.
 
-Only if you are sure, record it as `verified` in the run file. If you are not
-sure, or the command fails, leave the logo out entirely; the cover then sets the
-company's name as type, which is a designed outcome and not a defect.
+Only if you are sure, record it as `verified` on the **target's entry in the
+market map**, which is the only place the deck places it. If you are not sure,
+or the command fails, leave the logo out entirely; the map sets that company's
+name as type, which is a designed outcome and not a defect.
 
 ### 3. Write the thesis
 
@@ -223,6 +257,7 @@ you established:
 ```json
 {
   "company": "US Fleet Tracking",
+  "writtenForm": "USFleetTracking",
   "headquarters": {
     "city": "Oklahoma City, Oklahoma",
     "source": "https://www.usfleettracking.com/contact-us",
@@ -316,18 +351,17 @@ you established:
       ],
       "proposal": "Recur can add AI scoring to the GPS and video the product already streams"
     }
-  },
-  "logo": {
-    "file": "work/logo.png",
-    "source": "https://www.usfleettracking.com/images/usft-logo-white.webp",
-    "verified": true
   }
 }
 ```
 
+`writtenForm` is the company's own written form, from step 2. Leave it out when the
+masthead has no readable letters in it and the cover will set the name as given.
+
 `identification` is one line on how you settled which company was meant, and
 `rejected` lists the candidates you ruled out. Both go into slide 1's speaker
-notes, never onto a slide. So does the logo's source.
+notes, never onto a slide. Every logo's source goes into slide 3's, beside the
+company it belongs to.
 
 `metro` and `region` are what the cover photo falls back to when the
 headquarters city has no usable photo on Commons. Give the nearest major metro
@@ -335,7 +369,9 @@ within about 60km, and the state or region. Leave `metro` out when the city *is*
 the major metro.
 
 `verified` must be `true` only because you looked at the image. A logo without
-it is never placed.
+it is never placed. There is no top-level `logo` block: the target's mark sits
+on its market-map entry like every other company's, because slide 3 is the only
+slide that places one.
 
 ### 6. Check the copy, then read it yourself
 
@@ -344,12 +380,12 @@ node <skill-dir>/scripts/check-content.js --input run.json
 ```
 
 It reports everything countable: word counts, a question mark, a number with no
-source behind it, the company's name spelled some other way, a missing source
-entry, a quadrant holding too many companies, text too long for the box it has
-to sit in, and a thesis with fewer than two bullets that hang a clause off the
-main one. Every finding names one field, except that last one: it names the
-`thesis`, because no single bullet is at fault, and you choose which bullets to
-rebuild.
+source behind it, the company's name spelled some other way, a written form that
+is not that name restyled, a missing source entry, a quadrant holding too many
+companies, text too long for the box it has to sit in, and a thesis with fewer
+than two bullets that hang a clause off the main one. Every finding names one
+field, except that last one: it names the `thesis`, because no single bullet is
+at fault, and you choose which bullets to rebuild.
 
 ```json
 {"ok": false, "findings": [
@@ -436,7 +472,10 @@ only an eye catches:
 - anything overlapping: a logo on an axis line, two logos touching, copy over
   the callout sidebar;
 - text too small or too low-contrast to read;
-- a logo that landed wrong, stretched, or in the wrong place.
+- a logo that landed wrong, stretched, or in the wrong place;
+- a cover name that wraps awkwardly or reads as the wrong company. It is set in
+  the written form you recorded, so this is where a form read off a masthead
+  gets looked at as type.
 
 The rendered image predicts PowerPoint. The deck is set in Arial and the
 renderer substitutes Liberation Sans, which has the same metrics, so lines break

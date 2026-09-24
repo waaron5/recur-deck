@@ -224,10 +224,39 @@ test("the notes carry every competitor's evidence, every placement, and both axe
   }
 });
 
+test("the notes record where every placed logo came from, the target's included", () => {
+  // Slide 3 is the only slide that places a logo now, so it carries the whole
+  // deck's share of that record. A reviewer checking whether a mark really
+  // belongs to the company wearing it has to be able to do it from the deck.
+  const map = marketMap({
+    ...TEST_MARKET_MAP,
+    companies: TEST_MARKET_MAP.companies.map((company) =>
+      company.target
+        ? {
+            ...company,
+            logo: {
+              source: 'https://www.usfleettracking.com/images/usft-logo-white.webp',
+              width: 258,
+              height: 27,
+              sourceFormat: 'webp',
+            },
+          }
+        : company,
+    ),
+  });
+
+  const notes = marketMapNotes(map);
+  assert.match(
+    notes,
+    /US Fleet Tracking \(target\)[\s\S]*?Logo: https:\/\/www\.usfleettracking\.com\/images\/usft-logo-white\.webp \(258x27px, from webp\)/,
+    "the source and provenance should follow the target's own entry",
+  );
+  assert.ok(!/Azuga[\s\S]*?Logo:/.test(notes), 'a company with no logo needs no such line');
+});
+
 test('the notes record why a company was set as type', () => {
-  // Slide 1 records the reason its cover fell back to a wordmark, and the map
-  // owes a reviewer the same: otherwise a competitor set in type reads as
-  // something that went wrong rather than as a decision.
+  // A competitor set in type reads as something that went wrong rather than as
+  // a decision unless the reason sits beside it.
   const map = marketMap(TEST_MARKET_MAP);
   const marks = new Map([
     ['Linxup', { kind: 'wordmark', reason: 'the logo could not be used: unknown format' }],

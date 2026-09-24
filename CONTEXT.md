@@ -89,8 +89,12 @@ A run made to confirm one specific outcome, such as an evidence failure or a bes
 _Avoid_: Negative test, smoke test
 
 **Text wordmark**:
-A company's name set deliberately in clean text where its logo image would appear. It is used when no logo image can be verified as the company's own, when the image cannot be converted, or when the image cannot stay sharp at the size its slot needs.
+A company's name set deliberately in clean text. On the sell deck's cover it is the treatment: the cover carries no logo at all, and sets the target company's name in that company's written form. On the market map it is the fallback, used when no logo image can be verified as the company's own, when the image cannot be converted, or when the image cannot stay sharp at the size its slot needs. Either way it is a designed outcome, never a defect.
 _Avoid_: Placeholder, broken logo
+
+**Written form**:
+A company's name as that company writes it on its own masthead — "USFleetTracking" for a company called US Fleet Tracking, "shopmonkey" for Shopmonkey. It is the same letters in the same order as the name the run was given, restyled only in case, spacing and punctuation. It is what the cover's text wordmark sets, and a run that cannot read one sets the name it was given.
+_Avoid_: Brand name, logotype, styled name
 
 **Recur introduction**:
 The reusable section of the sell deck presenting Recur's identity, team, experience, backing, and values; represented by slides 4–9 of the reference presentation.

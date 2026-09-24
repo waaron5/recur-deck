@@ -611,3 +611,53 @@ test('a list of nouns after a comma is not mistaken for a clause', () => {
   const [finding] = under(checkRun(thesisOf(texts)), 'sentence-structure');
   assert.match(finding?.message ?? '', /0 of the 6/);
 });
+
+// ---------- the cover's written form ----------
+
+test("a written form that only restyles the company's name passes", () => {
+  // The three levers the decision allows, each on its own: closing up the
+  // spaces, changing the case, and dropping the punctuation. None of them
+  // changes a letter, which is the whole rule.
+  for (const writtenForm of ['USFleetTracking', 'us fleet tracking', 'U.S. Fleet Tracking']) {
+    const findings = under(checkRun(researchWith({ writtenForm })), 'written-form');
+    assert.deepEqual(findings, [], `"${writtenForm}" should pass`);
+  }
+});
+
+test('a written form that changes the letters is caught', () => {
+  // The failure this is here for: the model writes down what the masthead says
+  // rather than how it says the name. A tagline, a legal suffix or an initial
+  // dropped are all the same mistake, and all of them put a different name on
+  // the cover of a deck being mailed to that company's founder.
+  for (const writtenForm of [
+    'USFleetTracking - Live GPS',
+    'USFleetTracking Inc',
+    'FleetTracking',
+    'USFleet',
+  ]) {
+    const findings = under(checkRun(researchWith({ writtenForm })), 'written-form');
+    assert.equal(findings.length, 1, `"${writtenForm}" should be caught`);
+    assert.equal(findings[0].field, 'writtenForm');
+    assert.equal(findings[0].slide, 1);
+    assert.match(findings[0].message, /same letters/);
+  }
+});
+
+test('a run with no written form is not a finding', () => {
+  // A masthead set as an image with no readable letters in it is a real case,
+  // and the decided answer is to leave the field out: the cover then sets the
+  // name the run was given. That is an outcome, not a defect.
+  //
+  // The blank cases are here because two modules have to agree on them: this
+  // gate decides a blank form is nothing to report, and the cover's own
+  // coverNameFrom decides a blank form leaves the given name in place. A blank
+  // that one of them read as a value would put an empty slot on a cover.
+  assert.deepEqual(under(checkRun(TEST_RESEARCH), 'written-form'), []);
+  for (const writtenForm of ['', '   ']) {
+    assert.deepEqual(
+      under(checkRun(researchWith({ writtenForm })), 'written-form'),
+      [],
+      `a written form of ${JSON.stringify(writtenForm)} is absent, not wrong`,
+    );
+  }
+});

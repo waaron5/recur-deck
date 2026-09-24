@@ -11,7 +11,6 @@ const path = require('node:path');
 const {
   normaliseLogo,
   logoPlacement,
-  backgroundFit,
   pickLogoCandidates,
 } = require('../skill/src/logo.js');
 const { ensureBuilt } = require('./helpers.js');
@@ -66,15 +65,11 @@ test('transparent padding is trimmed away, so the rules measure the mark', async
   }
 });
 
-// The two slots a logo is placed into, written as literals rather than imported
+// The slot a logo is placed into, written as a literal rather than imported
 // from design.js: a test that reads the same constant the code places from only
-// proves the code read its own value.
+// proves the code read its own value. There is one slot now - decision 01 of
+// the tightening map took the logo off the cover.
 //
-// Cover: the name's slot, 2.831in wide. A logo there may not outgrow the
-// divider beside it (0.600in tall), and may not read smaller than the text
-// wordmark it replaces (cap height 0.269in).
-const COVER_SLOT = { maxWidth: 2.831, maxHeight: 0.6, minHeight: 0.269 };
-
 // Market map: equal optical area rather than a uniform box, so a wide wordmark
 // and a square mark carry the same weight, capped at 1.0875 x 0.315in.
 //
@@ -83,21 +78,16 @@ const COVER_SLOT = { maxWidth: 2.831, maxHeight: 0.6, minHeight: 0.269 };
 // the same physical size is a different number of inches in each.
 const MAP_SLOT = { area: 0.1406, maxWidth: 1.0875, maxHeight: 0.315, minHeight: 0.105 };
 
-test("US Fleet Tracking's logo is too coarse for the cover but holds up on the map", async () => {
+test("US Fleet Tracking's logo holds up at map size", async () => {
   // The rule is 150px per inch of placed width. This mark is 258 x 27px, so it
-  // stays sharp to 258/150 = 1.72in wide, which at its 9.56:1 shape is 0.180in
-  // tall - below the 0.269in the wordmark it replaces would set. The cover
-  // therefore gets a text wordmark, which is what the prototype's upscaled logo
-  // looked wrong enough to earn: "an instant signal of lack of care".
+  // stays sharp to 258/150 = 1.72in wide. On the map it is sized by area to
+  // 1.159in, capped to 1.0875in, and lands 0.114in tall - above that slot's
+  // 0.105in floor, and still inside its sharp maximum.
   //
-  // The same mark on the map is sized by area to 1.159in, capped to 1.0875in,
-  // and lands 0.114in tall - above that slot's 0.105in floor, and still inside
-  // its sharp maximum. One rule, two honest outcomes.
+  // This mark used to be the case that failed the cover and passed the map from
+  // one rule. Decision 01 of the tightening map took the logo off the cover, so
+  // only the map's outcome is left to hold.
   const logo = await normaliseLogo(fixture('usft-logo.png'), { assetsDir: await assetsDir() });
-
-  const onCover = logoPlacement({ logo, slot: COVER_SLOT });
-  assert.equal(onCover.kind, 'wordmark', 'a 258px mark cannot fill the cover slot sharply');
-  assert.match(String(onCover.reason), /sharp|small|resolution/i, 'the reason should be legible');
 
   const onMap = logoPlacement({ logo, slot: MAP_SLOT });
   assert.equal(onMap.kind, 'logo', 'the same mark is sharp enough at map size');
@@ -110,37 +100,6 @@ test("US Fleet Tracking's logo is too coarse for the cover but holds up on the m
     `map height ${onMap.height}, expected about 0.114in`,
   );
   assert.ok(Number(onMap.height) >= 0.105, 'and no smaller than the map is allowed to go');
-});
-
-test('only a mark made for a dark ground reaches the cover unrecoloured', async () => {
-  // Whole-logo recolouring is what ruined US Fleet Tracking's multicolour mark
-  // in the prototype, so the rule is to use the version the company drew for
-  // that background and never to repaint one that was not.
-  //
-  // Measured on each file's fully opaque core, which is what separates a second
-  // ink from antialiasing:
-  //   usft-logo-white.webp  mean luminance 225          - drawn for a dark ground
-  //   samsara-logo.png      one ink, 100% of the core   - may be whitened
-  //   usft-servapp.png      three inks, 47/35/17%       - repainting would ruin it
-  const dir = await assetsDir();
-  const madeForDark = await normaliseLogo(fixture('usft-logo-white.webp'), { assetsDir: dir });
-  const oneInk = await normaliseLogo(fixture('samsara-logo.png'), { assetsDir: dir });
-  const manyInks = await normaliseLogo(fixture('usft-servapp.png'), { assetsDir: dir });
-
-  assert.equal(
-    backgroundFit({ logo: madeForDark, background: 'dark' }).treatment,
-    'as-is',
-    "a light mark is already the company's own dark-background version",
-  );
-  assert.equal(
-    backgroundFit({ logo: oneInk, background: 'dark' }).treatment,
-    'whiten',
-    'a single-ink mark may be whitened through its alpha channel',
-  );
-
-  const multicolour = backgroundFit({ logo: manyInks, background: 'dark' });
-  assert.equal(multicolour.treatment, 'wordmark', 'a multicolour mark is never repainted');
-  assert.match(String(multicolour.reason), /colour|recolour|repaint/i);
 });
 
 // A home page shaped like the ones the logo trial actually met: the company's
@@ -205,26 +164,6 @@ test('a mark set only in CSS is still found, ahead of the social image', async (
 
   assert.ok(css >= 0, 'the stylesheet names the only logo on the page');
   assert.ok(social < 0 || css < social, 'and a real logo always outranks the social image');
-});
-
-test('a mark drawn entirely in soft edges is read, not refused for a made-up reason', () => {
-  // Ink colour is read from a mark's fully opaque core, because antialiasing
-  // varies alpha rather than ink. A mark that is semi-transparent everywhere has
-  // no such core, and reporting that as "0% of its ink is one shade" would be a
-  // reason that is not true - this is a single ink, and a whitenable one.
-  const width = 8;
-  const height = 8;
-  const data = Buffer.alloc(width * height * 4);
-  for (let i = 0; i < width * height; i += 1) {
-    data[i * 4] = 17;
-    data[i * 4 + 1] = 17;
-    data[i * 4 + 2] = 17;
-    data[i * 4 + 3] = 200;
-  }
-
-  const fit = backgroundFit({ logo: { raster: { data, width, height } }, background: 'dark' });
-
-  assert.equal(fit.treatment, 'whiten', 'one ink at a soft alpha is still one ink');
 });
 
 test('a logo that cannot be converted gives a reason, never a broken image', async () => {

@@ -513,6 +513,16 @@ function marketMapNotes(map, marks = new Map()) {
     lines.push(`  Evidence: ${company.evidence}`);
     lines.push(`  Placement: ${company.placement}`);
 
+    // Where the mark came from, and - when a company fell back to type - why.
+    // This is every logo the deck places: decision 01 of the tightening map
+    // took the logo off the cover, so slide 3 is where a reviewer checks a
+    // mark's provenance without going back to the site, the target's included.
+    if (company.logo?.source) {
+      const { source, width, height, sourceFormat } = company.logo;
+      const from = width && height ? ` (${width}x${height}px, from ${sourceFormat})` : '';
+      lines.push(`  Logo: ${source}${from}`);
+    }
+
     const mark = marks.get(company.name);
     if (mark?.kind === 'wordmark' && mark.reason) {
       lines.push(`  Mark: text wordmark, because ${mark.reason}`);

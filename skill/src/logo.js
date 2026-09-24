@@ -136,109 +136,6 @@ function logoPlacement({ logo, slot }) {
   return { kind: 'logo', width, height };
 }
 
-// Antialiasing varies a pixel's alpha rather than its ink, so only the fully
-// opaque core says what colours a mark is actually drawn in.
-const OPAQUE = 250;
-
-/**
- * Whether a mark may sit on a ground of this colour, and how.
- *
- * The rule is to use the version the company drew for that background and never
- * to repaint one that was not. A whole-logo recolour is what ruined US Fleet
- * Tracking's multicolour mark in the prototype.
- *
- * @param {object} options
- * @param {{raster: Raster}} options.logo
- * @param {'dark'|'light'} options.background
- * @returns {{treatment: 'as-is'|'whiten'}|{treatment: 'wordmark', reason: string}}
- */
-function backgroundFit({ logo, background }) {
-  const ink = inkSummary(logo.raster);
-
-  if (background === 'dark') {
-    if (ink.luminance > LOGO.lightMarkLuminance) return { treatment: 'as-is' };
-    if (ink.singleInkShare >= LOGO.singleInkShare) return { treatment: 'whiten' };
-    return {
-      treatment: 'wordmark',
-      reason:
-        `the mark is drawn in more than one colour, with ${Math.round(ink.singleInkShare * 100)}% ` +
-        'of its ink one shade, and recolouring a multicolour logo ruins it',
-    };
-  }
-
-  // The market map's pale band is the light ground. Decision 06 sets no rule
-  // for one, and nothing is invented here: the company's own version is used as
-  // it is, which is what all but a near-white mark is drawn for.
-  return { treatment: 'as-is' };
-}
-
-/**
- * What ink a mark is drawn in: how light it is, and how much of it is one
- * shade.
- *
- * @param {Raster} raster
- */
-function inkSummary(raster) {
-  // A mark that is semi-transparent everywhere has no opaque core to read. It
-  // still has one honest ink, so the reading falls back to every visible pixel
-  // rather than reporting a mark with no colour at all, which would refuse it
-  // for a reason that is not true.
-  const opaque = sampleInk(raster, OPAQUE);
-  return opaque.core ? opaque : sampleInk(raster, 1);
-}
-
-/**
- * Read a mark's ink from every pixel at or above an alpha.
- *
- * @param {Raster} raster
- * @param {number} minAlpha
- */
-function sampleInk({ data, width, height }, minAlpha) {
-  /** @type {Map<number, {n: number, r: number, g: number, b: number}>} */
-  const buckets = new Map();
-  let core = 0;
-  let luma = 0;
-
-  for (let i = 0; i < width * height; i += 1) {
-    const at = i * 4;
-    if (data[at + 3] < minAlpha) continue;
-    const r = data[at];
-    const g = data[at + 1];
-    const b = data[at + 2];
-    core += 1;
-    luma += 0.2126 * r + 0.7152 * g + 0.0722 * b;
-
-    const key = ((r >> 5) << 10) | ((g >> 5) << 5) | (b >> 5);
-    const seen = buckets.get(key) ?? { n: 0, r: 0, g: 0, b: 0 };
-    seen.n += 1;
-    seen.r += r;
-    seen.g += g;
-    seen.b += b;
-    buckets.set(key, seen);
-  }
-
-  if (!core) return { core: 0, luminance: 0, singleInkShare: 0 };
-
-  // The commonest shade, then how much of the mark sits close to it.
-  let top = { n: 0, r: 0, g: 0, b: 0 };
-  for (const bucket of buckets.values()) if (bucket.n > top.n) top = bucket;
-  const cr = top.r / top.n;
-  const cg = top.g / top.n;
-  const cb = top.b / top.n;
-
-  let sameInk = 0;
-  for (let i = 0; i < width * height; i += 1) {
-    const at = i * 4;
-    if (data[at + 3] < minAlpha) continue;
-    const dr = data[at] - cr;
-    const dg = data[at + 1] - cg;
-    const db = data[at + 2] - cb;
-    if (Math.sqrt(dr * dr + dg * dg + db * db) < LOGO.singleInkDistance) sameInk += 1;
-  }
-
-  return { core, luminance: luma / core, singleInkShare: sameInk / core };
-}
-
 // A company that sells to enterprises fills its home page with its customers'
 // logos, and those outnumber its own mark many times over. Two signals mark
 // them: words in the image's own tag, and the block it sits in. The trial's
@@ -370,69 +267,42 @@ function inOtherCompaniesBlock(html, at) {
 }
 
 /**
- * Repaint a single-ink mark white, through its alpha channel.
- *
- * Only the colour changes; every pixel keeps the alpha it had, so the mark's
- * antialiased edges stay soft instead of turning into a hard cutout. This is
- * the one recolouring the rules allow, and only for a mark drawn in one ink.
- *
- * @param {NormalisedLogo} logo
- * @returns {NormalisedLogo}
- */
-function whitenMark(logo) {
-  const { data, width, height } = logo.raster;
-  const painted = Buffer.from(data);
-
-  for (let i = 0; i < width * height; i += 1) {
-    const at = i * 4;
-    if (painted[at + 3] === 0) continue;
-    painted[at] = 0xff;
-    painted[at + 1] = 0xff;
-    painted[at + 2] = 0xff;
-  }
-
-  const raster = { data: painted, width, height };
-  return { ...logo, png: encodePng(raster), raster };
-}
-
-/**
  * Which mark a slot carries: the company's own logo, or its name set as type.
  *
- * Three gates, in order, and any of them sends the run to a text wordmark with
+ * Two gates, in order, and either of them sends the run to a text wordmark with
  * a reason worth reading. The model must have confirmed the logo is this
- * company's; the mark must suit its ground without being repainted; and it must
- * stay sharp at a size the slot can carry. A wordmark is a deliberate design
- * here, not a failure - an upscaled or recoloured logo reads as carelessness,
- * and a clean wordmark does not.
+ * company's, and the mark must stay sharp at a size the slot can carry. A
+ * wordmark is a deliberate design here, not a failure - an upscaled logo reads
+ * as carelessness, and a clean wordmark does not.
+ *
+ * There was a third gate: whether a mark suited the ground it was landing on,
+ * which mattered because the cover's ground was a dark photograph. Decision 01
+ * of the tightening map took the logo off the cover, leaving the market map's
+ * pale band as the only ground a logo lands on - and the rule there was always
+ * to use the company's own version exactly as it is. So the gate is gone, along
+ * with the ink reading and the whitening that served it.
  *
  * @param {object} options
  * @param {(NormalisedLogo & {verified?: boolean}) | undefined} options.logo
  * @param {{maxWidth: number, maxHeight: number, minHeight: number, area?: number}} options.slot
- * @param {'dark'|'light'} options.background
  * @param {string} [options.reason]  Why there is no logo, when there is none.
  * @returns {PlacedMark}
  */
-function chooseMark({ logo, slot, background, reason }) {
+function chooseMark({ logo, slot, reason }) {
   if (!logo) return { kind: 'wordmark', reason: reason ?? 'no logo was acquired' };
   if (!logo.verified) {
     return { kind: 'wordmark', reason: 'the logo was not confirmed as this company’s own' };
   }
 
-  const fit = backgroundFit({ logo, background });
-  if (fit.treatment === 'wordmark') return { kind: 'wordmark', reason: fit.reason };
-
   const placed = logoPlacement({ logo, slot });
   if (placed.kind === 'wordmark') return { kind: 'wordmark', reason: placed.reason };
 
-  const mark = fit.treatment === 'whiten' ? whitenMark(logo) : logo;
-  return { kind: 'logo', png: mark.png, width: placed.width, height: placed.height };
+  return { kind: 'logo', png: logo.png, width: placed.width, height: placed.height };
 }
 
 module.exports = {
   normaliseLogo,
   logoPlacement,
-  backgroundFit,
   pickLogoCandidates,
-  whitenMark,
   chooseMark,
 };

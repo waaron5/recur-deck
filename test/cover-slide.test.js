@@ -75,65 +75,67 @@ async function testLogo(name) {
   return normaliseLogo(bytes, { assetsDir: path.join(stageDir, 'assets') });
 }
 
-test("a verified logo stands in for the company's name on the cover", async () => {
-  // Samsara's mark is 1198 x 194px and drawn in a single ink, so it stays sharp
-  // to 7.99in wide - far past the 2.831in slot - and may be whitened for the
-  // dark ground. It is the case US Fleet Tracking's own logo is not.
+test("the cover sets the company's name in the brand's own written form", async () => {
+  // The reference cover reads "USFleetTracking" - closed up, internal capitals
+  // - for a company the deck calls "US Fleet Tracking". That lettering is what
+  // makes the cover read as the company's brand, and the run supplies it.
+  const { pptx } = await build({ writtenForm: 'USFleetTracking' });
+
+  const onSlide = (await pptx.textBoxes(1)).map((box) => box.text).join(' ');
+  assert.ok(onSlide.includes('USFleetTracking'), 'the cover should set the written form');
+  assert.ok(
+    !onSlide.includes('US Fleet Tracking'),
+    'and should not also set the name the run was given',
+  );
+});
+
+test('a cover with no written form sets the name the run was given', async () => {
+  // A masthead that is an image with no readable letters in it is a real case,
+  // and the decided answer is that the run leaves the field out. A blank slot
+  // is never an outcome.
+  for (const writtenForm of [undefined, '', '   ']) {
+    const { pptx } = await build({ writtenForm });
+    const onSlide = (await pptx.textBoxes(1)).map((box) => box.text).join(' ');
+    assert.ok(
+      onSlide.includes('US Fleet Tracking'),
+      `a written form of ${JSON.stringify(writtenForm)} should leave the given name on the cover`,
+    );
+  }
+});
+
+test('the cover carries no logo, whatever the run acquired', async () => {
+  // Decision 01 of the tightening map took the logo off slide 1: one large mark
+  // in a 2.831in slot on a photograph is the thing the eye lands on, and it
+  // fails hard. Samsara's mark is the case that used to pass every gate - a
+  // single-ink 1198 x 194px logo, sharp to 7.99in wide and whitenable for a
+  // dark ground - so it is the one that proves the path is gone rather than
+  // merely unreached by the usual inputs.
   const logo = await testLogo('samsara-logo.png');
   const { pptx } = await build({
     company: 'Samsara',
+    writtenForm: 'samsara',
     logo: { ...logo, source: 'https://www.samsara.com/', verified: true },
   });
 
   const onSlide = (await pptx.textBoxes(1)).map((box) => box.text).join(' ');
-  assert.ok(!onSlide.includes('Samsara'), 'the logo replaces the name, it does not join it');
-
+  assert.ok(onSlide.includes('samsara'), 'the name is set as type');
   assert.equal(
     (await pptx.imageHashes(1)).length,
-    3,
-    'the cover should carry the photo, the Recur wordmark and the logo',
+    2,
+    'the cover should carry the photo and the Recur wordmark, and nothing else',
   );
-
-  const notes = await pptx.notesText(1);
-  assert.match(String(notes), /samsara\.com/, 'slide 1 should record where the logo came from');
 });
 
-test('an unconfirmed logo never reaches the cover', async () => {
-  // The model looks at every normalised logo and says whether it is really this
-  // company's. In the trial the ranking alone picked another company's mark on
-  // 3 of 10 sites, and a product sub-brand on a fourth, so an unconfirmed logo
-  // is not placed however good it looks.
-  const logo = await testLogo('samsara-logo.png');
-  const { pptx } = await build({
-    company: 'Samsara',
-    logo: { ...logo, source: 'https://www.samsara.com/', verified: false },
-  });
+test("slide 1's notes record a written form that departs from the given name", async () => {
+  // A reviewer seeing "USFleetTracking" on a deck built for "US Fleet Tracking"
+  // has to be able to tell it was read off the company's own masthead rather
+  // than mistyped.
+  const { pptx } = await build({ writtenForm: 'USFleetTracking' });
+  assert.match(String(await pptx.notesText(1)), /Cover sets: USFleetTracking/);
 
-  const onSlide = (await pptx.textBoxes(1)).map((box) => box.text).join(' ');
-  assert.ok(onSlide.includes('Samsara'), 'the name should fall back to a text wordmark');
-  assert.equal((await pptx.imageHashes(1)).length, 2, 'no logo should have been placed');
-  assert.match(String(await pptx.notesText(1)), /not confirmed/i);
-});
-
-test("US Fleet Tracking's own logo is too coarse for the cover, and the notes say why", async () => {
-  // This is the file the company serves for dark backgrounds, so it passes the
-  // background rule and fails on resolution alone, which is the case decision 06
-  // named. At 258 x 27px it stays sharp only to 1.72in wide, which is 0.180in
-  // tall against the 0.269in the wordmark it replaces sets.
-  const logo = await testLogo('usft-logo-white.webp');
-  const { pptx } = await build({
-    company: 'US Fleet Tracking',
-    logo: { ...logo, source: 'https://www.usfleettracking.com/', verified: true },
-  });
-
-  const onSlide = (await pptx.textBoxes(1)).map((box) => box.text).join(' ');
-  assert.ok(onSlide.includes('US Fleet Tracking'), 'the cover sets the name as type instead');
-  assert.equal((await pptx.imageHashes(1)).length, 2, 'an upscaled logo is never placed');
-
-  const notes = String(await pptx.notesText(1));
-  assert.match(notes, /text wordmark/i);
-  assert.match(notes, /stays sharp only to/i, 'the notes should give the resolution reason');
-  assert.match(notes, /usfleettracking\.com/, 'and still record where the logo came from');
+  // A cover that sets the name unchanged has nothing to explain.
+  const plain = await build();
+  assert.doesNotMatch(String(await plain.pptx.notesText(1)), /Cover sets:/);
 });
 
 test('the cover is filled by the headquarters landmark photo', async () => {
@@ -160,8 +162,8 @@ test('the Recur wordmark is placed as the bundled image, never set as type', asy
   // It must not depend on a font being installed on the machine that opens it.
   const { pptx, stageDir } = await build();
 
-  const wordmark = sha256(fs.readFileSync(path.join(stageDir, 'assets', 'recur-wordmark-white.png')));
-  assert.ok((await pptx.imageHashes(1)).includes(wordmark), 'the white wordmark should be placed');
+  const recurMark = sha256(fs.readFileSync(path.join(stageDir, 'assets', 'recur-wordmark-white.png')));
+  assert.ok((await pptx.imageHashes(1)).includes(recurMark), 'the white wordmark should be placed');
 
   const text = (await pptx.textBoxes(1)).map((box) => box.text).join(' ');
   assert.doesNotMatch(text, /RECUR/i, 'the Recur wordmark should be an image, not text');

@@ -133,21 +133,31 @@ const TITLE = { x: 0.57, w: 8.8, h: 0.45, fontSize: 20, y: { thesis: 0.58, marke
 const COVER = {
   wordmark: { right: 4.638, capHeight: 0.4, centreY: 2.835 },
   divider: { x: 4.927, y: 2.508, h: 0.6, weight: 1 },
-  // The name is a text wordmark until the logo pipeline lands in ticket 03. Its
-  // box is taller than the reference's ink so a long name wraps inside the slot
-  // rather than shrinking below the type floor.
+  // The company's name, set as type. This slot carries no logo: decision 01 of
+  // the tightening map took the logo off the cover, because one large mark in
+  // a 2.831in slot on a photograph is the thing the eye lands on and it fails
+  // hard - wrong shape, wrong weight for a dark ground, or too coarse to scale
+  // takes the whole cover with it. The same mark on slide 3 is one of nine and
+  // fails softly, so slide 3 keeps its logos.
+  //
+  // What makes this read as the company's brand is the lettering convention,
+  // not a licensed face: the reference sets "USFleetTracking" closed up with
+  // internal capitals, and the run supplies that written form. Bold white at
+  // the measured cap height is the whole treatment - no tracking, no two-tone
+  // split, no invented case. Each of those was built and looked at on five real
+  // companies first: tracking pulls the name toward RECUR's own tracked mark
+  // across the divider, so the two read as one voice rather than as two parties,
+  // and a second colour drops half the name to 5.20:1 over a bright photograph,
+  // under the 5.83:1 COVER_PHOTO below exists to hold.
+  //
+  // The box is taller than the reference's ink so a long name wraps inside the
+  // slot rather than shrinking below the type floor.
   //
   // The cap height is measured cap-top to baseline, which is not the same as
   // the ink: "USFleetTracking" has a descender, so its ink spans 0.354in while
   // the caps run y 2.638-2.900in. The reference deliberately sets the company
   // name smaller than RECUR's 0.400in.
   name: { left: 5.323, width: 2.831, centreY: 2.808, capHeight: 0.269, boxHeight: 0.9 },
-  // A logo stands in the name's slot when one is verified, sharp enough, and
-  // right for a dark ground. Its width is the name's own. The height bounds are
-  // a judgment call rather than a measurement, because the reference cover sets
-  // this company as type: a logo may not outgrow the divider beside it
-  // (0.600in), and may not read smaller than the wordmark it replaces.
-  logo: { maxWidth: 2.831, maxHeight: 0.6, minHeight: 0.269 },
 };
 
 // Slide 3, the market map.
@@ -316,29 +326,22 @@ const COVER_PHOTO = {
 // enlarge a logo past the size at which it still looks sharp, because an
 // upscaled mark is "an instant signal of lack of care". Pixels per inch of
 // placed width; 150 is the starting threshold, to be tuned in the release runs.
-// The background-fit thresholds are measured off the real logos the trial
-// pulled down, and each sits in a gap between cases rather than on top of one:
 //
-//   mean luminance   225 (a white mark) against 119, 59 and 17 for dark marks
-//   share of one ink 100% (a single-ink mark) against 75%, 64% and 47%
+// This threshold used to be justified by what it did on two slots at once: US
+// Fleet Tracking's 258 x 27px mark stays sharp to 1.72in wide, which was too
+// short for the cover's slot and tall enough for the map's, so one rule gave
+// both decisions 06 and 10 the outcome they asked for. Decision 01 of the
+// tightening map took the logo off the cover, so that argument is gone and
+// only the map's half of it is left: this now decides, for one of nine small
+// marks on slide 3, whether it is placed or set as type. Nothing else reads
+// it. What the release runs have to check has narrowed to match - a map mark
+// that reads soft at 150, or a clean one needlessly dropped to type.
 //
-// Both are read from each mark's fully opaque core, because antialiasing varies
-// a pixel's alpha rather than its ink and would otherwise read as a second
-// colour.
-const LOGO = {
-  sharpPixelsPerInch: 150,
-  // Above this, a mark is already the light version its company drew for a
-  // dark ground, and is used exactly as it is.
-  lightMarkLuminance: 160,
-  // At or above this share of one ink, a mark carries a single colour and may
-  // be whitened through its alpha channel. Below it, repainting would ruin it.
-  singleInkShare: 0.95,
-  // How close two colours count as the same ink, as a distance in RGB. At this
-  // value the trial's single-ink mark measured 100% of its core one shade while
-  // the next closest measured 75%, so the threshold above sits in a gap rather
-  // than on top of a case.
-  singleInkDistance: 40,
-};
+// The background-fit thresholds that used to sit beside it went with the same
+// decision. They asked whether a mark suited a dark ground and whether it could
+// be whitened, and the map's pale band - now the only ground a logo lands on -
+// takes every company's own version exactly as it is.
+const LOGO = { sharpPixelsPerInch: 150 };
 
 // The in-run render check. Slides 1-3 are rasterised for the model to look at
 // before the deck is offered to anyone.

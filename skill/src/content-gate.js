@@ -144,6 +144,7 @@ function checkRun(research) {
   const findings = [];
   const company = typeof research?.company === 'string' ? research.company.trim() : '';
 
+  findings.push(...checkWrittenForm(research));
   findings.push(...checkSourceRecord(research));
   findings.push(...checkCrowding(research?.marketMap));
 
@@ -440,6 +441,47 @@ function checkUnsourcedNumber({ field, slide, text, sources }) {
   }
 
   return [];
+}
+
+/**
+ * The cover's written form: the company's name as it writes it itself.
+ *
+ * The decision allows exactly one kind of departure from the name the run was
+ * given. Case, spacing and punctuation are the brand's own lettering - "GPS
+ * Insight" writes itself "GPSINSIGHT" and Shopmonkey writes itself
+ * "shopmonkey" - and squashing both sides down to their letters and digits is
+ * what tells that apart from a different name.
+ *
+ * Everything else is caught, because the cover of a deck being mailed to a
+ * founder is the wrong place to discover that the masthead's tagline, its
+ * legal suffix, or half the name came along with it. This is the only check
+ * that runs on a field which is not copy the deck sets from the research, so
+ * it is called directly rather than through copyFields.
+ *
+ * A run with no written form at all is not a finding: a masthead set as an
+ * image with no readable letters is a real case, and the cover then sets the
+ * name the run was given.
+ *
+ * @param {any} research
+ * @returns {Finding[]}
+ */
+function checkWrittenForm(research) {
+  const company = typeof research?.company === 'string' ? research.company.trim() : '';
+  const written = typeof research?.writtenForm === 'string' ? research.writtenForm.trim() : '';
+  if (!company || !written) return [];
+
+  if (squash(written) === squash(company)) return [];
+
+  return [
+    finding(
+      'writtenForm',
+      1,
+      'written-form',
+      `"${written}" is not how "${company}" is written: the cover may restyle the ` +
+        'name\u2019s case, spacing and punctuation, but it must be the same letters ' +
+        'in the same order',
+    ),
+  ];
 }
 
 /**
