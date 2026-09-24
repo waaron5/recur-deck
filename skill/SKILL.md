@@ -176,9 +176,19 @@ sentences are built. Across the six bullets, at least two hang a second clause
 off the main one - a fronted condition, a trailing consequence, or a
 qualifier - and the content check counts them.
 
-Headers stay within 12 words and bullets within 16, and each has to fit its box.
-Every line is a statement, never a question. If a bullet would read just as true
-with another company's name in it, it is too generic.
+**A header has one line and no more.** Its box is 7.2in wide, it holds a single
+line, and the first bullet sits a quarter of an inch beneath it, so a header that
+needs a second line prints across that bullet. The content check measures every
+line against its box and refuses anything over, with nothing added for slack -
+and the bold section label in front of the header counts, which leaves a header
+about 5.3in. The three headers below are 7 to 9 words and sit at 89-93% of that.
+Slide 3's axis names and subtitle are single-line boxes too, and are measured
+the same way.
+
+Headers also stay within 12 words and bullets within 16: that is a limit on how
+long a line a founder should have to read, and short words can reach it while
+still fitting the box. Every line is a statement, never a question. If a bullet
+would read just as true with another company's name in it, it is too generic.
 
 **Sparse evidence means saying less, not inventing more.** All six bullets stay
 required; they may stay product-level and category-level.
@@ -270,7 +280,7 @@ you established:
   ],
   "thesis": {
     "here": {
-      "header": "Commercial fleets are mid-cycle in adopting real-time telematics",
+      "header": "Commercial fleets are mid-cycle in adopting telematics",
       "bullets": [
         {
           "text": "Small commercial fleets still coordinate dispatch on homegrown tools",
@@ -283,7 +293,7 @@ you established:
       ]
     },
     "excited": {
-      "header": "US Fleet Tracking sells live GPS tracking without long contracts",
+      "header": "US Fleet Tracking sells live tracking without contracts",
       "bullets": [
         {
           "text": "Vehicle locations refresh on a live map every ten seconds",
@@ -296,7 +306,7 @@ you established:
       ]
     },
     "help": {
-      "header": "Bring Recur's go-to-market and AI strengths to US Fleet Tracking",
+      "header": "Bring Recur's go-to-market and AI to the live tracker",
       "bullets": [
         {
           "text": "Apply Recur's go-to-market team to the live tracking product",
@@ -389,8 +399,8 @@ at fault, and you choose which bullets to rebuild.
 
 ```json
 {"ok": false, "findings": [
-  {"slide": 2, "field": "thesis.here.header", "rule": "word-count",
-   "message": "14 words, and a header stays within 12 words: shorten it"},
+  {"slide": 2, "field": "thesis.here.header", "rule": "fit",
+   "message": "needs about 5.91in of a 5.55in line: make it shorter"},
   {"slide": 2, "field": "thesis", "rule": "sentence-structure",
    "message": "0 of the 6 thesis bullets hang a second clause off the main one, ..."}
 ]}

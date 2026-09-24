@@ -10,8 +10,8 @@
 //   {"ok": true, "findings": []}
 //
 //   {"ok": false, "findings": [
-//     {"slide": 2, "field": "thesis.here.header", "rule": "word-count",
-//      "message": "15 words, and a header stays within 12 words: shorten it"}
+//     {"slide": 2, "field": "thesis.here.header", "rule": "fit",
+//      "message": "needs about 5.91in of a 5.55in line: make it shorter"}
 //   ]}
 //
 // The point of running it before the build is that a run repairs the fields it

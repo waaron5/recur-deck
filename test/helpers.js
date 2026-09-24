@@ -179,7 +179,7 @@ const TEST_CREDIT = {
  */
 const TEST_THESIS = {
   here: {
-    header: 'Commercial fleets are mid-cycle in adopting real-time telematics',
+    header: 'Commercial fleets are mid-cycle in adopting telematics',
     bullets: [
       {
         text: 'Small commercial fleets still coordinate dispatch on homegrown tools',
@@ -192,7 +192,7 @@ const TEST_THESIS = {
     ],
   },
   excited: {
-    header: 'US Fleet Tracking sells live GPS tracking without long contracts',
+    header: 'US Fleet Tracking sells live tracking without contracts',
     bullets: [
       {
         text: 'Vehicle locations refresh on a live map every ten seconds',
@@ -208,7 +208,7 @@ const TEST_THESIS = {
   // organic growth with an outbound team" would assert an absent outbound
   // motion, which is an invented fact and a critical defect.
   help: {
-    header: "Bring Recur's go-to-market and AI strengths to US Fleet Tracking",
+    header: "Bring Recur's go-to-market and AI to the live tracker",
     bullets: [
       {
         text: "Apply Recur's go-to-market team to the live tracking product",

@@ -48,6 +48,19 @@ the September 2026 practice failures cannot recur.
   3's notes, where the marks now live. Still owed: one of these covers through
   the supported host's own renderer, since the five were looked at under Quick
   Look. [01](issues/01-cover-name-in-the-brands-own-hand.md)
+- A box that holds one line is the whole ceiling: `FIT_ALLOWANCE` is deleted
+  rather than set to zero, and the gate refuses any line whose Arial advances
+  pass its box — the header, both axis names and the subtitle alike. The 4.6-6.5%
+  that bought the old 10% was a fact about the reference PNG and not the
+  estimate: its slide 2 headers set at about 14.5pt in a face that is not Arial,
+  shown by splitting the bold label from the header at the colon and by two
+  words that appear on the slide at both sizes. The word limits stay at 12 and
+  16 as a readability ceiling, since short words reach them while still fitting
+  the box. All three example headers overran and were shortened in SKILL.md and
+  the fixture, and a test now runs the gate against SKILL.md's own example.
+  Still owed: one built header through the supported host's renderer, since
+  nothing here was rendered.
+  [02](issues/02-a-header-that-cannot-wrap.md)
 
 ## Not yet specified
 

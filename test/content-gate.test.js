@@ -5,6 +5,8 @@
 // them together. A throw would report one; these assert on the findings list.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const { checkRun } = require('../skill/src/content-gate.js');
 const { TEST_RESEARCH, researchWith } = require('./helpers.js');
@@ -142,11 +144,12 @@ test('every problem comes back at once, across fields and rules', () => {
   const research = researchWith({
     thesis: {
       here: {
-        // Kept comfortably inside its box: this test is about several rules
-        // reporting together, and a header that also overflowed would tie it to
-        // the fit allowance. "Traking" is the misspelling the company-name rule
-        // catches; the bullet's question mark is what the punctuation rule does.
-        header: 'US Fleet Traking customers are mid-cycle in adopting telematics',
+        // Kept comfortably inside its box - 4.16in of a 5.55in line - because
+        // this test is about several rules reporting together, and a header
+        // that also overflowed would tie it to the fit rule. "Traking" is the
+        // misspelling the company-name rule catches; the bullet's question mark
+        // is what the punctuation rule does.
+        header: 'US Fleet Traking sits mid-cycle on telematics',
         bullets: [
           {
             text: 'Why do small commercial fleets still coordinate dispatch by hand?',
@@ -398,15 +401,80 @@ test('a map leaving two quadrants empty of competitors is caught', () => {
 });
 
 test('the reference run fits every box it has to sit in', () => {
-  // The false-positive guard, and the reason the fit check leaves an allowance:
-  // this fixture is the reference deck's own copy, and the reference sets each
-  // of these lines without overflowing. A gate that fired here would spend a
-  // repair round on every single run.
+  // The false-positive guard: this fixture is the copy a clean run writes, and
+  // every line of it has to sit in its box with the ceiling at zero. A gate
+  // that fired here would spend a repair round on every single run.
   //
   // It covers the two-line cases too. "Enterprise and large fleets" does not
   // fit the axis gutter on one line, and is not meant to: its box is 0.36in
   // deep and holds two.
   assert.deepEqual(under(checkRun(TEST_RESEARCH), 'fit'), []);
+});
+
+test('a header may fill its line, and one word more is refused', () => {
+  // The ceiling, pinned from both sides. The header's box is 7.2in and cannot
+  // grow: it holds one line, the bullets' ink centre sits 0.25in under it, and
+  // a second line lands on bullet 1. So the rule is the box, with nothing
+  // added to it.
+  //
+  // Measured at 15pt Arial, which is what the deck declares and what
+  // PowerPoint therefore breaks lines by. After the bold "Why we're here: "
+  // the line has 5.553in left; this header asks 5.488in of it and the same
+  // header with "today" on the end asks 6.056in. Both are inside the 12-word
+  // limit, so only the fit rule can tell them apart - and under the old 10%
+  // allowance both passed.
+  const atTheCeiling = 'Commercial fleets are mid-cycle in adopting fleet telematics';
+  const oneWordPast = `${atTheCeiling} today`;
+
+  const fitOf = (header) =>
+    under(
+      checkRun(researchWith({ thesis: { here: { header, bullets: TEST_RESEARCH.thesis.here.bullets } } })),
+      'fit',
+    );
+
+  assert.deepEqual(fitOf(atTheCeiling), []);
+  assert.deepEqual(fieldsIn(fitOf(oneWordPast)), ['thesis.here.header']);
+});
+
+test('a single-line label on the market map is held to the same ceiling', () => {
+  // The header is the box that was caught, but it is not the only one that
+  // cannot grow. The y axis's name is set uppercase and tracked in the 1.2375in
+  // gutter, in a 0.16in box centred on the top of the upright, with the "SMB
+  // commercial fleets" category label just beneath it. A second line lands on
+  // that label exactly as a second header line lands on bullet 1, so the axis
+  // names take the header's ceiling with them.
+  //
+  // "Fleet segment served" sets 1.2687in tracked, which is 2.5% over the
+  // gutter - inside the old 10% allowance, and over the box.
+  const research = researchWith({
+    marketMap: {
+      ...TEST_RESEARCH.marketMap,
+      axes: {
+        ...TEST_RESEARCH.marketMap.axes,
+        y: { ...TEST_RESEARCH.marketMap.axes.y, name: 'Fleet segment served' },
+      },
+    },
+  });
+
+  assert.deepEqual(fieldsIn(under(checkRun(research), 'fit')), ['marketMap.axes.y.name']);
+});
+
+test('the example run SKILL.md shows a model fits every box', () => {
+  // The three headers in SKILL.md's example are the headers a run copies, so
+  // an example that overflows teaches the overflow. The September 2026 runs
+  // wrapped all three, and all three of SKILL.md's estimated over the box and
+  // passed anyway under the old allowance.
+  //
+  // Only the fit rule is asserted. The example lists 2 competitors rather than
+  // the 6-9 a real run needs, because it is showing the shape of an entry and
+  // not a full map, so the distribution rule fires on it by design.
+  const skill = fs.readFileSync(path.join(__dirname, '..', 'skill', 'SKILL.md'), 'utf8');
+  const examples = [...skill.matchAll(/```json\n([\s\S]*?)```/g)]
+    .map((block) => block[1])
+    .filter((block) => block.includes('"marketMap"'));
+
+  assert.equal(examples.length, 1, 'SKILL.md shows exactly one example run');
+  assert.deepEqual(under(checkRun(JSON.parse(examples[0])), 'fit'), []);
 });
 
 test('a bullet too wide for its column is caught before anything is rendered', () => {

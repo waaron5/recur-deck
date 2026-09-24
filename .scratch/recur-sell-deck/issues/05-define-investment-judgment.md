@@ -112,3 +112,25 @@ After this amendment the content gate still enforces word counts, the fit
 estimate, unsourced numbers, the company's name, source-record completeness, the
 market map's distribution, and the new sentence-structure check. Every judgment
 about vocabulary and tone now belongs to the model, against the exemplar.
+
+## Amendment — September 24, 2026
+
+Amended by [Make the single-line fit check exact, so a header cannot
+wrap](../../recur-sell-deck-tune/issues/02-a-header-that-cannot-wrap.md).
+
+**The word limits stand at 12 and 16. What changes is the reason given for the
+header's 12**, which the September 18 amendment recorded as "slack rather than a
+limit: after the bold section label the header line fits about 9 to 10 words, so
+the fit estimate binds first and the number never does."
+
+The fit estimate did not bind first: it carried a 10% allowance that let every
+one of these headers through, and three of them wrapped onto their bullets in
+the September 2026 runs. That allowance is gone and a line now has to fit its
+box.
+
+"The number never does" is also true only of long words. Twelve ordinary words
+overrun the line at 8.34in of 5.55in, but "The way these fleets buy has not yet
+caught up" is ten words in 4.35in of it, and fifteen short words sit in 4.49in
+of a 7.01in bullet column. So the two rules do not cover each other: the width
+rule is about what fits, the word count is about what a founder should have to
+read, and either can fire first depending on the words.

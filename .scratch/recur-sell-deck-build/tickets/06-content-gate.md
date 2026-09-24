@@ -87,3 +87,23 @@ against the running gate before and after:
   shape problems the field checks cannot see.
 - `build-deck.js` ran the gate *after* the landmark download, under a comment
   saying it ran before. The gate now runs first, so failing copy costs no photo.
+
+## Amendment — September 24, 2026
+
+Amended by [Make the single-line fit check exact, so a header cannot
+wrap](../../recur-sell-deck-tune/issues/02-a-header-that-cannot-wrap.md), after
+slide 2's three headers wrapped onto their bullets in the September 2026
+practice runs.
+
+**`FIT_ALLOWANCE` is gone, and a line now has to fit its box.** The 10% above
+rested on a 4.6-6.5% gap between the estimate and the reference PNG's ink that
+this ticket could not attribute. Ticket 02 attributes it, by splitting the bold
+label from the header at the colon: the gap is a fact about the reference PNG,
+which sets slide 2 at about 14.5pt in a face that is not Arial, and not an error
+bar on the estimate. That ticket carries the measurement.
+
+So the paragraph above claiming "firing early would spend a repair round on
+every run, because the reference deck's own headers estimate over their box" had
+it backwards — set in Arial those headers would wrap — and the fixture and
+SKILL.md headers were shortened rather than the ceiling raised. The word limits
+are unchanged and keep their own job.

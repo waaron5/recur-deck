@@ -25,6 +25,25 @@
 // also discriminates - Verdana lands 9% wide, Tahoma 4% narrow, Arial Narrow
 // 18% narrow - so this is the reference deck's own Latin metric.
 //
+// The fourth sample does not survive re-measurement, and the conclusion does.
+// Ticket 02 of the tightening map split each bold label from its header at the
+// colon on Slide2.png and measured the labels alone: they read 8.4-9.2% under
+// Arial Bold at 15pt, not the 0.7% "implies 15.10pt" records. Two things the
+// original sample could not see are behind it. The header row sets at about
+// 14.5pt rather than the cap-derived 15 - "commercial" and "fleets" each appear
+// on the slide at both the header and the bullet size, in a 1.262 and 1.265
+// ratio where 15 over 11.5 implies 1.304 - and slide 2's Latin is not Arial at
+// all, only close to it in the regular weight. Its bold is about 4 points
+// narrower than Arial Bold once the size is corrected, which is why only a line
+// mixing the two weights ever showed it, and why the three single-weight
+// samples above still read clean.
+//
+// So this script's output is unchanged and so is the reason for it: the deck
+// declares Arial, which is what these numbers measure, and the estimate built
+// from them is the same advance sum PowerPoint and LibreOffice break lines by.
+// What is no longer claimed is that the reference deck's own bold corroborates
+// it. See content-gate.js's FIT_ALLOWANCE, which was set from that claim.
+//
 // Arial is additionally metric-compatible with Liberation Sans, which is what
 // the sandbox renderer substitutes, so an estimate taken from these numbers
 // predicts the line breaks ticket 07's render check will show. That is why

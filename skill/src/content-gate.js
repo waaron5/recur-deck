@@ -70,8 +70,19 @@ const finding = (field, slide, rule, message) => ({ field, slide, rule, message 
 
 // Decision 05's limits, as amended. A header is a claim and a bullet is its
 // support, and both stop working at the length where a founder has to re-read
-// them. Sixteen is what a bullet's box holds; the header's twelve never binds,
-// because after its bold section label the fit estimate stops it first.
+// them.
+//
+// These are readability ceilings and not fit rules, and since ticket 02 made
+// the box itself the fit ceiling, that division is the whole reason they still
+// earn their place.
+//
+// Neither rule covers the other, because which one fires depends on how long
+// the words are. "Commercial fleets across every region are firmly mid-cycle in
+// adopting real-time telematics" is twelve words in 8.34in of a 5.55in line, so
+// the box stops it long before the count does. "The way these fleets buy has
+// not yet caught up" is ten words in 4.35in of the same line, and there a
+// founder meets the length first. A bullet reads the same way: fifteen short
+// words sit in 4.49in of a 7.01in column.
 const LIMITS = { header: 12, bullet: 16 };
 
 // The one punctuation rule left. A question mark stands in for decision 05's
@@ -112,25 +123,6 @@ const CLAUSE_SHAPES = [
 // headcount and funding - as facts. LinkedIn is deliberately not here: the same
 // decision ranks a founder's LinkedIn as one of the company's own channels.
 const AGGREGATORS = ['crunchbase', 'zoominfo'];
-
-// How much wider the estimate is allowed to run than the box before a field is
-// called overlong.
-//
-// The estimate sums advance widths, which is an upper bound on what a renderer
-// draws: it ignores pair kerning, which only pulls glyphs together, and an
-// advance includes the last glyph's right side bearing while the ink a reader
-// sees stops short of it. Measured against the reference slides, the estimate
-// ran wide by 0.4% on the cover name, 1.4% on a bullet and 2.2% on the title,
-// but by 4.6%, 6.1% and 6.5% on the three thesis headers, which are the only
-// lines that mix a bold run with a regular one. Why those three run wider is
-// not settled - the header text could not be split from its label on the
-// reference PNG to attribute it - so the allowance is set above the worst case
-// rather than tuned to a cause.
-//
-// The direction matters more than the number. Firing late costs a render round
-// on copy that was nearly too long; firing early would spend a repair round on
-// every run, because the reference deck's own headers estimate over their box.
-const FIT_ALLOWANCE = 0.1;
 
 /**
  * Every problem the countable rules find, in the order a reader meets them on
@@ -619,6 +611,59 @@ function checkTargetName(map, company) {
  * This is the whole point of estimating fit before rendering: overflow is
  * repaired by shortening text, and knowing about it here saves a render round.
  *
+ * **The ceiling is the box, with nothing added to it.** Until ticket 02 of the
+ * September 2026 tightening map there was a FIT_ALLOWANCE of 10% here, and that
+ * 10% is why three slide 2 headers wrapped onto the bullets underneath them.
+ * The number came from comparing the estimate against ink measured off the
+ * reference PNGs, where single-weight lines ran 0.4-2.2% wide but the three
+ * thesis headers ran 4.6-6.5% wide, and the cause of that gap was left
+ * unsettled.
+ *
+ * It is settled now, by splitting the bold label from the regular header at the
+ * colon on Slide2.png (1300 x 731px at 130 px/in). The colon is the narrow
+ * two-dot cluster the label's glyph runs end on: x 368-371 on row 1, 401-405 on
+ * row 2, 386-390 on row 3. Against Arial at the declared 15pt the label's ink
+ * runs 8.4-9.2% under its advance and the regular header's 4.8-6.9% under -
+ * both halves short, and the bold half the shorter on every row, which no
+ * single trailing side bearing explains. Two things are doing it, and neither
+ * is the estimate:
+ *
+ *   - The row is not set at 15pt. "commercial" and "fleets" each appear twice
+ *     on the slide, once in a header and once in a bullet, and their ink runs
+ *     130px to 103px and 62px to 49px - a ratio of 1.262 and 1.265 where the
+ *     declared 15pt over 11.5pt implies 1.304. The headers set at about 14.5pt.
+ *     design.js derived 15 from a measured cap height through CAP_HEIGHT_EM and
+ *     rounded up; the bullets' 11.5 was rounded down from 11.73, which is why
+ *     they looked accurate and the headers did not.
+ *   - The reference's Latin is not Arial. Slide 2's 'a', 'c', 'e' and 't' are
+ *     not Arial's letterforms, though the cover's "USFleetTracking" is plainly
+ *     Arial Bold. Its regular weight sits close enough to Arial's advances that
+ *     the bullets and the title matched; its bold weight does not. Re-measured
+ *     at 14.5pt the regular headers land 1.3-3.4% wide, which is the ordinary
+ *     ink-stops-short-of-the-advance bias and grows with the number of words on
+ *     the line, while the bold labels stay 4.8-5.6% wide on all three rows.
+ *     Only a line mixing the two weights could show that.
+ *
+ * So 4.6-6.5% is a fact about the reference PNG, not an error bar on the
+ * estimate. What this deck ships is Arial, declared in design.js, and both
+ * PowerPoint and LibreOffice break an Arial line at the point its advance sum
+ * passes the box - the very sum textWidth returns. The only thing between the
+ * two is pair kerning, which can only pull glyphs together. The estimate is
+ * therefore an upper bound on the shipped deck with nothing left over to allow
+ * for, so there is no allowance: a header whose advances exceed 7.2in takes a
+ * second line, and the gate says so.
+ *
+ * That is also why the reference deck's own headers are no longer the argument
+ * for an allowance. Set in Arial at 15pt they measure 7.51in, 7.34in and 7.32in
+ * against a 7.2in box: they do not overflow on the reference because the
+ * reference is set in a narrower face at a smaller size, and re-set the way
+ * this deck sets type they would wrap. The fixture's headers were shortened to
+ * fit rather than the ceiling raised to admit them.
+ *
+ * The direction of the remaining error is the safe one. Firing early costs one
+ * of a run's three content rounds; firing late costs a founder a deck with a
+ * header lying across its first bullet, which is what September 2026 shipped.
+ *
  * @param {CopyField} field
  * @returns {Finding[]}
  */
@@ -631,7 +676,7 @@ function checkFit({ field, slide, text, box }) {
   const prefix = box.prefix ? textWidth(box.prefix, { fontSize, bold: true }) : 0;
   // Tracked type carries its letter spacing on every character.
   const tracking = ((box.tracking ?? 0) * [...written].length) / 72;
-  const room = box.width * (1 + FIT_ALLOWANCE) - prefix - tracking;
+  const room = box.width - prefix - tracking;
   const allowed = box.lines ?? 1;
 
   if (allowed === 1) {
@@ -670,7 +715,7 @@ function checkCalloutFit(map) {
   if (!callout || typeof callout !== 'object') return [];
 
   const { fontSize, indent, lineSpacing, spaceAfter, height } = MAP.callout;
-  const full = MAP_LAYOUT.calloutWidth * (1 + FIT_ALLOWANCE);
+  const full = MAP_LAYOUT.calloutWidth;
   const indented = full - indent / 72;
 
   /** @param {any} text @param {number} width @param {string} [prefix] */
@@ -795,9 +840,15 @@ function thesisFields(thesis) {
  * Slide 3: the subtitle, both axes with their two sides each, and the callout.
  *
  * The axis names and their sides are labels a reader scans rather than reads,
- * so they take the header's shorter limit. The subtitle and the callout's lines
- * are sentences, and take the bullet's. None of them records a source: the
- * evidence for slide 3 hangs off each company and each axis, not off its copy.
+ * so they take the header's shorter word limit; the subtitle and the callout's
+ * lines are sentences, and take the bullet's. On these fields the word limit is
+ * only what names the finding, though. None of these boxes is wide enough for a
+ * count to bind - the y axis's name has 1.2375in of gutter, and "Fleet segment
+ * focus" already fills 1.2073in of it at three words - so the box is what holds
+ * them, the same way it holds the header.
+ *
+ * None of them records a source: the evidence for slide 3 hangs off each
+ * company and each axis, not off its copy.
  *
  * The callout's own fit is checked as a block, because its paragraphs share one
  * box, so its fields carry no box of their own here.
@@ -864,4 +915,4 @@ function marketMapFields(map) {
   return fields;
 }
 
-module.exports = { LIMITS, FIT_ALLOWANCE, checkRun };
+module.exports = { LIMITS, checkRun };
