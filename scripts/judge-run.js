@@ -142,7 +142,20 @@ function reportTiming(work) {
   // the missing visual check - so a reader that parsed the file itself would print
   // a different list from the one reply.js hands the user, which is the one thing
   // a judging pass must not do.
-  const state = openRunState({ file });
+  //
+  // Read-only, because this is the only thing that reads a host run's evidence
+  // once the chat is closed. An ordinary open writes a blank record over any
+  // state file it cannot parse - which a sandbox killed mid-save leaves - so the
+  // command someone runs to find out what happened was the command that
+  // destroyed the answer.
+  const state = openRunState({ file, readOnly: true });
+
+  if (state.damaged) {
+    line(`  ${file} could not be read, so this run's record is damaged rather than empty`);
+    line('  the file is left exactly as it was found; open it and see how far it got');
+    return;
+  }
+
   const stages = state.stages;
 
   if (stages.length === 0) {
@@ -193,13 +206,20 @@ function reportTiming(work) {
   // Blind renders are not repair rounds and are not counted as ones, so they would
   // otherwise vanish from the judged run - and a deck nobody could look at is
   // exactly what a judging pass wants flagged for the person doing the looking.
-  const { blind, answered } = state.renders;
+  const { blind, answered, reasons } = state.renders;
   if (blind > 0) {
     line(
       `  renders that showed nothing: ${blind}${
         answered ? ' (a later render answered)' : ' — this deck went unseen'
       }`,
     );
+    // Each converter's own sentence, because the count says a render failed and
+    // ticket 05 of the tightening map asks which one and why. An absent soffice
+    // is a sandbox that cannot render at all; one killed at its bound is a
+    // conversion that is too slow for the deck it was given; one that ran and
+    // wrote no PDF is neither. They are three findings with three different
+    // fixes, and this is the only place the distinction survives a closed chat.
+    for (const why of reasons) line(`    ${why}`);
   }
 
   for (const fallback of state.fallbacks) line(`  Settled for: ${fallback}`);

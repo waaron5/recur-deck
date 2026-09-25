@@ -231,3 +231,51 @@ test('a render that answers does not buy back a run it already spent waiting', (
 
   assert.equal(openRunState({ file }).renders.blind, 1, 'the count is spent for the run');
 });
+
+test('a blind render writes down what went quiet, not just that something did', () => {
+  // Ticket 05 of the tightening map asks a question the count alone cannot
+  // answer: the sandbox has both converters - decision 09's probe measured the
+  // whole step at about two seconds - and a run there still came back with no
+  // PDF. Whether that is soffice absent, soffice killed at its bound, or
+  // pdftoppm failing after a PDF was written calls for three different fixes,
+  // and render.js already words all three apart. Counting blind renders and
+  // discarding their causes is what leaves the host run with nothing to read
+  // back, which is how the September 2026 run's evidence was lost.
+  const file = stateFile();
+
+  openRunState({ file }).noteBlindRender('soffice did not finish within 30s');
+  openRunState({ file }).noteBlindRender('LibreOffice wrote no PDF for Recur x Acme.pptx');
+
+  assert.deepEqual(
+    openRunState({ file }).renders.reasons,
+    ['soffice did not finish within 30s', 'LibreOffice wrote no PDF for Recur x Acme.pptx'],
+    'both attempts, in the order they failed, because they can fail differently',
+  );
+});
+
+test('a blind render with nothing to say still counts as one', () => {
+  // Bookkeeping, like the rest of this module: losing a cause should cost a run
+  // the diagnosis, which is a nuisance, and never cost it the cap that stops it
+  // waiting on a converter forever.
+  const file = stateFile();
+
+  const noted = openRunState({ file }).noteBlindRender();
+
+  assert.equal(noted.blind, 1, 'the cap counts it');
+  assert.deepEqual(openRunState({ file }).renders.reasons, [], 'and claims no cause it was not given');
+});
+
+test('the causes a run recorded outlive a state file written before they existed', () => {
+  // Every run directory from before this was recorded has a renders block with
+  // no reasons in it, and the judging harness reads those directories. A missing
+  // list has to read as "none recorded" rather than stopping the report that is
+  // the only thing left of that run.
+  const file = stateFile();
+  require('node:fs').writeFileSync(
+    file,
+    JSON.stringify({ startedAt: Date.now(), renders: { blind: 1, answered: false } }),
+  );
+
+  assert.deepEqual(openRunState({ file }).renders.reasons, []);
+  assert.equal(openRunState({ file }).renders.blind, 1, 'and the count it did write is kept');
+});

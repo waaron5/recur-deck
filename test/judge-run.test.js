@@ -211,3 +211,103 @@ test('a judged run shows the renders that answered nothing, and the reply it wil
   );
   assert.match(printed, /Settled for: metro landmark/, 'beside the fallbacks that were stored');
 });
+
+test('a judged run says what went quiet, not only that something did', async () => {
+  // Ticket 05 of the tightening map is answered from a work directory, not from
+  // a chat transcript, because the transcript is what the September 2026 run's
+  // evidence went missing with. The sandbox carries both converters and a run
+  // there still delivered an unseen deck, so the finding the ticket needs is
+  // which converter and why - and a report that printed "2 renders showed
+  // nothing" would send the next person back to the host to find out.
+  const { file } = await built();
+  const work = tempDir('recur-judge-why-');
+
+  fs.writeFileSync(
+    runStateFile(work),
+    JSON.stringify({
+      startedAt: Date.now() - 6 * 60 * 1000,
+      rounds: {},
+      fallbacks: [],
+      defects: [],
+      stages: [{ stage: 'render-deck', ms: 30000, elapsedMs: 4 * 60 * 1000 }],
+      renders: {
+        blind: 2,
+        answered: false,
+        reasons: [
+          'soffice did not finish within 30s',
+          'LibreOffice wrote no PDF for Recur x Acme.pptx, so no slide could be rendered',
+        ],
+      },
+    }),
+  );
+
+  const printed = judge(['--deck', file, '--work', work]);
+
+  assert.match(printed, /did not finish within 30s/, 'the first attempt is quoted as it failed');
+  assert.match(printed, /wrote no PDF/, 'and so is the second, because they differ');
+});
+
+test('a run from before causes were recorded still judges', async () => {
+  // Every work directory kept so far has a renders block with no reasons in it.
+  // A report that needed them would be a report that cannot read the only runs
+  // there are.
+  const { file } = await built();
+  const work = tempDir('recur-judge-old-');
+
+  fs.writeFileSync(
+    runStateFile(work),
+    JSON.stringify({
+      startedAt: Date.now() - 6 * 60 * 1000,
+      rounds: {},
+      fallbacks: [],
+      defects: [],
+      stages: [{ stage: 'render-deck', ms: 30000, elapsedMs: 4 * 60 * 1000 }],
+      renders: { blind: 1, answered: false },
+    }),
+  );
+
+  const printed = judge(['--deck', file, '--work', work]);
+
+  assert.match(printed, /showed nothing: 1/, 'what it did record is still reported');
+  assert.doesNotMatch(printed, /undefined/, 'and nothing is invented to fill the gap');
+});
+
+test('judging a run never writes to the run it is judging', async () => {
+  // The judging pass is the only thing that reads a host run's evidence once the
+  // chat is closed - which is the whole premise of tickets 04 and 05 - and it ran
+  // through openRunState, which writes a blank record over any state file it
+  // cannot parse. A sandbox killed mid-save leaves exactly that file, so the one
+  // command a person runs to find out what happened was the command that
+  // destroyed the answer: the blind renders, their causes and the timeline, gone
+  // and replaced with a record dated the moment someone looked.
+  const { file } = await built();
+  const work = tempDir('recur-judge-corrupt-');
+  const state = runStateFile(work);
+
+  // Truncated mid-write, with the causes ticket 05 needs still legible in it.
+  const truncated =
+    '{"startedAt":1758800000000,"renders":{"blind":2,"answered":false,' +
+    '"reasons":["soffice did not finish within 30s"]},"stages":[';
+  fs.writeFileSync(state, truncated);
+
+  judge(['--deck', file, '--work', work]);
+
+  assert.equal(
+    fs.readFileSync(state, 'utf8'),
+    truncated,
+    'the bytes are left exactly as the run left them, for a person to read',
+  );
+});
+
+test('a judged run whose state cannot be read says so rather than inventing one', async () => {
+  // Reporting "no stage marks" for an unreadable file would read as a run that
+  // recorded nothing, which is a different finding from a file that was damaged -
+  // and the second is the one worth chasing.
+  const { file } = await built();
+  const work = tempDir('recur-judge-unreadable-');
+  fs.writeFileSync(runStateFile(work), '{"startedAt":175880000');
+
+  const printed = judge(['--deck', file, '--work', work]);
+
+  assert.match(printed, /could not be read/i, 'the damage is named as damage');
+});

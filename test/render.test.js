@@ -223,9 +223,12 @@ test("the converter's bound is seconds, not minutes", () => {
 /**
  * Run render-deck.js the way the skill does, and hand back what it printed.
  *
- * This machine has no LibreOffice, which makes it the honest place to test a
- * render that cannot answer: the converter really is absent, so nothing has to
- * be faked to provoke the failure the September 2026 run hit.
+ * The converter is put out of reach rather than assumed absent. This machine has
+ * no LibreOffice, which is what these cases were first written against, but
+ * ticket 05 of the tightening map exists to get the skill onto a host that does
+ * have one - and there this suite would quietly stop testing the blind render and
+ * start testing a real one. An empty PATH gives soffice no chance of being found
+ * on either machine, so what is asserted below is the same behaviour in both.
  *
  * @param {string} work
  * @param {string} deck
@@ -238,7 +241,7 @@ function renderDeckEntry(work, deck) {
     const stdout = execFileSync(
       process.execPath,
       [entry, '--input', deck, '--out', path.join(work, 'render'), '--work', work],
-      { encoding: 'utf8' },
+      { encoding: 'utf8', env: { PATH: '' } },
     );
     return { ok: true, output: stdout };
   } catch (error) {
@@ -301,11 +304,13 @@ test('a run that has waited out two blind renders is refused, and delivers clean
     /--flagged|NOT READY/,
     'a deck every deterministic check passed is not flagged for a renderer that hung',
   );
-  assert.deepEqual(
-    runState(work).renders,
-    { blind: 2, answered: false },
-    'and the run remembers that its eyes never opened, so the reply can say it',
-  );
+  // The two facts the reply is derived from, named rather than compared whole:
+  // the record also carries why each render went quiet, which is a different
+  // question - it is the diagnosis, not the line the founder reads - and is
+  // asserted where that behaviour is tested.
+  const { blind, answered } = runState(work).renders;
+  assert.equal(blind, 2, 'both renders showed nothing');
+  assert.equal(answered, false, 'so the run remembers its eyes never opened');
 });
 
 test('a run out of render rounds is still told to flag the deck', () => {
@@ -366,4 +371,43 @@ test('a run refused for blind renders is never told to flag, and its reply carri
     /Fallbacks: no visual check \(the renderer did not answer\)/,
     'the line render-deck.js promised is the line the user is handed',
   );
+});
+
+test('a run writes down which converter went quiet, and what it said', () => {
+  // The evidence ticket 05 of the tightening map has to be answered from. The
+  // sandbox carries both converters - decision 09's probe measured the whole step
+  // at about two seconds - and a run there still delivered a deck nobody looked
+  // at. Whether soffice was missing, killed at the 30-second bound, or ran and
+  // wrote no PDF are three different findings with three different fixes, and
+  // render.js words all three apart already. Until this they were worded only
+  // into stderr, which lives in a chat transcript; the work directory a host run
+  // is judged from carried a bare count. That is the same shape of loss as the
+  // September 2026 run, whose timings went with its deleted work directory.
+  const { work, deck } = startedRun();
+
+  const blind = renderDeckEntry(work, deck);
+
+  assert.equal(blind.ok, false, 'no converter means no images');
+  const [why] = runState(work).renders.reasons;
+  assert.ok(why, 'the run recorded why, not only that');
+  assert.match(why, /soffice/, 'named to the converter, because the two fail independently');
+  assert.match(
+    why,
+    /not installed/,
+    'and to the cause, which is what tells an absent converter from a slow one',
+  );
+});
+
+test('two blind renders keep both causes, because they need not be the same one', () => {
+  // A sandbox where soffice is slow enough to be killed once and then starts
+  // cold the second time is a different story from one where it is simply not
+  // there, and only the pair of causes tells them apart. Keeping the last would
+  // read as the run's whole experience of its converter.
+  const { work, deck } = startedRun();
+
+  renderDeckEntry(work, deck);
+  renderDeckEntry(work, deck);
+
+  assert.equal(runState(work).renders.reasons.length, 2, 'one line per attempt');
+  assert.equal(runState(work).renders.blind, 2, 'and the cap still counted both');
 });

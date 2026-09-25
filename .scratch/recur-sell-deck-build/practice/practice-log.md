@@ -61,6 +61,17 @@ went, and the speaker notes carrying every source. Then open the deck in real
 PowerPoint and judge the six things only an eye can judge, which the harness
 lists at the end of its report.
 
+**If the render went blind, copy the lines under it verbatim.** Beneath
+`renders that showed nothing:` the report now quotes each converter's own
+sentence, indented, one line per attempt, and the `render-deck` mark above it
+gives how long that attempt took. Together they are the whole of what
+[ticket 05 of the tightening map](../../recur-sell-deck-tune/issues/05-give-the-render-check-its-eyes-back.md)
+is waiting for: `soffice is not installed` is a sandbox that cannot render at
+all, a line about not finishing within 30s beside a 30-second mark is a
+conversion too slow for the deck it was given, and `wrote no PDF` beside a short
+mark is soffice running and failing at something else. They call for three
+different fixes and nothing else in the run tells them apart.
+
 A critical defect fails the run. Everything else is a quality note and does not.
 
 ## Runs

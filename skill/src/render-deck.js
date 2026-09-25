@@ -121,6 +121,15 @@ function openRun(work) {
  * that came back with nothing is a converter problem, and rewriting copy in
  * response to it changes copy that was never shown to be wrong.
  *
+ * The converter's own sentence goes into the run's record as well as onto
+ * stderr. Both say the same thing to different readers and only one of them
+ * lasts: stderr is read by the model in the chat, and the record is read later
+ * out of the work directory, which is the only evidence a host run leaves behind.
+ * Ticket 05 of the tightening map turns on that difference - the sandbox has both
+ * converters and still produced no PDF, and an absent soffice, one killed at its
+ * bound, and one that ran and wrote nothing are three findings that a bare count
+ * of blind renders cannot tell apart.
+ *
  * @param {ReturnType<typeof openRun>} run
  * @param {unknown} error
  * @param {string} [work]
@@ -129,7 +138,7 @@ function reportBlindRender(run, error, work) {
   const failure = /** @type {import('./render.js').RenderFailure} */ (
     error instanceof Error ? error : new Error(String(error))
   );
-  const blind = run?.noteBlindRender();
+  const blind = run?.noteBlindRender(failure.message);
 
   if (work) mark(work, 'render-deck');
 

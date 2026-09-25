@@ -26,11 +26,13 @@ const { RUN_BUDGET } = require('./design.js');
  * @typedef {{allowed: boolean, round: number, reason?: string, cause?: Refusal}} Spend
  * @typedef {import('./outcome.js').ReportedDefect} ReportedDefect
  * @typedef {{stage: string, ms: number, elapsedMs: number}} StageMark
- * @typedef {{blind: number, answered: boolean}} Renders
+ * @typedef {{blind: number, answered: boolean, reasons: string[]}} Renders
  *   `blind` counts every render that showed nothing, for the cap. `answered` is
  *   about the *latest* render only, because that is the one that looked at the
  *   deck being delivered: a run that rendered, repaired, and then went blind is
- *   shipping a deck nobody saw, whatever an earlier render managed.
+ *   shipping a deck nobody saw, whatever an earlier render managed. `reasons`
+ *   says what went quiet each time, in the order it happened, because two blind
+ *   renders in one run need not have the same cause and the fix differs by which.
  * @typedef {{
  *   startedAt: number,
  *   rounds: Record<string, number>,
@@ -101,6 +103,15 @@ function readState(file, now) {
           renders: {
             blind: Number.isFinite(stored?.renders?.blind) ? stored.renders.blind : 0,
             answered: stored?.renders?.answered === true,
+            // Absent in every run directory written before causes were recorded,
+            // and those directories are exactly what a judging pass reads. No
+            // list means none were recorded, never a report that cannot be run.
+            // Narrowed to strings for the same reason: these are printed straight
+            // into the report, and anything else there would read as `[object
+            // Object]` in the one line someone is reading to diagnose a sandbox.
+            reasons: Array.isArray(stored?.renders?.reasons)
+              ? stored.renders.reasons.filter((why) => typeof why === 'string')
+              : [],
           },
         },
       };
@@ -117,7 +128,7 @@ function readState(file, now) {
       fallbacks: [],
       defects: [],
       stages: [],
-      renders: { blind: 0, answered: false },
+      renders: { blind: 0, answered: false, reasons: [] },
     },
   };
 }
@@ -128,11 +139,27 @@ function readState(file, now) {
  * @param {object} options
  * @param {string} options.file  Where the state is kept, beside the run file.
  * @param {() => number} [options.now]
+ * @param {boolean} [options.readOnly]
+ *   For a reader that must not disturb what it is reading. A handle opened this
+ *   way answers every question and records nothing: the first-open write below
+ *   is skipped, and anything that would write throws rather than quietly failing
+ *   to. The judging harness opens one, because it runs against a work directory
+ *   that is the only evidence a run leaves behind - and the case where someone
+ *   most needs to look at that directory is the one where the file is damaged,
+ *   which is precisely the case the first-open write would overwrite.
  */
-function openRunState({ file, now = Date.now }) {
+function openRunState({ file, now = Date.now, readOnly = false }) {
+  // Asked before the read, because `fresh` alone cannot tell an absent file from
+  // an unreadable one, and a reader has to be able to report the difference: no
+  // file is a stage that was never part of a run, and a damaged one is a run
+  // whose record was lost, which is the finding worth chasing.
+  const existed = fs.existsSync(file);
   const { state, fresh } = readState(file, now);
 
   const save = () => {
+    if (readOnly) {
+      throw new Error('this run state was opened read-only, so nothing can be written to it');
+    }
     fs.mkdirSync(path.dirname(path.resolve(file)), { recursive: true });
     fs.writeFileSync(file, `${JSON.stringify(state, null, 2)}\n`);
   };
@@ -140,7 +167,7 @@ function openRunState({ file, now = Date.now }) {
   // Written at the first open rather than at the first spend. The run's start
   // time is what the cutoff is measured from, and a run that reached its third
   // stage before recording one would measure the cutoff from there.
-  if (fresh) save();
+  if (fresh && !readOnly) save();
 
   /**
    * Whether there is a round of this kind left to take, without taking one.
@@ -199,6 +226,18 @@ function openRunState({ file, now = Date.now }) {
     /** When the run began, which is what the cutoff is measured from. */
     get startedAt() {
       return state.startedAt;
+    },
+
+    /**
+     * Whether there was a state file here that could not be read.
+     *
+     * A run opens over the wreckage and carries on, because losing the record
+     * must never cost a deck. A reader has to say so instead: "this run recorded
+     * nothing" and "this run's record was damaged" look the same from the
+     * outside and are not the same finding.
+     */
+    get damaged() {
+      return existed && fresh;
     },
 
     /**
@@ -275,10 +314,20 @@ function openRunState({ file, now = Date.now }) {
      * to rewrite from - charging for it is what left the September 2026 run with
      * an unseen deck and an empty repair budget at the same time.
      *
+     * `why` is the converter's own sentence, kept because the count answers a
+     * different question from the one ticket 05 of the tightening map asks. The
+     * cap needs to know only that a render showed nothing; diagnosing the sandbox
+     * needs to know whether soffice was absent, killed at its bound, or writing
+     * no PDF after running - which render.js already words apart and which, until
+     * now, only ever reached stderr. A chat transcript is not a record, and the
+     * transcript is what the September 2026 run's evidence was lost with.
+     *
+     * @param {string} [why]  What the converter said, if the caller knows.
      * @returns {{blind: number, left: number}}
      */
-    noteBlindRender() {
+    noteBlindRender(why) {
       state.renders.blind += 1;
+      if (why) state.renders.reasons.push(String(why));
       // The deck as it now stands went unseen, whatever an earlier render of an
       // earlier deck managed. Without this, a run that rendered, found a defect,
       // repaired it and then went blind would report itself as having been looked
@@ -303,9 +352,17 @@ function openRunState({ file, now = Date.now }) {
       save();
     },
 
-    /** What this run's renders came to. @returns {Renders} */
+    /**
+     * What this run's renders came to.
+     *
+     * The causes are copied out, not handed over: a caller that pushed onto the
+     * returned array would add a cause nothing ever saves, and the whole point of
+     * recording them is that they survive the process that saw them.
+     *
+     * @returns {Renders}
+     */
     get renders() {
-      return { ...state.renders };
+      return { ...state.renders, reasons: [...state.renders.reasons] };
     },
 
     /**

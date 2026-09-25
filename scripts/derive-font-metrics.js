@@ -42,7 +42,9 @@
 // declares Arial, which is what these numbers measure, and the estimate built
 // from them is the same advance sum PowerPoint and LibreOffice break lines by.
 // What is no longer claimed is that the reference deck's own bold corroborates
-// it. See content-gate.js's FIT_ALLOWANCE, which was set from that claim.
+// it. Ticket 02 of the September 2026 tightening map deleted the FIT_ALLOWANCE
+// that claim had been used to set; see checkFit in content-gate.js, where the
+// reasoning that replaced it now lives.
 //
 // Arial is additionally metric-compatible with Liberation Sans, which is what
 // the sandbox renderer substitutes, so an estimate taken from these numbers

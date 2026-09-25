@@ -82,6 +82,18 @@ the September 2026 practice failures cannot recur.
 
 ## Not yet specified
 
+- **Which branch a slow run that went blind should take.** `mayRender()` answers
+  `cause: 'time'` before it ever looks at the blind count, and every cause but
+  `'blind'` routes to a flagged deck — so a run past the cutoff whose renders only
+  ever showed nothing is told to flag a deck holding no defect, which is the
+  outcome decision 03 exists to prevent. Amends decision 03.
+  [06](issues/06-a-slow-run-that-went-blind-is-still-flagged.md)
+- **Which characters a line of cover type may contain.** Decision 01's gate rule
+  compares the written form's letters and digits and is blind to everything
+  between them, so a newline sets the cover in two lines where ticket 02 allows
+  one, and a control character reaches `slide1.xml` and makes a deck PowerPoint
+  will not open. Amends decision 01.
+  [07](issues/07-the-written-form-reaches-the-cover-unexamined.md)
 - **Whether the package's weight is worth chasing at all.** The ZIP is 2.8MB:
   `resvg.wasm` is 2.48MB of it and stays, because it converts the slide 3
   competitor logos that are staying. The other 1.6MB is six 1300 x 731 RGB PNGs
