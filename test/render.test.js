@@ -364,6 +364,47 @@ test('a run out of render rounds is still told to flag the deck', () => {
   );
 });
 
+test('a slow run whose renders all went blind delivers clean, and is not flagged', () => {
+  // Ticket 06, amending decision 03. The cutoff is checked before the count, so
+  // a run past twelve minutes is refused with `cause: 'time'` however its renders
+  // went - and every cause but 'blind' used to route to a flagged deck. A run
+  // that never once saw its slides was told to hand the founder a NOT READY deck
+  // because a converter went quiet, which is the outcome decision 03 exists to
+  // prevent.
+  const { work, deck } = startedRun();
+  const state = runState(work);
+  state.startedAt = Date.now() - 13 * 60 * 1000;
+  state.renders = { blind: 2, answered: false, reasons: [] };
+  fs.writeFileSync(path.join(work, 'run-state.json'), JSON.stringify(state));
+
+  const refused = renderDeckEntry(work, deck);
+
+  assert.equal(refused.ok, false);
+  assert.match(refused.output, /past its 12 minutes/, 'the clock is still what refused it');
+  assert.match(refused.output, /deliver the deck/i, 'but the deck goes out');
+  assert.doesNotMatch(
+    refused.output,
+    /--flagged|NOT READY/,
+    'with nothing to flag, because this run looked at nothing and repaired nothing',
+  );
+});
+
+test('a slow run that did look at its slides is still told to flag the deck', () => {
+  // The other side of the same branch, so the amendment cannot be read as "time
+  // never flags". This run rendered, looked, and repaired; the clock then stopped
+  // it. It holds a defect that outlived a repair, which is what the flag is for.
+  const { work, deck } = startedRun({ render: 1 });
+  const state = runState(work);
+  state.startedAt = Date.now() - 13 * 60 * 1000;
+  fs.writeFileSync(path.join(work, 'run-state.json'), JSON.stringify(state));
+
+  const refused = renderDeckEntry(work, deck);
+
+  assert.equal(refused.ok, false);
+  assert.match(refused.output, /past its 12 minutes/);
+  assert.match(refused.output, /flag/i, 'a round was spent, so something was seen and not fixed');
+});
+
 test('a run refused for blind renders is never told to flag, and its reply carries the line', async () => {
   // The two halves that have to agree. render-deck.js tells the model its
   // Fallbacks: line already says the deck was not visually checked, and reply.js

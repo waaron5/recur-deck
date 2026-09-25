@@ -34,7 +34,7 @@
 const { textWidth, wrapLines } = require('./font-metrics.js');
 const { thesisSections } = require('./thesis.js');
 const { marketMap, checkDistribution } = require('./market-map.js');
-const { MAP, MAP_LAYOUT, THESIS_GEOMETRY, THESIS_SECTIONS } = require('./design.js');
+const { COVER, MAP, MAP_LAYOUT, THESIS_GEOMETRY, THESIS_SECTIONS } = require('./design.js');
 
 /**
  * @typedef {{
@@ -461,6 +461,27 @@ function checkWrittenForm(research) {
   const company = typeof research?.company === 'string' ? research.company.trim() : '';
   const written = typeof research?.writtenForm === 'string' ? research.writtenForm.trim() : '';
   if (!company || !written) return [];
+
+  // Before the letters are compared, because this is about what sits between
+  // them: `squash` removes everything that is not a letter or a digit, so a
+  // control character passes the comparison below and then reaches slide1.xml
+  // verbatim, where it is not valid XML 1.0 and the deck will not open. A
+  // newline and a doubled space are repaired by the cover, which sets one line
+  // of type; a control character cannot be restyled into anything, so it is
+  // reported as a finding and the model writes the form again.
+  // Ticket 07 of the tightening map, amending decision 01.
+  if (COVER.type.control.test(written)) {
+    return [
+      finding(
+        'writtenForm',
+        1,
+        'written-form',
+        `"${written}" carries a control character, which the cover cannot set and ` +
+          'which makes a file PowerPoint will not open: give the written form as ' +
+          'printable characters on one line',
+      ),
+    ];
+  }
 
   if (squash(written) === squash(company)) return [];
 

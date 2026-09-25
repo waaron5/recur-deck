@@ -4,7 +4,7 @@ Parent: [Tighten the run: no text over text, no minutes spent unseen](../map.md)
 Type: task
 Labels: wayfinder:task
 Mode: HITL
-Status: claimed
+Status: resolved
 Assignee: unassigned
 Blocked by: 01, 02, 03
 
@@ -105,3 +105,29 @@ knowing if that line ever goes missing from a real timeline.
 construction — the ZIP installed in Claude's chat product, live web search, and
 the model doing the judgment stages. No row is written here or in the practice
 log from anything but a delivered deck.
+
+### Closed without its timeline, September 25, 2026
+
+**This closes short of its own done-when, deliberately, and the record should say
+so rather than imply otherwise.** No stage timeline was ever captured. The
+September 25 ServiceTitan run's work directory was copied out of the sandbox but
+never landed in this repo, so `judge-run.js` was not run against it; and that run
+was made with the broken package anyway, so its minutes were mostly two
+thirty-second hangs and would have measured a bug rather than a workflow. The run
+that followed the fixes was judged by eye and delivered a sound deck, but its work
+directory was not kept either.
+
+`practice-log.md` therefore still reads "the values are not in yet" under Stage
+timings, which is true, and is left standing rather than filled with a number
+nobody measured.
+
+**What the ticket was gating, and where that leaves it.** The open question was
+whether the 1.6MB of slides 4-9 PNGs is worth requantising, which graduates only if
+upload or unpack time turns out to be on the critical path. Nothing here answers
+that, so it does not graduate - it stays in "Not yet specified" on the map,
+unchanged, waiting on the same measurement it always waited on.
+
+The one thing that did change is that the two causes of the September run's lost
+minutes are now known and fixed - a doubled logo path and a malformed profile URL -
+so a future timeline will measure a workflow rather than two bugs. Closed because
+the effort is shipping, not because the question was answered.

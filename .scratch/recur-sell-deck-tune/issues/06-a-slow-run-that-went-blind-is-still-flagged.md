@@ -4,7 +4,7 @@ Parent: [Tighten the run: no text over text, no minutes spent unseen](../map.md)
 Type: task
 Labels: wayfinder:task, ready-for-agent
 Mode: unattended
-Status: open
+Status: resolved
 Assignee: unassigned
 Blocked by: none
 
@@ -64,3 +64,28 @@ says it was amended and how.
 Raised by the review pass over ticket 05's groundwork. Not fixed there: it amends
 a landed decision rather than ticket 05's own question, and which of the two
 routes to take is a decision with reasoning attached, not a patch.
+
+### Settled, September 25, 2026
+
+**The first route, and the thing the ticket said might be the real answer.**
+`decide`'s ordering is untouched - decision 03 reasoned about it on its own terms
+and that reasoning still holds - and `whatToDoInstead` now decides the branch from
+what the run has rather than from which limit fired first.
+
+What it consults is the round count, not the blind count. The ticket observed that
+neither `cause` answers *does this run hold a defect that outlived a repair?*, and
+the count does: a render round is only ever spent once a converter answered, so
+`round` is exactly how many times this run looked at something. A run at `round: 0`
+has looked at nothing and repaired nothing, and there is nothing for a flag to be
+about - whether it was refused by the clock, by two quiet converters, or by a
+cutoff it crossed before its first render. That last case is one the ticket did not
+name and the same rule covers.
+
+Two tests hold both sides: a run past the cutoff whose renders all went blind
+delivers clean with the unseen line, and a run past the cutoff that did spend a
+round is still told to flag. The second is there so the amendment cannot be read
+as "time never flags".
+
+`reply.js` is untouched, and the `Fallbacks:` line is still derived from the run's
+own record - `blind > 0 && !answered` - so a run that never rendered at all claims
+nothing either way.

@@ -4,7 +4,7 @@ Parent: [Tighten the run: no text over text, no minutes spent unseen](../map.md)
 Type: task
 Labels: wayfinder:task
 Mode: HITL
-Status: claimed
+Status: resolved
 Assignee: unassigned
 Blocked by: 04
 
@@ -196,3 +196,16 @@ of the probe's.
 host, showing three images and a `render-deck` mark in seconds. Everything above
 is a measurement of `soffice` driven by hand; no run has yet rendered through the
 package itself.
+
+### Closed, September 25, 2026
+
+The fixed package was run on the supported host and the render check answered.
+The user judged the delivered deck good - slides looked at, logos on slide 3,
+nothing overflowing - which is the ticket's first ending: **the render check works
+inside its bound on the supported host**, and SKILL.md, `visual-rules.md` and
+`design.js` all say so with the host's own measurement rather than the probe's.
+
+What is recorded here is the user's report of that run, not a captured timeline;
+see ticket 04 for why no numbers were kept. That is enough for this ticket, whose
+question was whether the capability exists at all, and not enough for a claim about
+how long a run takes.

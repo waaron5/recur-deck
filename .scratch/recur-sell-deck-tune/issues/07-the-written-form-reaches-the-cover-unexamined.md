@@ -4,7 +4,7 @@ Parent: [Tighten the run: no text over text, no minutes spent unseen](../map.md)
 Type: task
 Labels: wayfinder:task, ready-for-agent
 Mode: unattended
-Status: open
+Status: resolved
 Assignee: unassigned
 Blocked by: none
 
@@ -64,3 +64,33 @@ were measured rather than taken on the reviewer's word — the control-character
 is worse than reported, since it yields a file PowerPoint will not open. Not fixed
 there: it amends a landed decision, and which rule the cover should hold is a
 decision with reasoning attached, not a patch.
+
+### Settled, September 25, 2026
+
+**A rule of the cover's own, not the filename rule.** `safeCompany` strips what a
+file name cannot hold, and a written form may legitimately carry a slash or a
+colon - the cover has no reason to refuse one. So `design.js` now says which
+characters a line of cover type may contain, with the September 25 measurements
+that produced the rule, the way every other value there does.
+
+The three rows are answered by two different mechanisms, because they are two
+different kinds of wrong:
+
+- **A newline and a doubled space are restyled, not refused.** Decision 01 already
+  lets the cover restyle case, spacing and punctuation, and a newline is spacing:
+  a masthead set across two lines becomes the one line the slot holds, which is
+  ticket 02's ceiling kept rather than breached. Any run of whitespace collapses
+  to one space in `coverNameFrom`.
+- **A control character is reported by the gate and stripped by the cover.** It
+  cannot be restyled into anything, so the model is told to write the form again.
+  It is also stripped, because a flagged build is asked for after the repair budget
+  ran out and skips the gate's refusal by design - and a file PowerPoint will not
+  open is the one outcome no exhausted budget should be able to produce.
+
+The two patterns deliberately do not overlap: tab, line feed, vertical tab, form
+feed and carriage return are control characters that are also whitespace, and they
+belong to the rule that restyles. What is left has no printable form and no
+spacing meaning.
+
+Five tests hold it - the three measured rows, a written form with more than one
+control character, and the spacing cases still passing the gate.

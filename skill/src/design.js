@@ -158,6 +158,33 @@ const COVER = {
   // the caps run y 2.638-2.900in. The reference deliberately sets the company
   // name smaller than RECUR's 0.400in.
   name: { left: 5.323, width: 2.831, centreY: 2.808, capHeight: 0.269, boxHeight: 0.9 },
+
+  // Which characters a line of cover type may contain. Decision 01 lets the
+  // written form restyle the given name's case, spacing and punctuation, and the
+  // gate compares the two with everything but letters and digits removed - so
+  // whatever sits *between* the letters was not merely permitted, it was
+  // invisible. Measured September 25, 2026: a newline set the cover in two runs,
+  // where ticket 02 settled that a box holding one line is the whole ceiling and
+  // the fit check measures a single line's advances; a doubled space reached the
+  // slide intact; and a U+0001 reached slide1.xml verbatim, which is not valid
+  // XML 1.0 and makes a deck PowerPoint refuses to open.
+  //
+  // This is the cover's own rule rather than safeCompany's, which exists to keep
+  // a name usable as a file name: a written form may legitimately hold a slash or
+  // a colon, and the cover has no reason to refuse one. So the rule is only what
+  // one line of type cannot carry.
+  //
+  // `space` is every run of whitespace, collapsed to one space, because a newline
+  // is spacing and decision 01 already allows spacing to be restyled - a masthead
+  // set across two lines becomes the one line the slot holds. `control` cannot be
+  // restyled into anything, so the gate reports it instead.
+  //
+  // The two do not overlap: tab, line feed, vertical tab, form feed and carriage
+  // return are control characters that are also whitespace, and they belong to
+  // the rule that restyles rather than the one that refuses. What is left is a
+  // character with no printable form and no spacing meaning, which is only ever
+  // a mistake. Ticket 07 of the tightening map, amending decision 01.
+  type: { space: /\s+/gu, control: /[\u0000-\u0008\u000E-\u001F\u007F-\u009F]/u },
 };
 
 // Slide 3, the market map.

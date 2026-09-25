@@ -40,6 +40,9 @@ const USAGE = 'usage: render-deck.js --input <deck>.pptx [--out <dir>] [--work <
  * other checks found, which this stage cannot see: a content gate whose rounds ran
  * out may have findings standing. What a blind render knows is only that it is not
  * itself a reason to flag anything.
+ *
+ * It is also what a run refused before its first render is told, whatever refused
+ * it - see whatToDoInstead.
  */
 const DELIVER_UNSEEN =
   'stop rendering and deliver the deck, and do not flag it for this - a render that ' +
@@ -70,7 +73,7 @@ function main() {
     // difference is deliberate: the gate still has findings worth printing when
     // its budget runs out, and this has nothing to show for a render it is not
     // going to start.
-    throw new Error(`${permission.reason}: ${whatToDoInstead(permission.cause)}`);
+    throw new Error(`${permission.reason}: ${whatToDoInstead(permission)}`);
   }
 
   const outDir = args.out || path.join(path.dirname(path.resolve(args.input)), 'render');
@@ -188,18 +191,33 @@ function adviceForBlindRender(failure, blind) {
 }
 
 /**
- * The two refusals, which call for opposite things.
+ * What a refused render is told to do instead, which is one of two opposite
+ * things.
  *
  * A run out of render rounds has looked at its slides twice and still has a
  * defect it could not repair, which is what decision 07's flagged deck is for. A
  * run whose renders answered nothing has looked at nothing, and has no defect to
  * flag; its deck goes out clean and the reply says it was not seen.
  *
- * @param {'rounds' | 'time' | 'blind' | undefined} cause
+ * @param {{cause?: 'rounds' | 'time' | 'blind', round: number}} refusal
  * @returns {string}
  */
-function whatToDoInstead(cause) {
+function whatToDoInstead({ cause, round }) {
   if (cause === 'blind') return DELIVER_UNSEEN;
+
+  // The question this branch is really asking is whether the run holds a defect
+  // that outlived a repair, and no cause answers that on its own: a run past the
+  // twelve-minute cutoff is refused with `cause: 'time'` whether it has looked at
+  // its slides twice or not at all. A render round is only ever spent once a
+  // converter answered, so the count of them is exactly how many times this run
+  // looked at something - and a run at round 0 has looked at nothing, repaired
+  // nothing, and has nothing for a flag to be about. It went quiet or it ran out
+  // of clock; either way the deck is sound as far as anything here knows, and
+  // decision 03's reasoning for the flagged deck - "rendered twice, looked twice,
+  // and still has a defect it could not repair" - describes none of it.
+  //
+  // Ticket 06 of the tightening map, amending decision 03.
+  if (round === 0) return DELIVER_UNSEEN;
 
   return (
     'stop rendering and deliver a flagged deck with build-deck.js --flagged, ' +

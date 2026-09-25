@@ -757,8 +757,33 @@ function pngSize(file) {
  */
 function coverNameFrom(writtenForm, company) {
   const written = typeof writtenForm === 'string' ? writtenForm.trim() : '';
-  return written || company;
+  return oneLine(written || company);
 }
+
+/**
+ * A name reduced to what one line of cover type can carry.
+ *
+ * The gate reports a control character so the model can write the form again,
+ * but a flagged build is asked for *after* the repair budget ran out and skips
+ * the gate's refusal by design - so the only thing standing between a stray
+ * character and a deck PowerPoint will not open is this. Runs of whitespace
+ * collapse to one space, which is decision 01's own allowance that the cover may
+ * restyle spacing: a masthead set across two lines becomes the one line the slot
+ * holds, and the fit check's single-line measurement stays true.
+ *
+ * Ticket 07 of the tightening map. The rule and its reasoning are in design.js.
+ *
+ * @param {string} name
+ */
+function oneLine(name) {
+  return name.replace(CONTROL, '').replace(COVER.type.space, ' ').trim();
+}
+
+// Every control character, not the first one. `COVER.type.control` is deliberately
+// not global, because the gate asks it `.test()` and a global regex carries a
+// lastIndex between calls - the same string would answer yes, then no. Replacing
+// needs the global form, so it is made once from the same source.
+const CONTROL = new RegExp(COVER.type.control.source, 'gu');
 
 /**
  * Size a text wordmark to its slot: the reference's cap height, unless the name

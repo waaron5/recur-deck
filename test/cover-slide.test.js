@@ -89,6 +89,40 @@ test("the cover sets the company's name in the brand's own written form", async 
   );
 });
 
+test('the cover sets one line of printable type, whatever the written form carries', async () => {
+  // Ticket 07, amending decision 01. The gate compares the written form with the
+  // given name once both are squashed to letters and digits, so everything
+  // between the letters passed unexamined. Measured September 25, 2026: a newline
+  // set the cover in two text runs against ticket 02's one-line ceiling, a
+  // doubled space reached the slide intact, and a control character reached
+  // slide1.xml verbatim - which is not valid XML 1.0, so the deck would not open.
+  //
+  // Whitespace is restyled rather than refused, because decision 01 already lets
+  // the cover restyle spacing. The control character is stripped here as well as
+  // reported by the gate, because a flagged build skips the gate's refusal by
+  // design and an unopenable file is the one outcome no budget should be able to
+  // produce.
+  const cases = [
+    ['US Fleet\nTracking', 'a masthead set across two lines'],
+    ['US  Fleet  Tracking', 'a doubled space'],
+    ['US Fleet\u0001Tracking', 'a control character'],
+    ['US\u0001 Fleet\u0002 Tracking', 'more than one control character'],
+  ];
+
+  for (const [writtenForm, what] of cases) {
+    const { pptx } = await build({ writtenForm });
+    const boxes = await pptx.textBoxes(1);
+    const onSlide = boxes.map((box) => box.text).join(' ');
+
+    assert.ok(
+      onSlide.includes('US Fleet Tracking') || onSlide.includes('US FleetTracking'),
+      `${what} still sets the name as one line of type`,
+    );
+    assert.doesNotMatch(onSlide, /[\u0000-\u001F\u007F-\u009F]/, `${what} reaches no XML`);
+    assert.doesNotMatch(onSlide, / {2}/, `${what} leaves no doubled space on the slide`);
+  }
+});
+
 test('a cover with no written form sets the name the run was given', async () => {
   // A masthead that is an image with no readable letters in it is a real case,
   // and the decided answer is that the run leaves the field out. A blank slot

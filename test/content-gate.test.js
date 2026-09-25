@@ -711,6 +711,35 @@ test('a written form that changes the letters is caught', () => {
   }
 });
 
+test('a written form carrying a control character is caught, and says what it breaks', () => {
+  // Ticket 07, amending decision 01. `squash` removes everything that is not a
+  // letter or a digit, so the letters comparison above is blind to a control
+  // character - it passed the gate and reached slide1.xml verbatim, where it is
+  // not valid XML 1.0 and makes a file PowerPoint refuses to open. The deck
+  // strips it too, but a finding is what gets the form written again, and an
+  // unopenable deck is a critical defect rather than something to repair
+  // silently.
+  const findings = under(
+    checkRun(researchWith({ writtenForm: 'US Fleet\u0001Tracking' })),
+    'written-form',
+  );
+
+  assert.equal(findings.length, 1);
+  assert.equal(findings[0].field, 'writtenForm');
+  assert.equal(findings[0].slide, 1);
+  assert.match(findings[0].message, /control character/);
+});
+
+test('a written form restyled only in spacing still passes, newline included', () => {
+  // The other half of the same rule. Decision 01 lets the cover restyle case,
+  // spacing and punctuation, and a masthead set across two lines is spacing - so
+  // these are set on the one line the slot holds rather than refused.
+  for (const writtenForm of ['US Fleet\nTracking', 'US  Fleet  Tracking']) {
+    const findings = under(checkRun(researchWith({ writtenForm })), 'written-form');
+    assert.deepEqual(findings, [], `"${JSON.stringify(writtenForm)}" should pass`);
+  }
+});
+
 test('a run with no written form is not a finding', () => {
   // A masthead set as an image with no readable letters in it is a real case,
   // and the decided answer is to leave the field out: the cover then sets the
