@@ -344,13 +344,24 @@ const COVER_PHOTO = {
 const LOGO = { sharpPixelsPerInch: 150 };
 
 // The in-run render check. Slides 1-3 are rasterised for the model to look at
-// before the deck is offered to anyone.
+// before the deck is handed over.
 //
 // 150 px/in makes a 1500 x 844px image of this 10in page, which is enough to
-// read 9pt type and see a logo sitting on a line. The timeout is a bound on a
-// converter that hangs rather than an expected duration: the capability probe
-// measured this whole step at about 2 seconds, and a run has 15 minutes total.
-const RENDER = { dpi: 150, timeoutMs: 120000 };
+// read 9pt type and see a logo sitting on a line.
+//
+// The timeout is a bound on a converter that hangs rather than an expected
+// duration: the capability probe in decision 09 measured this whole step at
+// about 2 seconds. It was two minutes, and the September 2026 run showed what
+// that costs - a sandbox whose converter hung twice spent four of the run's
+// fifteen minutes and bought no image either time. Thirty seconds is still
+// fifteen times the measurement, with room for a cold LibreOffice first start.
+// Decision 03 of the tightening map.
+//
+// It bounds each converter, not the step, so the arithmetic worth having is the
+// worst case rather than the bound: soffice hanging costs 30s, and soffice
+// finishing while pdftoppm hangs costs 60s. Against blindRenders of 2 that is 1-2
+// minutes for a sandbox that cannot render, where the old bound cost 2-4.
+const RENDER = { dpi: 150, timeoutMs: 30000 };
 
 // Stage 0's probe: one request to a non-package host, before a run spends
 // anything on research.
@@ -405,6 +416,14 @@ const PREFLIGHT = {
 // its reason in another.
 const RUN_BUDGET = {
   rounds: { content: 3, render: 2 },
+  // How many renders that answered nothing a run will sit through before it
+  // stops asking. These are not repair rounds and are not charged as ones: a
+  // round bounds rewriting, and a render with no image to show gave the model
+  // nothing to rewrite from. What still has to be bounded is the waiting, so
+  // that a sandbox which simply cannot render costs a minute rather than the
+  // run. Two, matching the render rounds, because a converter that failed twice
+  // is not going to succeed on the third ask. Decision 03 of the tightening map.
+  blindRenders: 2,
   cutoffMs: 12 * 60 * 1000,
   typicalMs: 10 * 60 * 1000,
   limitMs: 15 * 60 * 1000,

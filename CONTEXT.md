@@ -43,7 +43,7 @@ What a run establishes before it spends anything on research: that the sandbox c
 _Avoid_: Health check, smoke test
 
 **Repair budget**:
-What a run may spend rewriting its way out of trouble: three content rounds, two render rounds, and no new round after about twelve minutes of elapsed time. A critical defect that outlives the budget produces a flagged deck rather than another round.
+What a run may spend rewriting its way out of trouble: three content rounds, two render rounds, and no new round after about twelve minutes of elapsed time. A critical defect that outlives the budget produces a flagged deck rather than another round. A round buys a rewrite, so only a check that found something to rewrite costs one — a blind render does not.
 _Avoid_: Retries, attempts, backoff
 
 **Critical defect**:
@@ -58,8 +58,12 @@ One problem the content gate reports, naming the single field that has to change
 _Avoid_: Error, violation, warning
 
 **Render check**:
-The step that rasterises slides 1–3 of a built deck so the model can look at them before the file is offered to anyone. It catches what only an eye sees: text that overflows, is clipped, overlaps something, or is illegible, and logos that landed wrong. Its repairs are shorter copy, never smaller type.
+The step that rasterises slides 1–3 of a built deck so the model can look at them before the file is handed over. It catches what only an eye sees: text that overflows, is clipped, overlaps something, or is illegible, and logos that landed wrong. Its repairs are shorter copy, never smaller type. It is a second opinion rather than a guarantee: the content gate is what guarantees fit, so a run denied its render — a converter that hangs or is absent — hands the deck over and names the missing check in the reply, without flagging it for that.
 _Avoid_: Screenshot test, visual regression
+
+**Blind render**:
+A render check that produced no image — the sandbox's converter hung or is not installed — so there was nothing for the model to look at. It costs no repair round, because a round bounds rewriting and a blind render gives nothing to rewrite from. Two of them is as long as a run waits, and then the deck is handed over with the missing check named in the reply. It never flags a deck: it found nothing to flag. A converter that timed out and one that is absent are both blind renders, and the words for those two causes stay available — what is avoided is naming the outcome after either of them, since a run treats them the same and only one is worth asking twice.
+_Avoid_: Failed render, render error, render timeout
 
 **Structural check**:
 The deterministic check a built deck passes before it is rendered: exactly nine slides, slides 4–9 in order, speaker notes on slides 1–3, and a file that reopens. What it reports are critical defects rather than findings, because no rewrite of the copy repairs them; they fail the build instead of costing a repair round.

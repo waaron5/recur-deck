@@ -200,50 +200,6 @@ test('a deck that is not there is refused before anything is run', () => {
   assert.equal(calls.length, 0, 'nothing should be spawned for a deck that does not exist');
 });
 
-test('a run out of render rounds is refused before a converter is ever started', () => {
-  // The other half of decision 07's budget. Two render rounds, and the refusal
-  // has to come before anything is spawned - both because starting a two-minute
-  // conversion for a deck the run may not repair is wasted time, and because it
-  // is what makes this testable on a machine with no LibreOffice at all.
-  const { execFileSync } = require('node:child_process');
-  const entry = path.join(__dirname, '..', 'skill', 'src', 'render-deck.js');
-
-  const work = tempDir('recur-render-budget-');
-  fs.writeFileSync(
-    path.join(work, 'run-state.json'),
-    JSON.stringify({
-      startedAt: Date.now(),
-      rounds: { render: 2 },
-      fallbacks: [],
-      defects: [],
-    }),
-  );
-
-  const deck = path.join(work, 'Recur x Acme.pptx');
-  fs.writeFileSync(deck, Buffer.from('PK'));
-
-  let output = '';
-  try {
-    execFileSync(
-      process.execPath,
-      [entry, '--input', deck, '--out', path.join(work, 'render'), '--work', work],
-      { encoding: 'utf8' },
-    );
-    assert.fail('a run with no render rounds left should not succeed');
-  } catch (error) {
-    const failed = /** @type {{stdout?: string, stderr?: string}} */ (error);
-    output = `${failed.stdout ?? ''}${failed.stderr ?? ''}`;
-  }
-
-  assert.match(output, /render rounds are spent/, 'it says which budget ran out');
-  assert.match(output, /flag/i, 'and what to do instead of rendering again');
-  assert.doesNotMatch(
-    output,
-    /not installed in this sandbox/,
-    'the budget is checked first, so this never becomes a missing-converter error',
-  );
-});
-
 test('a converter missing from the sandbox says so, rather than failing obscurely', () => {
   // This is the failure a run has to be able to tell apart from a badly drawn
   // slide: one means repair the copy, the other means this sandbox cannot
@@ -252,5 +208,162 @@ test('a converter missing from the sandbox says so, rather than failing obscurel
     () =>
       execute('recur-no-such-converter', [], { timeoutMs: 1000, cwd: tempDir('recur-enoent-') }),
     /not installed in this sandbox/,
+  );
+});
+
+test("the converter's bound is seconds, not minutes", () => {
+  // Decision 03 of the tightening map. The capability probe in decision 09
+  // measured this whole step at about 2 seconds; the old two-minute bound meant
+  // a sandbox whose converter hung cost the run four minutes of its fifteen for
+  // nothing. Thirty seconds is written here as the decision's own number, so
+  // this test can disagree with design.js rather than agree by construction.
+  assert.equal(RENDER.timeoutMs, 30000);
+});
+
+/**
+ * Run render-deck.js the way the skill does, and hand back what it printed.
+ *
+ * This machine has no LibreOffice, which makes it the honest place to test a
+ * render that cannot answer: the converter really is absent, so nothing has to
+ * be faked to provoke the failure the September 2026 run hit.
+ *
+ * @param {string} work
+ * @param {string} deck
+ */
+function renderDeckEntry(work, deck) {
+  const { execFileSync } = require('node:child_process');
+  const entry = path.join(__dirname, '..', 'skill', 'src', 'render-deck.js');
+
+  try {
+    const stdout = execFileSync(
+      process.execPath,
+      [entry, '--input', deck, '--out', path.join(work, 'render'), '--work', work],
+      { encoding: 'utf8' },
+    );
+    return { ok: true, output: stdout };
+  } catch (error) {
+    const failed = /** @type {{stdout?: string, stderr?: string}} */ (error);
+    return { ok: false, output: `${failed.stdout ?? ''}${failed.stderr ?? ''}` };
+  }
+}
+
+/** A started run with a deck beside it, for the entry-point tests. */
+function startedRun(rounds = {}) {
+  const work = tempDir('recur-render-run-');
+  fs.writeFileSync(
+    path.join(work, 'run-state.json'),
+    JSON.stringify({ startedAt: Date.now(), rounds, fallbacks: [], defects: [], stages: [] }),
+  );
+
+  const deck = path.join(work, 'Recur x Acme.pptx');
+  fs.writeFileSync(deck, Buffer.from('PK'));
+
+  return { work, deck };
+}
+
+/** What the run has written down about itself. */
+const runState = (work) => JSON.parse(fs.readFileSync(path.join(work, 'run-state.json'), 'utf8'));
+
+test('a render that answers nothing costs no repair round, and says so', () => {
+  // Whether the advice then says to render again or to deliver depends on why the
+  // converter went quiet, and this machine has no LibreOffice at all - so what is
+  // asserted here is the part that holds either way: the repair budget is
+  // untouched, and the output says as much rather than leaving the model to
+  // assume a failed step was a repair it has now paid for.
+  const { work, deck } = startedRun();
+
+  const first = renderDeckEntry(work, deck);
+
+  assert.equal(first.ok, false, 'a render with no images to show has not succeeded');
+  assert.equal(
+    runState(work).rounds.render ?? 0,
+    0,
+    'a render that produced nothing gave the model nothing to repair from',
+  );
+  assert.match(first.output, /no repair round/i, 'and it says so');
+  assert.match(first.output, /do not rewrite/i, 'because rewriting is the intuitive wrong move');
+});
+
+test('a run that has waited out two blind renders is refused, and delivers clean', () => {
+  // Decision 03: turning a sandbox hiccup into a failed run is too harsh when
+  // every deterministic check passed. The deck ships clean with one honest line.
+  const { work, deck } = startedRun();
+
+  renderDeckEntry(work, deck);
+  renderDeckEntry(work, deck);
+  const third = renderDeckEntry(work, deck);
+
+  assert.equal(third.ok, false);
+  assert.equal(runState(work).rounds.render ?? 0, 0, 'none of the three touched the repair budget');
+  assert.match(third.output, /deliver/i, 'it says to hand the deck over');
+  assert.doesNotMatch(
+    third.output,
+    /--flagged|NOT READY/,
+    'a deck every deterministic check passed is not flagged for a renderer that hung',
+  );
+  assert.deepEqual(
+    runState(work).renders,
+    { blind: 2, answered: false },
+    'and the run remembers that its eyes never opened, so the reply can say it',
+  );
+});
+
+test('a run out of render rounds is still told to flag the deck', () => {
+  // The two refusals are different. A run whose renders answered and whose
+  // defects outlived its repairs has seen a real problem it could not fix, and
+  // decision 07's flagged deck is still the right outcome for that one.
+  const { work, deck } = startedRun({ render: 2 });
+
+  const refused = renderDeckEntry(work, deck);
+
+  assert.equal(refused.ok, false);
+  assert.match(refused.output, /render rounds are spent/, 'it says which budget ran out');
+  assert.match(refused.output, /flag/i, 'and what to do instead of rendering again');
+  assert.doesNotMatch(
+    refused.output,
+    /not installed in this sandbox/,
+    'the budget is checked first, so this never becomes a missing-converter error',
+  );
+});
+
+test('a run refused for blind renders is never told to flag, and its reply carries the line', async () => {
+  // The two halves that have to agree. render-deck.js tells the model its
+  // Fallbacks: line already says the deck was not visually checked, and reply.js
+  // has to actually print that - including for a run that rendered successfully
+  // earlier, repaired, and then went blind, which is the case that used to be
+  // told one thing and print another.
+  const { work, deck } = startedRun();
+
+  // An earlier render of an earlier deck, which the model looked at and repaired.
+  const earlier = JSON.parse(fs.readFileSync(path.join(work, 'run-state.json'), 'utf8'));
+  earlier.renders = { blind: 0, answered: true };
+  earlier.rounds = { render: 1 };
+  fs.writeFileSync(path.join(work, 'run-state.json'), JSON.stringify(earlier));
+
+  renderDeckEntry(work, deck);
+  const second = renderDeckEntry(work, deck);
+
+  assert.equal(second.ok, false);
+  assert.doesNotMatch(second.output, /--flagged|NOT READY/, 'a quiet converter flags nothing');
+
+  const { execFileSync } = require('node:child_process');
+  const reply = execFileSync(
+    process.execPath,
+    [
+      path.join(__dirname, '..', 'skill', 'src', 'reply.js'),
+      '--work',
+      work,
+      '--outcome',
+      'clean',
+      '--company',
+      'Acme',
+    ],
+    { encoding: 'utf8' },
+  );
+
+  assert.match(
+    reply,
+    /Fallbacks: no visual check \(the renderer did not answer\)/,
+    'the line render-deck.js promised is the line the user is handed',
   );
 });

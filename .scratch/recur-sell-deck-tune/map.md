@@ -61,6 +61,24 @@ the September 2026 practice failures cannot recur.
   Still owed: one built header through the supported host's renderer, since
   nothing here was rendered.
   [02](issues/02-a-header-that-cannot-wrap.md)
+- A render that cannot answer is a **blind render**: 30 seconds per converter
+  instead of two, so a sandbox that cannot render costs 1-2 minutes where it cost
+  2-4; no repair round; and after two of them the deck ships **clean** with
+  `Fallbacks: no visual check (the renderer did not answer)`. Charging a round
+  for a render that produced no image was charging for a repair that could not
+  happen — it is what left the September run unseen and out of budget at once —
+  so `run-state.js` splits asking a round (`mayRender()`, mutating nothing) from
+  recording one (`noteRound()`), and the render check asks before it spawns and
+  pays only once images exist. The two refusals now name their cause, because
+  they call for opposite things: out of rounds still means a flagged deck, out of
+  blind renders means a clean one. `reply.js` is untouched — the run records that
+  a render answered nothing and that one answered, and the phrase is derived from
+  those, so the line cannot be forgotten and cannot be retracted by a later
+  render that works. The promise is restated, not dropped: **every deck is looked
+  at, and a deck that could not be looked at says so** — the fit half of it went
+  to the content gate in 02. Still owed: the 30s bound against a real cold
+  LibreOffice start, on the same host run 01 and 02 are waiting for.
+  [03](issues/03-eyes-that-fail-cheap.md)
 
 ## Not yet specified
 

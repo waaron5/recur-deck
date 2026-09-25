@@ -84,3 +84,34 @@ Whoever picks it up should know the shape of it: the decision was made, and the
 code never carried it out. Fixing it means giving the model a look at the
 candidates before the build — the run file already accepts a `landmark` the model
 supplies, so the mechanism exists; what is missing is the step that chooses.
+
+## Amendment — September 24, 2026
+
+**The render-round budget is amended: a render that produced no image spends no
+round, and the "no deck is delivered unseen" promise is narrowed to match what
+the render check can actually guarantee.** Settled in
+[Stop the render check spending the run on a converter that cannot
+answer](../../recur-sell-deck-tune/issues/03-eyes-that-fail-cheap.md); the
+reasoning and the measurements are there.
+
+What changed in this decision's terms:
+
+- The two render rounds stand, and still bound repair. They are now charged only
+  for a render that came back with images — which is the only kind that can
+  produce something to repair.
+- A **blind render** — one whose converter hung or is absent — is bounded
+  separately at two, and at 30 seconds each rather than this decision's two
+  minutes. The September 2026 run spent four minutes and both render rounds on
+  two renders that showed it nothing.
+- A run whose renders all came back blind delivers a **clean** deck, not a
+  flagged one. Flagging says critical defects are standing, and a blind render
+  finds none. The reply's `Fallbacks:` line carries `no visual check (the
+  renderer did not answer)`, built from what the run recorded.
+- The promise becomes **every deck is looked at, and a deck that could not be
+  looked at says so**. The fit half of the old promise moved to the content gate
+  in [A box that holds one
+  line](../../recur-sell-deck-tune/issues/02-a-header-that-cannot-wrap.md), which
+  refuses an overflowing line before a deck is built. The render check is the
+  second opinion, and a second opinion can be honestly denied.
+
+The reply template is untouched, and so is `reply.js`.

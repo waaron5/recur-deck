@@ -85,3 +85,149 @@ test('what the run fell back to outlives the process that noticed it', () => {
     { slide: 3, message: 'only four competitors are placed' },
   ]);
 });
+
+test('a render round is taken when the converter answers, and not before', () => {
+  // Decision 03 of the tightening map splits the render round in two. Asking
+  // whether one is available happens before a converter is spawned; taking one
+  // happens only once images exist. A round bounds repair, and a render with no
+  // image produced nothing to repair from.
+  const file = stateFile();
+
+  const asking = openRunState({ file });
+  assert.equal(asking.mayRender().allowed, true, 'the first render is inside the budget');
+  assert.equal(asking.mayRender().allowed, true, 'and asking twice spends nothing');
+
+  assert.equal(openRunState({ file }).noteRound('render'), 1, 'the answered render is round 1');
+  assert.equal(openRunState({ file }).noteRound('render'), 2, 'and the next one is round 2');
+
+  const third = openRunState({ file }).mayRender();
+  assert.equal(third.allowed, false, 'decision 07 allows two render rounds, not three');
+  assert.match(String(third.reason), /2 render/, 'and the reason says what ran out');
+  assert.equal(third.cause, 'rounds', 'named so the caller can say what to do instead');
+});
+
+test('a render that answers nothing costs no repair round', () => {
+  // The September 2026 failure: the renderer timed out twice, both rounds were
+  // charged, and the deck went out unseen with its repair budget already gone.
+  const file = stateFile();
+
+  openRunState({ file }).noteBlindRender();
+
+  const after = openRunState({ file });
+  assert.equal(after.mayRender().allowed, true, 'a render that showed nothing bought no round');
+  assert.equal(after.noteRound('render'), 1, 'so the first repair round is still round 1');
+});
+
+test('two renders that answer nothing are all a run waits for', () => {
+  // Not charging a round cannot mean retrying forever. Two blind renders at the
+  // 30-second bound cost about a minute, and then the run stops asking.
+  const file = stateFile();
+
+  const first = openRunState({ file }).noteBlindRender();
+  assert.equal(first.blind, 1);
+  assert.equal(first.left, 1, 'one more attempt is worth making');
+
+  const second = openRunState({ file }).noteBlindRender();
+  assert.equal(second.blind, 2);
+  assert.equal(second.left, 0, 'and then no more');
+
+  const third = openRunState({ file }).mayRender();
+  assert.equal(third.allowed, false, 'the third is refused before a converter is spawned');
+  assert.equal(third.cause, 'blind', 'for a different reason than a spent repair round');
+  assert.equal(third.round, 0, 'and none of it touched the repair budget');
+});
+
+test('a run whose eyes never opened says so on its own Fallbacks line', () => {
+  // The honest line decision 03 asks for, built from what the run recorded
+  // rather than from the model remembering to mention it.
+  const file = stateFile();
+
+  openRunState({ file }).noteBlindRender();
+
+  assert.deepEqual(openRunState({ file }).fallbacks, [
+    'no visual check (the renderer did not answer)',
+  ]);
+});
+
+test('a render that did answer leaves no claim that nothing was seen', () => {
+  // A first attempt that timed out and a second that worked is a run that saw
+  // its slides. Saying otherwise would make the line stop carrying information.
+  const file = stateFile();
+
+  openRunState({ file }).noteBlindRender();
+
+  const answered = openRunState({ file });
+  answered.noteRenderAnswered();
+  answered.noteRound('render');
+
+  assert.deepEqual(openRunState({ file }).fallbacks, [], 'nothing was fallen back to');
+});
+
+test('the unseen line sits beside the fallbacks a run wrote down itself', () => {
+  // The unseen line is derived and the others are stored, so they reach the
+  // reply by two different routes. A getter that returned only one of them would
+  // drop either a ladder rung or the missing check from the Fallbacks: line, and
+  // that line is what someone reads before mailing the deck.
+  const file = stateFile();
+
+  const building = openRunState({ file });
+  building.noteFallback('metro landmark (Dallas, Texas)');
+  building.noteBlindRender();
+
+  assert.deepEqual(openRunState({ file }).fallbacks, [
+    'metro landmark (Dallas, Texas)',
+    'no visual check (the renderer did not answer)',
+  ]);
+});
+
+test('a run that rendered, repaired, then went blind is a run whose deck went unseen', () => {
+  // The case that made the advice lie. An earlier render looked at an earlier
+  // deck; the one being delivered was repaired after it and never seen. Reporting
+  // that this run was visually checked would put the reassurance on the wrong
+  // deck, and drop the only line saying otherwise.
+  const file = stateFile();
+
+  const first = openRunState({ file });
+  first.noteRenderAnswered();
+  first.noteRound('render');
+
+  openRunState({ file }).noteBlindRender();
+
+  assert.deepEqual(
+    openRunState({ file }).fallbacks,
+    ['no visual check (the renderer did not answer)'],
+    'the deck on the table is the one the line is about',
+  );
+});
+
+test('when both limits are gone, the spent repair rounds are what decides', () => {
+  // A run that rendered twice has looked at its slides twice, and a defect that
+  // outlived both is decision 07's flagged deck. Answering "deliver, do not flag"
+  // to that run - because its converter also went quiet twice - would hand over a
+  // deck with a known defect and no warning on it.
+  const file = stateFile();
+
+  const run = openRunState({ file });
+  run.noteRenderAnswered();
+  run.noteRound('render');
+  run.noteRenderAnswered();
+  run.noteRound('render');
+  run.noteBlindRender();
+  run.noteBlindRender();
+
+  const refused = openRunState({ file }).mayRender();
+  assert.equal(refused.allowed, false);
+  assert.equal(refused.cause, 'rounds', 'the repair budget is the answer, not the blind cap');
+  assert.match(String(refused.reason), /2 render/);
+});
+
+test('a render that answers does not buy back a run it already spent waiting', () => {
+  // The blind cap bounds how long a run waits, and waiting already happened. A
+  // sandbox that has gone quiet twice has said what it is.
+  const file = stateFile();
+
+  openRunState({ file }).noteBlindRender();
+  openRunState({ file }).noteRenderAnswered();
+
+  assert.equal(openRunState({ file }).renders.blind, 1, 'the count is spent for the run');
+});

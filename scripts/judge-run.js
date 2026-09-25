@@ -24,7 +24,7 @@ const path = require('node:path');
 
 const { parseArgs } = require('../skill/src/args.js');
 const { checkStructure, readNotes, SLIDE_COUNT } = require('../skill/src/structure.js');
-const { runStateFile } = require('../skill/src/run-state.js');
+const { openRunState, runStateFile } = require('../skill/src/run-state.js');
 const {
   RUN_BUDGET,
   GENERATED_SLIDE_NUMBERS,
@@ -137,9 +137,13 @@ function reportTiming(work) {
     return;
   }
 
-  /** @type {{startedAt?: number, rounds?: Record<string, number>, fallbacks?: string[], defects?: {slide: number, message: string}[], stages?: {stage: string, ms: number, elapsedMs: number}[]}} */
-  const state = JSON.parse(fs.readFileSync(file, 'utf8'));
-  const stages = Array.isArray(state.stages) ? state.stages : [];
+  // Read through openRunState rather than straight out of the JSON. One of the
+  // fallbacks a run reports is derived from its record rather than stored in it -
+  // the missing visual check - so a reader that parsed the file itself would print
+  // a different list from the one reply.js hands the user, which is the one thing
+  // a judging pass must not do.
+  const state = openRunState({ file });
+  const stages = state.stages;
 
   if (stages.length === 0) {
     line('  the run recorded no stage marks, so it has no measured length');
@@ -181,13 +185,25 @@ function reportTiming(work) {
   }
   line(`  ${asDuration(code)} of that was code; the rest is the model researching and judging`);
 
-  const rounds = Object.entries(state.rounds ?? {}).filter(([, spent]) => spent > 0);
+  const rounds = Object.entries(state.rounds).filter(([, spent]) => spent > 0);
   if (rounds.length > 0) {
     line(`  repair rounds spent: ${rounds.map(([kind, spent]) => `${spent} ${kind}`).join(', ')}`);
   }
 
-  for (const fallback of state.fallbacks ?? []) line(`  Settled for: ${fallback}`);
-  for (const defect of state.defects ?? []) {
+  // Blind renders are not repair rounds and are not counted as ones, so they would
+  // otherwise vanish from the judged run - and a deck nobody could look at is
+  // exactly what a judging pass wants flagged for the person doing the looking.
+  const { blind, answered } = state.renders;
+  if (blind > 0) {
+    line(
+      `  renders that showed nothing: ${blind}${
+        answered ? ' (a later render answered)' : ' — this deck went unseen'
+      }`,
+    );
+  }
+
+  for (const fallback of state.fallbacks) line(`  Settled for: ${fallback}`);
+  for (const defect of state.defects) {
     line(`  Recorded defect, slide ${defect.slide}: ${defect.message}`);
   }
 }

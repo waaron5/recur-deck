@@ -68,8 +68,8 @@ test('the skill folder carries its instructions, script, reference and assets', 
     'scripts/build-deck.js',
     'scripts/fetch-logo.js',
     'scripts/check-content.js',
-    // Without this a run cannot look at what it built, and decision 07 delivers
-    // no deck unseen.
+    // Without this a run cannot look at what it built, and decision 07 has every
+    // deck looked at.
     'scripts/render-deck.js',
     // Stage 0. Without this a run finds out the sandbox cannot reach the web
     // only when it goes to download the cover photo, which is after the model

@@ -176,3 +176,38 @@ test('the harness lists what only a person can judge, so the pass is not half do
     assert.match(printed, pattern, 'every defect only an eye catches is listed to check');
   }
 });
+
+test('a judged run shows the renders that answered nothing, and the reply it will print', async () => {
+  // Blind renders are not repair rounds, so nothing in the rounds line accounts
+  // for them, and the person judging would see a clean-looking run over a deck
+  // nobody could look at. The Fallbacks: line matters for the same reason and in a
+  // sharper way: this report and reply.js must name the same fallbacks, and the
+  // missing visual check is derived from the run's record rather than stored in
+  // it - so a reader that parsed run-state.json itself would silently disagree
+  // with what the user was told.
+  const { file } = await built();
+  const work = tempDir('recur-judge-blind-');
+
+  fs.writeFileSync(
+    runStateFile(work),
+    JSON.stringify({
+      startedAt: Date.now() - 6 * 60 * 1000,
+      rounds: { content: 1 },
+      fallbacks: ['metro landmark (Dallas, Texas)'],
+      defects: [],
+      stages: [{ stage: 'render-deck', ms: 30000, elapsedMs: 4 * 60 * 1000 }],
+      renders: { blind: 2, answered: false },
+    }),
+  );
+
+  const printed = judge(['--deck', file, '--work', work]);
+
+  assert.match(printed, /showed nothing: 2/, 'the blind renders are counted somewhere');
+  assert.match(printed, /unseen/i, 'and called what they are');
+  assert.match(
+    printed,
+    /Settled for: no visual check \(the renderer did not answer\)/,
+    'in the same words reply.js gives the user',
+  );
+  assert.match(printed, /Settled for: metro landmark/, 'beside the fallbacks that were stored');
+});

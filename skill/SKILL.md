@@ -462,7 +462,16 @@ which is a critical defect: flag the deck.
 
 ### 8. Render the slides, and look at them
 
-**No deck is delivered unseen.**
+**Every deck is looked at, and a deck that could not be looked at says so.**
+
+That is the promise, and it is narrower than it used to be on purpose. The
+content gate in step 6 is what *guarantees* no line overflows its box: it refuses
+any line whose Arial advances pass the box it is set in, so overflow is caught
+before a deck is built rather than spotted afterwards. This step is the second
+opinion - it catches what a measurement cannot - and a second opinion is
+something a run can be honestly denied. When the sandbox's converter goes quiet
+there is nothing to look at, and that is named in the reply rather than passed
+over.
 
 ```
 node <skill-dir>/scripts/render-deck.js --input "<the file build-deck.js printed>" --out work/render --work work
@@ -471,9 +480,30 @@ node <skill-dir>/scripts/render-deck.js --input "<the file build-deck.js printed
 It renders slides 1-3 to PNGs in about two seconds and prints where they landed.
 
 `--work` is the directory holding `run.json`, so this can find the run's state.
-Each render spends one of the run's **two** render rounds. When they are gone it
-refuses before starting a converter and tells you to deliver a flagged deck
-instead.
+
+**A render that answered** - three images came back - spends one of the run's
+**two** render rounds. When they are gone it refuses before starting a converter
+and tells you to deliver a flagged deck instead.
+
+**A render that answered nothing** - the converter hung, or is not installed -
+spends no round, and is bounded at 30 seconds so finding out costs seconds. It
+prints `"ok": false` with `"attemptsLeft"` and an `advice` line. Two things
+follow, and both are the opposite of the instinct:
+
+- **Do not rewrite any copy.** A render with no image showed you nothing about
+  your copy. There is no finding here to repair.
+- **Render again with the same command**, once. No round was spent, so nothing
+  was lost. A converter reported as *not installed* will not appear on a second
+  ask - that one goes straight to the next paragraph.
+
+After **two** renders that answered nothing the run stops asking, and this is
+what it does: **deliver the deck, and do not flag it for this.** A flagged deck
+says critical defects are standing, and a render that showed you nothing found
+none. Whether the deck is flagged is still decided by what the other checks
+found - so a deck otherwise clean goes out clean. Write the reply with `reply.js`
+as usual: its `Fallbacks:` line carries `no visual check (the renderer did not
+answer)` from what the run recorded, so nothing here depends on you remembering
+to mention it.
 
 **Now open those three images and look at them.** You are checking for things
 only an eye catches:
@@ -513,6 +543,10 @@ notes still record which rung it settled for.
 A run may rewrite its way out of trouble **three times on copy and twice on
 renders**, and may start **no new round once it is about twelve minutes old**.
 Each round touches only the fields that failed.
+
+A round is a rewrite, so only a step that gave you something to rewrite costs
+one. A render that came back with no image costs no round; those are bounded
+separately, at two, by step 8.
 
 When the budget runs out with a critical defect still standing, stop repairing
 and deliver a **flagged deck**:

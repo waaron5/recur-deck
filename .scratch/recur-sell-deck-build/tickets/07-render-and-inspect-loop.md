@@ -148,3 +148,25 @@ one with shorter text. Say so if it should move to 08.
 
 Verified here: 157 tests, typecheck clean, package 16 files. Not verified: any of
 it under a real renderer.
+
+## Amendment — September 24, 2026
+
+The loop this ticket built now distinguishes a render that answered from one that
+did not. See [Stop the render check spending the run on a converter that cannot
+answer](../../recur-sell-deck-tune/issues/03-eyes-that-fail-cheap.md) for the
+decision and the code.
+
+In this ticket's terms: `render-deck.js` no longer spends a render round before
+starting a converter. It asks `mayRender()`, which mutates nothing, and calls
+`noteRound('render')` only once `renderSlides` has returned images — so the round
+is charged for what the model can repair from rather than for the attempt.
+A render that threw is recorded as a blind render, bounded at two and at 30
+seconds each, and the run then delivers the deck clean with the missing check
+named in the reply.
+
+The removed clause is worth noting against this ticket's own bullet above.
+SKILL.md used to tell the model to deliver the deck unrendered when a converter
+was missing, and this ticket removed it as contradicting its first line. That
+instruction is back, in a narrower and bounded form, and with the promise
+restated so it no longer contradicts anything: the run tries twice, cheaply, and
+says in the reply that nobody looked.

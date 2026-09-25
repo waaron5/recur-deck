@@ -1,16 +1,24 @@
 // Rendering slides to images, so the model can look at the deck it just built.
 //
 // Stage 7 of the unattended-run decision (issues/07-define-unattended-run.md):
-// no deck is delivered unseen. Slides 1-3 are rasterised
-// and the model checks them for text that overflows, is clipped, overlaps
-// something or is illegible, and for logos that landed wrong. What it finds is
-// repaired by shortening copy - never by shrinking type - and the deck is built
-// and rendered again.
+// every deck is looked at. Slides 1-3 are rasterised and the model checks them
+// for text that overflows, is clipped, overlaps something or is illegible, and
+// for logos that landed wrong. What it finds is repaired by shortening copy -
+// never by shrinking type - and the deck is built and rendered again.
+//
+// This is the second opinion rather than the guarantee. Decision 02 of the
+// tightening map made the content gate authoritative on fit, so a line that does
+// not fit its box never reaches a build, let alone a render. What is left here is
+// what a measurement cannot see - and being a second opinion is what lets a run
+// be honestly denied one: a converter that goes quiet costs the run seconds and
+// no repair round, and the deck ships clean with the reply saying it was not
+// looked at. Decision 03, and render-deck.js holds that half.
 //
 // The route is LibreOffice to PDF, then pdftoppm to PNG. Both tools were
 // confirmed present in the sandbox by the capability check in decision 09, which
 // measured the whole step at about 2 seconds. That is why this is a routine part
-// of every run rather than something kept for when a deck looks wrong.
+// of every run rather than something kept for when a deck looks wrong - and why
+// the bound on it is 30 seconds rather than the two minutes it once was.
 //
 // What makes the image worth trusting is the typeface. The renderer has
 // Liberation, Carlito and DejaVu and no Arial, so it substitutes - and
@@ -28,6 +36,7 @@ const { GENERATED_SLIDE_NUMBERS, RENDER } = require('./design.js');
 /**
  * @typedef {{slide: number, file: string}} RenderedSlide
  * @typedef {(command: string, args: string[], options: {timeoutMs: number, cwd: string}) => void} Run
+ * @typedef {Error & {missingConverter?: true}} RenderFailure
  */
 
 /**
@@ -145,8 +154,15 @@ function execute(command, args, { timeoutMs, cwd }) {
   } catch (error) {
     const failure = /** @type {NodeJS.ErrnoException & {killed?: boolean}} */ (error);
     if (failure.code === 'ENOENT') {
-      throw new Error(
-        `${command} is not installed in this sandbox, so slides cannot be rendered and checked`,
+      // Tagged, not just worded. render-deck.js has to tell an absent converter
+      // from one that merely hung - the second is worth asking again and the
+      // first never will be - and recognising it by its sentence would make this
+      // string load-bearing from another module.
+      throw Object.assign(
+        new Error(
+          `${command} is not installed in this sandbox, so slides cannot be rendered and checked`,
+        ),
+        { missingConverter: /** @type {true} */ (true) },
       );
     }
     if (failure.killed) {
