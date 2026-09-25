@@ -30,6 +30,7 @@
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 
 const { GENERATED_SLIDE_NUMBERS, RENDER } = require('./design.js');
 
@@ -74,12 +75,23 @@ function renderSlides({ file, outDir, run = execute }) {
 
   // A private profile directory, so this never contends with a LibreOffice that
   // is already running or leaves one behind holding a lock on the default one.
-  const profile = path.join(outDir, '.soffice-profile');
+  //
+  // The URL is built rather than concatenated, and from an absolute path. A
+  // file: URL reads whatever follows its two slashes as a host name, so a
+  // relative outDir made `file://work/render/.soffice-profile` - a profile on a
+  // machine named `work`. LibreOffice does not refuse that. It waits for a host
+  // that does not answer, until the bound below kills it and the run goes blind.
+  // Every measurement of this step used an absolute directory and so never saw
+  // it, while SKILL.md told the model to pass `--out work/render`: the September
+  // 2026 ServiceTitan run went blind twice for this and nothing else, and the
+  // same deck converts in about 3 seconds cold once the URL is well formed.
+  // pathToFileURL also escapes the spaces and non-ASCII a built path can carry.
+  const profile = pathToFileURL(path.resolve(outDir, '.soffice-profile')).href;
   run(
     'soffice',
     [
       '--headless',
-      `-env:UserInstallation=file://${profile}`,
+      `-env:UserInstallation=${profile}`,
       '--convert-to',
       'pdf',
       '--outdir',

@@ -10,6 +10,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 
 const { renderSlides, execute } = require('../skill/src/render.js');
 const { GENERATED_SLIDE_NUMBERS, RENDER } = require('../skill/src/design.js');
@@ -95,6 +96,38 @@ test('LibreOffice gets a profile of its own, so a running copy cannot block it',
   const profile = calls[0].args.find((arg) => arg.startsWith('-env:UserInstallation='));
   assert.ok(profile, 'the converter should be given its own user installation');
   assert.ok(profile.startsWith('-env:UserInstallation=file://'), 'which has to be a file URL');
+});
+
+test('the profile URL names a path and never a host, so a relative --out still renders', () => {
+  // The bug this exists for: `file://` + `work/render/.soffice-profile` is a
+  // profile on a machine called `work`. LibreOffice does not refuse it - it
+  // waits for that host until the bound kills it, and the run goes blind with
+  // nothing to show. Every earlier measurement passed an absolute directory,
+  // where the same concatenation happens to be correct, while SKILL.md told the
+  // model to pass `--out work/render`. So the relative case is the one asserted.
+  const cwd = process.cwd();
+  const dir = tempDir('recur-render-rel-');
+  process.chdir(dir);
+
+  try {
+    const file = deckFile();
+    const { run, calls } = fakeRenderer();
+
+    renderSlides({ file, outDir: 'work/render', run });
+
+    const profile = String(
+      calls[0].args.find((arg) => arg.startsWith('-env:UserInstallation=')),
+    ).replace('-env:UserInstallation=', '');
+
+    assert.equal(new URL(profile).host, '', 'a host here is a machine that will never answer');
+    assert.equal(
+      new URL(profile).pathname,
+      pathToFileURL(path.resolve('work/render/.soffice-profile')).pathname,
+      'and the profile is the directory the run asked for, resolved',
+    );
+  } finally {
+    process.chdir(cwd);
+  }
 });
 
 test('both converters are bounded, so a hung one cannot eat the run', () => {
