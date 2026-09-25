@@ -57,7 +57,8 @@ round. The prediction measures real advance widths, generated into
 
 Every run renders slides 1-3 and looks at them before the deck is offered to
 anyone. LibreOffice converts the deck to PDF and `pdftoppm` rasterises those
-three pages at 150 px per inch, which takes about two seconds.
+three pages at 150 px per inch, which takes about three seconds on the
+supported host, and about one on a second render in the same run.
 
 The model checks the images for overflowing, clipped, overlapping or illegible
 text and for logos that landed wrong. **Every repair is shorter copy**, rewritten

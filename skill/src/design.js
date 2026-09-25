@@ -357,6 +357,13 @@ const LOGO = { sharpPixelsPerInch: 150 };
 // fifteen times the measurement, with room for a cold LibreOffice first start.
 // Decision 03 of the tightening map.
 //
+// That room was then measured on the supported host rather than left as an
+// allowance: the same deck converts in about 3 seconds on a run's first render
+// and about 1 on its second, so building the private profile costs about two
+// seconds and the bound has ten times the headroom it needs. What hung that run
+// was never a slow start - it was a malformed profile URL, which render.js now
+// builds rather than concatenates.
+//
 // It bounds each converter, not the step, so the arithmetic worth having is the
 // worst case rather than the bound: soffice hanging costs 30s, and soffice
 // finishing while pdftoppm hangs costs 60s. Against blindRenders of 2 that is 1-2

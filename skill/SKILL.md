@@ -482,7 +482,9 @@ over.
 node <skill-dir>/scripts/render-deck.js --input "<the file build-deck.js printed>" --out work/render --work work
 ```
 
-It renders slides 1-3 to PNGs in about two seconds and prints where they landed.
+It renders slides 1-3 to PNGs in about three seconds and prints where they
+landed. A second render in the same run takes about one, because the profile it
+builds on the first is already there.
 
 `--work` is the directory holding `run.json`, so this can find the run's state.
 
