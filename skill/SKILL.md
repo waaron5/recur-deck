@@ -383,6 +383,11 @@ it is never placed. There is no top-level `logo` block: the target's mark sits
 on its market-map entry like every other company's, because slide 3 is the only
 slide that places one.
 
+**Every file path in the run file is read from the run file's own folder**, so
+`work/logo.png` beside `work/run.json` names the same image whichever folder you
+build from. This holds for `logo.file` and for `landmark.file`. Write the paths
+the way you made them and do not adjust them for where you are standing.
+
 ### 6. Check the copy, then read it yourself
 
 ```

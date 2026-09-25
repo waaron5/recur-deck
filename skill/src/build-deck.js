@@ -63,6 +63,28 @@ function readRun(args) {
   return JSON.parse(fs.readFileSync(args.input, 'utf8'));
 }
 
+/**
+ * A file the run file points at, found from the run file rather than from
+ * wherever the build happens to be invoked.
+ *
+ * The model writes these paths the way it made them - `work/buildops/logo.png`
+ * beside `work/run.json` - and a short path carries no start point of its own.
+ * Taking the start point from the working directory made the same run file mean
+ * different files from different folders: a September 2026 run recorded its
+ * logos that way, built from inside `work`, and every path resolved one level
+ * too deep. Each company fell back to a text wordmark, which is what the market
+ * map does for a logo it cannot read, and the deck shipped with eight of them.
+ * The run file is the thing that holds the path, so it is the thing the path is
+ * read against. `path.resolve` leaves an absolute path alone, so a run that
+ * writes absolute paths is unaffected.
+ *
+ * @param {string} runDir  The directory the run file sits in.
+ * @param {string} file
+ */
+function beside(runDir, file) {
+  return path.resolve(runDir, file);
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const run = readRun(args);
@@ -105,11 +127,12 @@ async function main() {
 
   // The run's state lives beside its run file, so every stage of the run finds
   // the same one.
-  const stateFile = runStateFile(path.dirname(path.resolve(args.input)));
+  const runDir = path.dirname(path.resolve(args.input));
+  const stateFile = runStateFile(runDir);
 
   const landmark = run.landmark?.file
     ? {
-        photo: fs.readFileSync(run.landmark.file),
+        photo: fs.readFileSync(beside(runDir, run.landmark.file)),
         credit: run.landmark.credit,
         width: run.landmark.width,
         // Carried in the run file so a rebuild after a repair still records
@@ -123,7 +146,7 @@ async function main() {
   // spend a download to arrive at the same picture - or at a different one,
   // which would make the rebuilt cover a new thing to inspect rather than the
   // same one with shorter text on it.
-  const landmarkFile = run.landmark?.file ?? saveLandmark(args.input, landmark);
+  const landmarkFile = run.landmark?.file ?? saveLandmark(runDir, landmark);
 
   const assetsDir = path.join(skillDir, 'assets');
 
@@ -133,7 +156,7 @@ async function main() {
     outDir,
     landmark,
     thesis: run.thesis,
-    marketMap: await readMapLogos(run.marketMap, assetsDir),
+    marketMap: await readMapLogos(run.marketMap, assetsDir, runDir),
     writtenForm: run.writtenForm,
     headquarters: run.headquarters,
     identification: run.identification,
@@ -144,7 +167,7 @@ async function main() {
 
   // The run's most expensive stage, so how long it took is the first thing a
   // slow run gets read against.
-  mark(path.dirname(path.resolve(args.input)), 'build-deck');
+  mark(runDir, 'build-deck');
 
   console.log(
     JSON.stringify(
@@ -173,13 +196,13 @@ async function main() {
  * A photo that cannot be saved is not worth failing a built deck over: the run
  * simply pays for the download again if it rebuilds.
  *
- * @param {string} input  The run file's path.
+ * @param {string} runDir  The directory the run file sits in.
  * @param {{photo: Buffer}} landmark
  * @returns {string | undefined}
  */
-function saveLandmark(input, landmark) {
+function saveLandmark(runDir, landmark) {
   try {
-    const file = path.join(path.dirname(path.resolve(input)), 'landmark.jpg');
+    const file = path.join(runDir, 'landmark.jpg');
     fs.writeFileSync(file, landmark.photo);
     return file;
   } catch {
@@ -195,9 +218,10 @@ function saveLandmark(input, landmark) {
  *
  * @param {{file: string, source?: string, verified?: boolean}} entry
  * @param {string} assetsDir
+ * @param {string} runDir  What a relative logo path is read against.
  */
-async function readLogo(entry, assetsDir) {
-  const logo = await normaliseLogo(fs.readFileSync(entry.file), { assetsDir });
+async function readLogo(entry, assetsDir, runDir) {
+  const logo = await normaliseLogo(fs.readFileSync(beside(runDir, entry.file)), { assetsDir });
   return { ...logo, source: entry.source, verified: entry.verified === true };
 }
 
@@ -212,8 +236,9 @@ async function readLogo(entry, assetsDir) {
  *
  * @param {any} map
  * @param {string} assetsDir
+ * @param {string} runDir  What a relative logo path is read against.
  */
-async function readMapLogos(map, assetsDir) {
+async function readMapLogos(map, assetsDir, runDir) {
   if (!map || !Array.isArray(map.companies)) return map;
 
   const companies = [];
@@ -223,7 +248,7 @@ async function readMapLogos(map, assetsDir) {
       continue;
     }
     try {
-      companies.push({ ...company, logo: await readLogo(company.logo, assetsDir) });
+      companies.push({ ...company, logo: await readLogo(company.logo, assetsDir, runDir) });
     } catch (error) {
       // Kept, not swallowed. The map records why a company fell back to type:
       // a competitor set as a wordmark for no stated reason reads as something
