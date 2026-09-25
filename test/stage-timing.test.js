@@ -19,10 +19,18 @@ const path = require('node:path');
 
 const { openRunState, recordStage, runStateFile } = require('../skill/src/run-state.js');
 const { RUN_BUDGET } = require('../skill/src/design.js');
-const { tempDir, researchWith } = require('./helpers.js');
+const {
+  tempDir,
+  researchWith,
+  ensureBuilt,
+  testPhoto,
+  TEST_HEADQUARTERS,
+  TEST_CREDIT,
+} = require('./helpers.js');
 
 const GATE = path.join(__dirname, '..', 'skill', 'src', 'check-content.js');
 const LOGO = path.join(__dirname, '..', 'skill', 'src', 'fetch-logo.js');
+const JUDGE = path.join(__dirname, '..', 'scripts', 'judge-run.js');
 
 /** A started run: a state file beside a run file, the way stage 0 leaves it. */
 function startedRun({ startedAt = Date.now(), research = researchWith() } = {}) {
@@ -158,5 +166,107 @@ test('the run length a deck is judged against is the decision, not a comment', (
   assert.ok(
     RUN_BUDGET.cutoffMs < RUN_BUDGET.limitMs,
     'the repair cutoff sits inside the limit, which is what it is for',
+  );
+});
+
+test('the stages of a real run produce a timeline the judging harness can print', async () => {
+  // The seam ticket 04 rests on, and the one nothing else here covers. Every
+  // other timing case writes run-state.json by hand, so a stage that changed the
+  // shape it records - or stopped recording at all - would leave all of them
+  // passing and the harness printing nothing. This drives the shipped bundle's
+  // own entry points and then judges what they wrote, which is exactly the pair
+  // of steps a practice run performs.
+  //
+  // Stage 0 is seeded rather than run, and seeded here rather than through
+  // startedRun() above, which writes a run file this needs more in than research:
+  // a headquarters and a landmark the build can use without a Commons download.
+  // start-run.js itself probes the network, so calling it would make a timing test
+  // fail on an offline machine over something that is not timing - and a seeded
+  // state file is what it leaves behind anyway.
+  //
+  // What the render does here depends on the machine: no LibreOffice and it goes
+  // blind, LibreOffice and it rasterises. Either way it records a mark, and a mark
+  // is the whole of what this asserts - so this passes on both, and neither
+  // outcome is what it claims to be testing.
+  const { stageDir } = await ensureBuilt();
+  const work = tempDir('recur-timeline-');
+  const runFile = path.join(work, 'run.json');
+
+  fs.writeFileSync(
+    path.join(work, 'run-state.json'),
+    JSON.stringify({
+      startedAt: Date.now(),
+      rounds: {},
+      fallbacks: [],
+      defects: [],
+      stages: [],
+      renders: { blind: 0, answered: false },
+    }),
+  );
+
+  const photo = path.join(work, 'landmark.jpg');
+  fs.writeFileSync(photo, testPhoto());
+  fs.writeFileSync(
+    runFile,
+    JSON.stringify({
+      ...researchWith(),
+      headquarters: TEST_HEADQUARTERS,
+      identification: 'Matched the prompt to usfleettracking.com.',
+      landmark: { file: photo, credit: TEST_CREDIT },
+    }),
+  );
+
+  /** One bundled stage, run the way the sandbox runs it. */
+  const stage = (name, args) => {
+    try {
+      return execFileSync(process.execPath, [path.join(stageDir, 'scripts', name), ...args], {
+        cwd: work,
+        encoding: 'utf8',
+        env: { PATH: process.env.PATH },
+        // The refusals below are expected here, so their JSON is captured rather
+        // than left to print into the test output as though something went wrong.
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+    } catch (error) {
+      // Some of these are expected to exit non-zero - nothing listens on port 1,
+      // and a machine with no converter cannot render - and a stage that spent
+      // time and came back with nothing still recorded having spent it.
+      const refused = /** @type {{stdout?: string}} */ (error);
+      return String(refused.stdout ?? '');
+    }
+  };
+
+  stage('fetch-logo.js', ['--site', 'http://127.0.0.1:1/', '--out', path.join(work, 'acme'), '--work', work]);
+  stage('check-content.js', ['--input', runFile]);
+  const built = stage('build-deck.js', ['--input', runFile, '--out', work]);
+  const deck = JSON.parse(built).file;
+  stage('render-deck.js', ['--input', deck, '--out', path.join(work, 'render'), '--work', work]);
+  stage('reply.js', [
+    '--work',
+    work,
+    '--outcome',
+    'clean',
+    '--company',
+    'US Fleet Tracking',
+    '--headquarters',
+    TEST_HEADQUARTERS.city,
+  ]);
+
+  const printed = execFileSync(process.execPath, [JUDGE, '--deck', deck, '--work', work], {
+    encoding: 'utf8',
+  });
+
+  // The timeline section alone, so a stage name that appears somewhere else in
+  // the report - in the notes, or in a defect - cannot stand in for a mark.
+  const timeline = printed.slice(printed.indexOf('TIMING'), printed.indexOf('SOURCE RECORD'));
+
+  for (const name of ['fetch-logo', 'check-content', 'build-deck', 'render-deck', 'reply']) {
+    assert.match(timeline, new RegExp(name), `${name} put its own mark in the timeline`);
+  }
+  assert.match(timeline, /total —/, "and the run's length is reported against the limit");
+  assert.doesNotMatch(
+    timeline,
+    /recorded no stage marks|recorded no timings/,
+    'the harness found marks to read, which is the whole of what this ticket needs',
   );
 });

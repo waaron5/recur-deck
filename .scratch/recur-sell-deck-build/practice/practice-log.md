@@ -38,6 +38,20 @@ with web search on and no URL in the prompt. One run per row.
 
 ## How each run is judged
 
+**First, get the work directory out of the sandbox, in the same chat, before
+closing it.** The deck comes back on its own — the build writes it to
+`/mnt/user-data/outputs`, whose files become downloads. The work directory does
+not: the stages run with `--work work`, relative to the sandbox's working
+directory, and nothing copies it anywhere. So ask for it:
+
+> Copy the whole `work` directory into `/mnt/user-data/outputs` and give me the
+> files.
+
+`work/run-state.json` is the file the timeline is read from. Keep the deck and the
+work directory together under `runs/<Company>/`, which is gitignored. **This is
+the step that lost the September 17, 2026 runs**, and it is written here rather
+than left to memory for that reason.
+
 ```
 node scripts/judge-run.js --deck "<the delivered file>" --work <the run's work dir>
 ```
@@ -123,6 +137,14 @@ because no run has produced any. Each of the six stages writes its own duration
 and the elapsed time it finished at into `run-state.json`, and the harness prints
 the timeline with the gaps between stages attributed to the model. Nothing here
 needs a stopwatch, but nothing is measured until the runs happen.
+
+**The mechanism itself was exercised on September 25, 2026** and does print a
+report: all six stages drove a fixture run on the development machine and
+`judge-run.js` read back six marks, a total against both bounds, and the blind
+render this machine's missing LibreOffice produced. What is missing is a run with a
+model in it, not a mechanism — the gaps between stages, which are most of a real
+run, are the one thing a fixture cannot produce. See
+[ticket 04 of the tightening map](../../recur-sell-deck-tune/issues/04-where-the-minutes-go.md).
 
 One path records no timeline at all, by design: a run whose preflight fails
 never creates a run state, so an evidence failure caused by the domain allowlist
