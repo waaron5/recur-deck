@@ -147,3 +147,52 @@ byte-identical, which is what a test now asserts.
 
 **The package was rebuilt** so the ZIP to install carries the captured cause:
 `dist/recur-sell-deck.zip`, 19 files, 2893 KB.
+
+### The cause, found September 25, 2026
+
+**It was never the sandbox, the deck, or the bound.** `render.js` built
+LibreOffice's profile argument by concatenating `file://` with a path the run
+supplies. A `file:` URL reads whatever follows its two slashes as a host name, so
+the documented invocation — `--out work/render`, relative — asked for a profile
+on a machine called `work`. LibreOffice does not refuse that. It waits for a host
+that never answers, until the 30-second bound kills it and the render goes blind
+with nothing to show.
+
+An absolute `outDir` starts with a slash, so `file://` + `/Users/…` is the
+correct three-slash form by accident. That is why nothing caught this: decision
+09's probe, every test in the suite, and this ticket's own September 25 dry run
+all passed absolute directories, while SKILL.md told the model to pass
+`work/render`. The bug fired only where nobody was measuring, which was every
+real run.
+
+**Measured on the supported host**, driving the same deck by hand: about 3
+seconds on a first render and about 1 on a second, against a 30-second bound.
+The relative-path form hung past 45 seconds and had to be killed, and the profile
+directory was never created.
+
+This answers the ticket's four bullets, in its own order:
+
+- **Whether it still fails, and at which converter.** At `soffice`, every time,
+  and for this and nothing else. `ETIMEDOUT` was the honest report of a process
+  waiting on a host.
+- **What changed since the probe.** Nothing about the deck. The cover photograph
+  and the embedded logos convert in three seconds. The probe passed an absolute
+  directory and a real run did not.
+- **Whether the private profile directory is the cost.** It costs about two
+  seconds — the difference between a run's first render and its second — so the
+  30s bound has ten times the headroom it needs. The review pass's argument that
+  a cold profile might not fit inside 30 seconds was a good argument and is now
+  measured false. The profile stays.
+- **Whether a different route is warranted.** No. The LibreOffice route was never
+  broken, so the resvg question set aside in grilling stays set aside.
+
+`render.js` now builds the URL with `pathToFileURL` from an absolute path, which
+also escapes the spaces and non-ASCII a built path can carry. The test drives a
+relative `outDir`, because the absolute case is the one that was always passing.
+SKILL.md, `visual-rules.md` and `design.js` carry the host's measurement in place
+of the probe's.
+
+**Still owed before this closes:** one run of the fixed package on the supported
+host, showing three images and a `render-deck` mark in seconds. Everything above
+is a measurement of `soffice` driven by hand; no run has yet rendered through the
+package itself.
